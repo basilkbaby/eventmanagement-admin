@@ -259,6 +259,8 @@ updatePricingDetails() {
 
           this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} blocked successfully`);
           this.completeAction();
+          
+          this.getSeatMap(this.eventId);
         } else {
           this.notificationService.showError(response.error || 'Failed to block seats');
           this.isLoading = false;
@@ -298,6 +300,8 @@ updatePricingDetails() {
 
           this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} unblocked successfully`);
           this.completeAction();
+          
+          this.getSeatMap(this.eventId);
         } else {
           this.notificationService.showError(response.error || 'Failed to unblock seats');
           this.isLoading = false;
