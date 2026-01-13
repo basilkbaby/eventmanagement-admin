@@ -16,7 +16,7 @@ import { AdminDashboardComponent } from './components/admin-dashboard/admin-dash
     RouterOutlet,
     HeaderComponent,
     SidebarComponent,
-    AdminDashboardComponent
+    AdminDashboardComponent,
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']

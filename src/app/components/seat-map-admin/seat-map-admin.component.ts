@@ -2,23 +2,24 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { 
-  getSeatColor, 
-  getSeatDisplayText, 
-  getSeatStatusConfig, 
-  isSeatSelectable, 
-  RowNumberingType, 
-  Seat, 
-  SEAT_STATUS_CONFIG, 
-  SeatManagement, 
-  SeatOverride, 
-  SeatSectionType, 
-  SeatStatus, 
-  SectionRowConfig, 
-  SelectedSeat, 
-  TicketType, 
-  VenueData, 
-  VenueSection 
+import {
+  getSeatColor,
+  getSeatDisplayText,
+  getSeatStatusConfig,
+  isSeatSelectable,
+  RowNumberingType,
+  Seat,
+  SEAT_STATUS_CONFIG,
+  SeatItemDto,
+  SeatManagement,
+  SeatOverride,
+  SeatSectionType,
+  SeatStatus,
+  SectionRowConfig,
+  SelectedSeat,
+  TicketType,
+  VenueData,
+  VenueSection
 } from '../../core/models/DTOs/seats.DTO.model';
 import { SeatMapVisualComponent } from './seat-map-visual/seat-map-visual.component';
 import { AdminSeatService } from '../../core/services/admin-seat.service';
@@ -45,15 +46,26 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
 
   // Admin actions
   adminAction: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release' = 'block';
-  
-  // Customer info for reservation/purchase
-  customerInfo = {
+
+ customerInfo = {
     name: '',
     email: '',
     phone: '',
-    notes: ''
+    postCode: '', // Added post code
+    transactionRef: '' // Added transaction ref
   };
 
+  // Pricing details
+  pricingDetails = {
+    subtotal: 0,
+    discount: 0,
+    discountType: 'none' as 'percentage' | 'fixed' | 'none',
+    discountValue: 0,
+    serviceFee: 0,
+    serviceFeeType: 'none' as 'percentage' | 'fixed' | 'none',
+    serviceFeeValue: 0, // Default 2%
+    total: 0
+  };
   // Confirmation
   showConfirmationModal: boolean = false;
   confirmationData: {
@@ -62,11 +74,11 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     action: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release';
     seats: SelectedSeat[];
   } = {
-    title: '',
-    message: '',
-    action: 'block',
-    seats: []
-  };
+      title: '',
+      message: '',
+      action: 'block',
+      seats: []
+    };
 
   // Zoom & Pan
   scale = .75;
@@ -75,13 +87,13 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   private zoomSpeed = 0.1;
   private isDragging = false;
   private lastMousePos = { x: 0, y: 0 };
-  public rowLabels: {x: number, y: number, label: string, side: 'left' | 'right'}[] = [];
+  public rowLabels: { x: number, y: number, label: string, side: 'left' | 'right' }[] = [];
 
   // Seat status configuration
   readonly seatStatusConfig = SEAT_STATUS_CONFIG;
   readonly SeatStatus = SeatStatus;
   readonly SeatSectionType = SeatSectionType;
-  
+
   // Track middle section bounds
   middleMinX = Number.MAX_VALUE;
   middleMaxX = 0;
@@ -93,7 +105,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private notificationService: NotificationService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -122,9 +134,53 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     });
   }
 
+updatePricingDetails() {
+  const subtotal = this.getSelectedTotalPrice();
+  
+  // Calculate discount
+  let discount = 0;
+  if (this.pricingDetails.discountType === 'fixed') {
+    discount = Math.min(this.pricingDetails.discountValue, subtotal);
+  } else if (this.pricingDetails.discountType === 'percentage') {
+    discount = (subtotal * Math.min(this.pricingDetails.discountValue, 100)) / 100;
+  }
+  
+  // Calculate service fee
+  let serviceFee = 0;
+  if (this.pricingDetails.serviceFeeType === 'fixed') {
+    serviceFee = this.pricingDetails.serviceFeeValue;
+  } else if (this.pricingDetails.serviceFeeType === 'percentage') {
+    serviceFee = ((subtotal - discount) * Math.min(this.pricingDetails.serviceFeeValue, 100)) / 100;
+  }
+  
+
+  this.pricingDetails = {
+    ...this.pricingDetails,
+    subtotal: subtotal,
+    discount: discount,
+    serviceFee: serviceFee,
+    total: subtotal - discount + serviceFee
+  };
+}
+
+  generateTransactionRef(): string {
+    const prefix = 'TXN';
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${prefix}-${timestamp}${random}`;
+  }
+
+  generateNewTransactionRef() {
+    this.customerInfo.transactionRef = this.generateTransactionRef();
+  }
+
   // ========== ADMIN ACTIONS ==========
   setAdminAction(action: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release') {
     this.adminAction = action;
+        // Update pricing when seats change
+    if (this.adminAction === 'purchase') {
+      this.updatePricingDetails();
+    }
   }
 
   applyAdminAction() {
@@ -134,9 +190,15 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     }
 
     // Validate customer info for reserve/purchase
-    if ((this.adminAction === 'reserve' || this.adminAction === 'purchase') && 
-        !this.customerInfo.name) {
+    if ((this.adminAction === 'reserve' || this.adminAction === 'purchase') &&
+      !this.customerInfo.name) {
       this.notificationService.showWarning('Please enter customer name');
+      return;
+    }
+
+     // Validate transaction ref for purchase
+    if (this.adminAction === 'purchase' && !this.customerInfo.transactionRef) {
+      this.notificationService.showWarning('Please enter transaction reference');
       return;
     }
 
@@ -152,7 +214,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
 
   confirmAction() {
     this.isLoading = true;
-    
+
     switch (this.confirmationData.action) {
       case 'block':
         this.performBlock();
@@ -175,16 +237,32 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   private performBlock() {
     const seatIds = this.confirmationData.seats.map(seat => seat.seatId);
     const seatObjects = this.getSeatsByIds(seatIds);
-    
-    this.seatService.blockSeats(this.eventId, seatIds, this.confirmationData.seats[0]?.sectionConfigId || '').subscribe({
+
+    // Prepare seat items for the request
+    const seatItems: SeatItemDto[] = this.confirmationData.seats.map(selectedSeat => {
+      const seat = seatObjects.find(s => s?.id === selectedSeat.seatId);
+      return {
+        seatId: selectedSeat.seatId,
+        seatSection: selectedSeat.sectionName,
+        seatSectionId: selectedSeat.sectionId,
+        price: selectedSeat.price
+      };
+    }).filter(item => item !== undefined); // Remove any undefined items
+
+    this.seatService.blockSeats(this.eventId, seatItems, 'Administrative block').subscribe({
       next: (response) => {
-        // Update local seat status
-        seatObjects.forEach(seat => {
-          if (seat) seat.status = SeatStatus.BLOCKED;
-        });
-        
-        this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} blocked successfully`);
-        this.completeAction();
+        if (response.success) {
+          // Update local seat status
+          seatObjects.forEach(seat => {
+            if (seat) seat.status = SeatStatus.BLOCKED;
+          });
+
+          this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} blocked successfully`);
+          this.completeAction();
+        } else {
+          this.notificationService.showError(response.error || 'Failed to block seats');
+          this.isLoading = false;
+        }
       },
       error: (error) => {
         this.notificationService.showError('Failed to block seats');
@@ -197,16 +275,33 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   private performUnblock() {
     const seatIds = this.confirmationData.seats.map(seat => seat.seatId);
     const seatObjects = this.getSeatsByIds(seatIds);
-    
-    this.seatService.unblockSeats(this.eventId, seatIds).subscribe({
+
+    // Prepare seat items for the request
+    const seatItems: SeatItemDto[] = this.confirmationData.seats.map(selectedSeat => {
+      const seat = seatObjects.find(s => s?.id === selectedSeat.seatId);
+      return {
+        seatId: selectedSeat.seatId,
+        seatSection: selectedSeat.sectionName,
+        seatSectionId: selectedSeat.sectionId,
+        price: selectedSeat.price
+      };
+    }).filter(item => item !== undefined); // Remove any undefined items
+
+
+    this.seatService.unblockSeats(this.eventId, seatItems).subscribe({
       next: (response) => {
-        // Update local seat status
-        seatObjects.forEach(seat => {
-          if (seat) seat.status = SeatStatus.AVAILABLE;
-        });
-        
-        this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} unblocked successfully`);
-        this.completeAction();
+        if (response.success) {
+          // Update local seat status
+          seatObjects.forEach(seat => {
+            if (seat) seat.status = SeatStatus.BLOCKED;
+          });
+
+          this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} unblocked successfully`);
+          this.completeAction();
+        } else {
+          this.notificationService.showError(response.error || 'Failed to unblock seats');
+          this.isLoading = false;
+        }
       },
       error: (error) => {
         this.notificationService.showError('Failed to unblock seats');
@@ -223,7 +318,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
       customerName: this.customerInfo.name,
       customerEmail: this.customerInfo.email,
       customerPhone: this.customerInfo.phone,
-      notes: this.customerInfo.notes,
+      customerPostCode: this.customerInfo.postCode,
       seatIds: seatIds,
       sectionConfigId: this.confirmationData.seats[0]?.sectionConfigId || '',
       reservationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -235,7 +330,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
         seatObjects.forEach(seat => {
           if (seat) seat.status = SeatStatus.RESERVED;
         });
-        
+
         this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} reserved successfully`);
         this.completeAction();
       },
@@ -250,27 +345,57 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   private performPurchase() {
     const seatIds = this.confirmationData.seats.map(seat => seat.seatId);
     const seatObjects = this.getSeatsByIds(seatIds);
+    
+    // Prepare seat items for the request
+    const seatItems: SeatItemDto[] = this.confirmationData.seats.map(selectedSeat => {
+      const seat = seatObjects.find(s => s?.id === selectedSeat.seatId);
+      return {
+        seatId: selectedSeat.seatId,
+        seatSection: selectedSeat.sectionName,
+        seatSectionId: selectedSeat.sectionId,
+        price: selectedSeat.price
+      };
+    }).filter(item => item !== undefined); // Remove any undefined items
+
     const purchaseData = {
+      eventId : this.eventId,
       customerName: this.customerInfo.name,
       customerEmail: this.customerInfo.email,
       customerPhone: this.customerInfo.phone,
-      notes: this.customerInfo.notes,
-      seatIds: seatIds,
+      customerPostCode: this.customerInfo.postCode,
+      transactionRef: this.customerInfo.transactionRef,
+      seats: seatItems,
       sectionConfigId: this.confirmationData.seats[0]?.sectionConfigId || '',
-      totalAmount: this.getSelectedTotalPrice(),
-      paymentMethod: 'admin_cash',
-      transactionId: 'ADM-' + Date.now()
+      
+      // Pricing details
+      pricing: {
+        subtotal: this.pricingDetails.subtotal,
+        discount: this.pricingDetails.discount,
+        discountType: this.pricingDetails.discountType,
+        discountValue: this.pricingDetails.discountValue,
+        serviceFee: this.pricingDetails.serviceFee,
+        totalAmount: this.pricingDetails.total
+      },
+      
+      totalAmount: this.pricingDetails.total,
+      paymentMethod: 'admin_cash'
     };
 
-    this.seatService.purchaseSeats(this.eventId, purchaseData).subscribe({
+    this.seatService.purchaseSeats(purchaseData).subscribe({
       next: (response) => {
-        // Update local seat status
-        seatObjects.forEach(seat => {
-          if (seat) seat.status = SeatStatus.BOOKED;
-        });
-        
-        this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} purchased successfully`);
-        this.completeAction();
+        if (response.success) {
+          // Update local seat status
+          seatObjects.forEach(seat => {
+            if (seat) seat.status = SeatStatus.BOOKED;
+          });
+
+          this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} purchased successfully`);
+          this.completeAction();
+          this.getSeatMap(this.eventId);
+        } else {
+          this.notificationService.showError(response.error || 'Failed to purchase seats');
+          this.isLoading = false;
+        }
       },
       error: (error) => {
         this.notificationService.showError('Failed to purchase seats');
@@ -283,14 +408,14 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   private performRelease() {
     const seatIds = this.confirmationData.seats.map(seat => seat.seatId);
     const seatObjects = this.getSeatsByIds(seatIds);
-    
+
     this.seatService.releaseSeats(this.eventId, seatIds).subscribe({
       next: (response) => {
         // Update local seat status
         seatObjects.forEach(seat => {
           if (seat) seat.status = SeatStatus.AVAILABLE;
         });
-        
+
         this.notificationService.showSuccess(`${seatIds.length} seat${seatIds.length > 1 ? 's' : ''} released successfully`);
         this.completeAction();
       },
@@ -306,6 +431,8 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     this.showConfirmationModal = false;
     this.clearSelection();
     this.resetCustomerInfo();
+    this.resetPricing();
+
     this.isLoading = false;
   }
 
@@ -324,18 +451,19 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   private getActionMessage(): string {
     const count = this.selectedSeats.length;
     const seatText = count === 1 ? 'seat' : 'seats';
-    
+
     switch (this.adminAction) {
-      case 'block': 
+      case 'block':
         return `Block ${count} ${seatText}? This will make them unavailable for customers.`;
-      case 'unblock': 
+      case 'unblock':
         return `Unblock ${count} ${seatText}? This will make them available for customers.`;
-      case 'reserve': 
+      case 'reserve':
         return `Reserve ${count} ${seatText} for ${this.customerInfo.name}? Reservation expires in 24 hours.`;
-      case 'purchase': 
-        const total = this.getSelectedTotalPrice();
-        return `Purchase ${count} ${seatText} for ${this.customerInfo.name}? Total: ${this.formatPrice(total)}`;
-      case 'release': 
+      case 'purchase':
+        const total = this.pricingDetails.total;
+        const ref = this.customerInfo.transactionRef ? `(Ref: ${this.customerInfo.transactionRef})` : '';
+        return `Purchase ${count} ${seatText} for ${this.customerInfo.name}? Total: ${this.formatPrice(total)} ${ref}`;
+      case 'release':
         return `Release ${count} ${seatText} back to available?`;
       default: return `Apply action to ${count} ${seatText}?`;
     }
@@ -355,7 +483,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   getActionButtonText(): string {
     const count = this.selectedSeats.length;
     const seatText = count === 1 ? 'Seat' : 'Seats';
-    
+
     switch (this.adminAction) {
       case 'block': return `Block ${count} ${seatText}`;
       case 'unblock': return `Unblock ${count} ${seatText}`;
@@ -377,14 +505,28 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     }
   }
 
-  resetCustomerInfo() {
+resetCustomerInfo() {
     this.customerInfo = {
       name: '',
       email: '',
       phone: '',
-      notes: ''
+      postCode: '',
+      transactionRef: this.generateTransactionRef()
     };
   }
+
+resetPricing() {
+  this.pricingDetails = {
+    subtotal: 0,
+    discount: 0,
+    discountType: 'none',
+    discountValue: 0,
+    serviceFee: 0,
+    serviceFeeType: 'none',
+    serviceFeeValue: 0, 
+    total: 0
+  };
+}
 
   getSeatsByIds(seatIds: string[]): (Seat | undefined)[] {
     return seatIds.map(id => this.seats.find(seat => seat.id === id));
@@ -402,49 +544,49 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     this.middleMinX = Number.MAX_VALUE;
     this.middleMaxX = 0;
     this.middleBottomY = 0;
-    
+
     const statusMap = new Map<string, SeatOverride>();
     const categories: (keyof SeatManagement)[] = ['reservedSeats', 'blockedSeats', 'soldSeats'];
-    
+
     categories.forEach(category => {
       this.venueData.seatManagement[category].forEach(seatOverride => {
         statusMap.set(seatOverride.seatId, seatOverride);
       });
     });
-    
+
     const getDefaultBlockLetter = (index: number): string => {
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       return letters[index % letters.length];
     };
-    
+
     const defaultRowNumberingType = RowNumberingType.PERSECTION;
     const continuousLetterGenerator = this.createLetterGenerator();
     const sortedSections = [...this.venueData.sections].sort((a, b) => {
       if (a.y !== b.y) return a.y - b.y;
       return a.x - b.x;
     });
-    
+
     sortedSections.forEach((section) => {
       const sectionType = section.seatSectionType || SeatSectionType.SEAT;
-      
+
       if (sectionType === SeatSectionType.FOH) {
         return;
       }
-      
+
       if (sectionType === SeatSectionType.STANDING) {
         this.createStandingSection(section);
         return;
       }
-      
+
       const sectionName = section.name.toUpperCase();
       const rowOffset = section.rowOffset || 0;
       const rowConfigs = section.rowConfigs || [];
       const sectionRowNumberingType = section.rowNumberingType || defaultRowNumberingType;
       const sectionSkipLetters = section.skipRowLetters || [];
-      const sortedConfigs = [...rowConfigs].sort((a, b) => 
+      const sortedConfigs = [...rowConfigs].sort((a, b) =>
         (a.fromColumn || 0) - (b.fromColumn || 0)
       );
-      
+
       const rowLabelPositions = new Map<string, {
         minX: number,
         maxX: number,
@@ -453,33 +595,33 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
         blockLetter: string,
         rowLetter: string
       }>();
-      
+
       let currentColumnPosition = 0;
-      
+
       sortedConfigs.forEach((rowConfig, configIndex) => {
         const fromRow = rowConfig.fromRow;
         const toRow = rowConfig.toRow;
         const fromColumn = rowConfig.fromColumn || 1;
         const toColumn = rowConfig.toColumn || section.seatsPerRow;
-        
+
         const blockLetter = rowConfig.blockLetter || getDefaultBlockLetter(configIndex);
-        const numberingDirection: 'left' | 'right' | 'center' = 
+        const numberingDirection: 'left' | 'right' | 'center' =
           (rowConfig.numberingDirection as 'left' | 'right' | 'center') || 'left';
-        
+
         const gapAfterColumn = rowConfig.gapAfterColumn;
         const gapSize = rowConfig.gapSize || 1;
         const skipLetters = rowConfig.skipRowLetters || sectionSkipLetters;
-        
+
         if (configIndex > 0) {
           currentColumnPosition += 2;
         }
-        
+
         let perConfigRowIndex = 0;
-        
+
         const calculateSeatNumber = (col: number): number => {
           const actualCol = col - fromColumn + 1;
           const totalSeatsInBlock = toColumn - fromColumn + 1;
-          
+
           switch (numberingDirection) {
             case 'right':
               return totalSeatsInBlock - actualCol + 1;
@@ -505,47 +647,47 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
               return actualCol;
           }
         };
-        
+
         for (let r = fromRow; r <= toRow; r++) {
           const globalRow = r + rowOffset;
           let rowLetter: string;
-          
+
           if (sectionRowNumberingType === RowNumberingType.CONTINUOUS) {
             rowLetter = continuousLetterGenerator.getNextLetter(skipLetters);
           } else {
             rowLetter = this.getRowLetterForIndex(perConfigRowIndex, skipLetters);
             perConfigRowIndex++;
           }
-          
+
           let rowMinX = Infinity;
           let rowMaxX = -Infinity;
-          
+
           for (let c = fromColumn; c <= toColumn; c++) {
             let columnOffset = 0;
             if (gapAfterColumn && c > gapAfterColumn) {
               columnOffset = gapSize;
             }
-            
+
             const numericSeatNumber = calculateSeatNumber(c);
             const shortSectionName = sectionName.charAt(0);
-            
+
             let seatId: string;
             if (sectionRowNumberingType === RowNumberingType.CONTINUOUS) {
               seatId = `${shortSectionName}-${rowLetter}${numericSeatNumber}`;
             } else {
               seatId = `${shortSectionName}-${blockLetter}-${rowLetter}${numericSeatNumber}`;
             }
-            
+
             const columnPosition = currentColumnPosition + (c - fromColumn) + columnOffset;
             const cx = section.x + (columnPosition * 22);
             const cy = section.y + (globalRow * 22);
-            
+
             rowMinX = Math.min(rowMinX, cx);
             rowMaxX = Math.max(rowMaxX, cx);
-            
+
             const seatOverride = statusMap.get(seatId);
             const seatStatus: SeatStatus = seatOverride?.status || SeatStatus.AVAILABLE;
-            
+
             const seat: Seat = {
               id: seatId,
               cx,
@@ -556,8 +698,9 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
               sectionId: section.id,
               sectionName: section.sectionLabel || section.name,
               sectionConfigId: rowConfig.id,
-              ticketType: rowConfig.type, 
+              ticketType: rowConfig.type,
               status: seatStatus,
+              originalStatus: seatStatus,
               price: rowConfig.customPrice || 0,
               color: rowConfig.color,
               gridRow: globalRow,
@@ -571,10 +714,10 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
               blockTotalSeats: toColumn - fromColumn + 1,
               rowNumberingType: sectionRowNumberingType
             };
-            
+
             this.seats.push(seat);
           }
-          
+
           const rowKey = `${section.id}-${blockLetter}-${rowLetter}`;
           rowLabelPositions.set(rowKey, {
             minX: rowMinX,
@@ -585,17 +728,17 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
             rowLetter: rowLetter
           });
         }
-        
+
         currentColumnPosition += (toColumn - fromColumn + 1);
         if (gapAfterColumn) {
           currentColumnPosition += gapSize;
         }
       });
-      
+
       rowLabelPositions.forEach((position) => {
         let labelX: number;
         let side: 'left' | 'right';
-        
+
         if (position.numberingDirection === 'right') {
           labelX = position.maxX + 15;
           side = 'right';
@@ -614,9 +757,9 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
             side = 'left';
           }
         }
-        
+
         const adjustedY = position.y + 4;
-        
+
         this.rowLabels.push({
           x: labelX,
           y: adjustedY,
@@ -630,43 +773,43 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   private getRowLetterForIndex(index: number, skipLetters: string[] = []): string {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const uppercaseSkip = skipLetters.map(l => l.toUpperCase());
-    
+
     let currentIndex = 0;
     let foundCount = -1;
-    
+
     while (foundCount < index) {
       let letter: string;
-      
+
       if (currentIndex < 26) {
         letter = letters[currentIndex];
       } else {
         const doubleIndex = currentIndex - 26;
         const firstCharIndex = Math.floor(doubleIndex / 26);
         const secondCharIndex = doubleIndex % 26;
-        
+
         if (firstCharIndex >= 26) {
           return `Row${index + 1}`;
         }
-        
+
         letter = `${letters[firstCharIndex]}${letters[secondCharIndex]}`;
       }
-      
+
       if (!uppercaseSkip.includes(letter)) {
         foundCount++;
       }
-      
+
       if (foundCount === index) {
         return letter;
       }
-      
+
       currentIndex++;
-      
+
       if (currentIndex > 1000) {
         console.warn('getRowLetterForIndex: Infinite loop prevented');
         return `Row${index + 1}`;
       }
     }
-    
+
     return `Row${index + 1}`;
   }
 
@@ -674,40 +817,40 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let singleLetterIndex = 0;
     let doubleLetterIndex = 0;
-    
+
     return {
       getNextLetter: (skipLetters: string[] = []) => {
         const uppercaseSkip = skipLetters.map(l => l.toUpperCase());
-        
+
         while (true) {
           let letter: string;
-          
+
           if (singleLetterIndex < 26) {
             letter = letters[singleLetterIndex];
             singleLetterIndex++;
           } else {
             const firstCharIndex = Math.floor(doubleLetterIndex / 26);
             const secondCharIndex = doubleLetterIndex % 26;
-            
+
             if (firstCharIndex >= 26) {
               return `Row${singleLetterIndex + doubleLetterIndex}`;
             }
-            
+
             letter = `${letters[firstCharIndex]}${letters[secondCharIndex]}`;
             doubleLetterIndex++;
           }
-          
+
           if (!uppercaseSkip.includes(letter)) {
             return letter;
           }
-          
+
           if (singleLetterIndex + doubleLetterIndex > 1000) {
             console.warn('Letter generator: Too many skipped letters');
             return `Row${singleLetterIndex + doubleLetterIndex}`;
           }
         }
       },
-      
+
       reset: () => {
         singleLetterIndex = 0;
         doubleLetterIndex = 0;
@@ -719,9 +862,9 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     const seatId = this.generateStandingTicketId(section);
     const cx = section.x;
     const cy = section.y;
-    
+
     const rowConfig = section.rowConfigs[0] || this.getDefaultRowConfig();
-    
+
     const seat: Seat = {
       id: seatId,
       cx,
@@ -732,31 +875,32 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
       sectionId: section.id,
       sectionName: section.sectionLabel || section.name,
       sectionConfigId: rowConfig.id,
-      ticketType: rowConfig.type, 
+      ticketType: rowConfig.type,
       status: SeatStatus.AVAILABLE,
+      originalStatus: SeatStatus.AVAILABLE,
       price: rowConfig.customPrice || 0,
       color: rowConfig.color,
       gridRow: section.rows,
       gridColumn: section.seatsPerRow,
       isStandingArea: true,
-      blockIndex : 0,
-      blockStartSeat : 0,
-      blockTotalSeats : 0,
+      blockIndex: 0,
+      blockStartSeat: 0,
+      blockTotalSeats: 0,
       blockLetter: 'A'
     };
-    
+
     this.seats.push(seat);
   }
-  
+
   generateStandingTicketId(section: any): string {
     const sectionPrefix = section.name.charAt(0).toUpperCase();
     let seatId: string;
-    
+
     do {
       const randomNum = Math.floor(Math.random() * 1000) + 1;
       seatId = `${sectionPrefix}-ST-${randomNum.toString().padStart(3, '0')}`;
     } while (this.usedStandingIds.includes(seatId));
-    
+
     this.usedStandingIds.push(seatId);
     return seatId;
   }
@@ -777,7 +921,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   // ========== SEAT SELECTION METHODS ==========
   onSeatClicked(seat: Seat) {
     if (!isSeatSelectable(seat.status)) return;
-    
+
     if (seat.status === SeatStatus.SELECTED) {
       this.deselectSeat(seat);
     } else {
@@ -787,7 +931,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
 
   selectSeat(seat: Seat) {
     seat.status = SeatStatus.SELECTED;
-    
+
     const selectedSeat: SelectedSeat = {
       seatId: seat.id,
       row: seat.rowLabel,
@@ -806,15 +950,24 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
       isStandingArea: seat.isStandingArea || false,
       isGeneralAdmission: false
     };
-    
+
     this.selectedSeats.push(selectedSeat);
     this.selectedSeatIds.push(seat.id);
+
+    // Update pricing when seats change
+    if (this.adminAction === 'purchase') {
+      this.updatePricingDetails();
+    }
   }
-  
+
   deselectSeat(seat: Seat) {
-    seat.status = SeatStatus.AVAILABLE;
+    seat.status = seat.originalStatus || SeatStatus.AVAILABLE;
     this.selectedSeats = this.selectedSeats.filter(s => s.seatId !== seat.id);
     this.selectedSeatIds = this.selectedSeatIds.filter(id => id !== seat.id);
+     // Update pricing when seats change
+    if (this.adminAction === 'purchase') {
+      this.updatePricingDetails();
+    }
   }
 
   clearSelection() {
@@ -826,32 +979,36 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     });
     this.selectedSeats = [];
     this.selectedSeatIds = [];
+    // Reset pricing
+    if (this.adminAction === 'purchase') {
+      this.resetPricing();
+    }
   }
 
   // ========== EVENT HANDLERS FROM VISUAL COMPONENT ==========
-  onSeatHovered(event: {seat: Seat | null, mouseX: number, mouseY: number}) {
+  onSeatHovered(event: { seat: Seat | null, mouseX: number, mouseY: number }) {
     this.hoveredSeatId = event.seat?.id || null;
   }
 
   onDragStarted(event: MouseEvent) {
     if (event.button !== 0) return;
-    
+
     this.isDragging = true;
     this.lastMousePos = { x: event.clientX, y: event.clientY };
   }
 
   onDragMoved(event: MouseEvent) {
     if (!this.isDragging) return;
-    
+
     const container = document.querySelector('.svg-container');
     if (!container) return;
-    
+
     const deltaX = this.lastMousePos.x - event.clientX;
     const deltaY = this.lastMousePos.y - event.clientY;
-    
+
     container.scrollLeft += deltaX;
     container.scrollTop += deltaY;
-    
+
     this.lastMousePos = { x: event.clientX, y: event.clientY };
   }
 
@@ -861,7 +1018,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
 
   onZoomed(event: WheelEvent) {
     event.preventDefault();
-    
+
     const delta = event.deltaY > 0 ? -this.zoomSpeed : this.zoomSpeed;
     this.scale = Math.max(0.5, Math.min(3, this.scale + delta));
   }
@@ -870,7 +1027,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   getSeatById(seatId: string): Seat | undefined {
     return this.seats.find(s => s.id === seatId);
   }
-  
+
   onRemoveSeat(seatId: string, event: MouseEvent) {
     event.stopPropagation();
     const seat = this.getSeatById(seatId);
@@ -878,11 +1035,11 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
       this.deselectSeat(seat);
     }
   }
-  
+
   getTotalPrice(): number {
     return this.selectedSeats.reduce((total, seat) => total + seat.price, 0);
   }
-  
+
   zoomIn() {
     this.scale = Math.min(3, this.scale * 1.2);
   }
@@ -896,27 +1053,27 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     this.offsetX = 0;
     this.offsetY = 0;
   }
-  
+
   formatPrice(price: number): string {
     return new Intl.NumberFormat('en-UK', {
       style: 'currency',
       currency: 'GBP'
     }).format(price);
   }
-  
+
   getRowArray(count: number): any[] {
     return new Array(count);
   }
-  
-  getUniqueTicketTiers(): Array<{name: string, price: number, color: string}> {
-    const tiers = new Map<string, {name: string, price: number, color: string}>();
-    
+
+  getUniqueTicketTiers(): Array<{ name: string, price: number, color: string }> {
+    const tiers = new Map<string, { name: string, price: number, color: string }>();
+
     this.venueData.sections.forEach(section => {
       section.rowConfigs.forEach(rowConfig => {
         if (rowConfig.type === 'FOH') {
           return;
         }
-        
+
         const key = rowConfig.type;
         if (!tiers.has(key)) {
           tiers.set(key, {
@@ -927,10 +1084,10 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
         }
       });
     });
-    
+
     return Array.from(tiers.values()).sort((a, b) => a.price - b.price);
   }
-  
+
   getDisplayStatuses() {
     const statuses = [
       SeatStatus.SELECTED,
@@ -940,14 +1097,14 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
       SeatStatus.RESERVED,
       SeatStatus.BLOCKED
     ];
-    
+
     return statuses.map(status => ({
       status,
       displayText: this.getSeatStatusText(status, 'VIP'),
       price: ''
     }));
   }
-  
+
   getSeatStatusText(status: SeatStatus, ticketType: TicketType): string {
     return getSeatDisplayText(status, ticketType);
   }
@@ -983,7 +1140,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   addAnotherStandingTicket(): void {
     const standingSeat = this.selectedSeats.find(seat => seat.isStandingArea);
     if (!standingSeat) return;
-    
+
     const originalStandingSeat = this.seats.find(seat => seat.id === standingSeat.seatId);
     if (!originalStandingSeat) return;
 
@@ -991,14 +1148,14 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     if (!section) return;
 
     const newSeatId = this.generateStandingTicketId(section);
-    
+
     const newSeat: Seat = {
       ...originalStandingSeat,
       id: newSeatId,
       cx: originalStandingSeat.cx + (Math.random() * 20 - 10),
       cy: originalStandingSeat.cy + (Math.random() * 20 - 10),
     };
-    
+
     this.selectSeat(newSeat);
   }
 

@@ -1,4 +1,4 @@
-<div class="dashboard-container">
+<div class="dashboard-container" *ngIf="false">
   <!-- Dashboard Header -->
   <div class="dashboard-header">
     <div class="header-content">
@@ -150,4 +150,15 @@
   </div>
   <br>
   <mat-divider></mat-divider>
+</div>
+
+<div class="dashboard-container" *ngIf="true">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="dashboard-title">Dashboard Overview</h1>
+      <p class="dashboard-subtitle">Welcome back! Here's what's happening with your events.</p>
+      <p class="dashboard-subtitle">coming soon</p>
+    </div>
+  </div>
 </div>

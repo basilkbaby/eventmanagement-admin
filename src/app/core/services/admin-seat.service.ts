@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { SeatOverride, SectionRowConfig, VenueData, VenueSection } from '../models/DTOs/seats.DTO.model';
+import { BlockSeatRequestDto, Seat, SeatItemDto, SeatOverride, SectionRowConfig, SelectedSeat, VenueData, VenueSection } from '../models/DTOs/seats.DTO.model';
 
 interface ApiResponse {
   success: boolean;
@@ -12,7 +12,7 @@ interface ApiResponse {
 }
 
 interface PurchaseData {
-  seatIds: string[];
+  seats: SeatItemDto[];
   customerName: string;
   customerEmail: string;
   notes?: string;
@@ -32,42 +32,43 @@ interface ReservationData {
   reservationExpiry?: Date;
 }
 
-interface BlockSeatsData {
-  seatIds: string[];
-  sectionConfigId?: string;
-  reason?: string;
-}
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminSeatService {
   private apiUrl = `${environment.apiUrl}/seat`;
+  private apiUrlCheckout = `${environment.apiUrl}/checkout`;
 
   constructor(private http: HttpClient) {}
 
   // ========== SEAT STATUS MANAGEMENT ==========
   
-  // Block seats
-  blockSeats(eventId: string, seatIds: string[], sectionConfigId?: string, reason: string = 'Administrative block'): Observable<ApiResponse> {
-    const data: BlockSeatsData = {
-      seatIds,
-      sectionConfigId,
-      reason
-    };
-    
-    return this.http.post<ApiResponse>(
-      `${this.apiUrl}/events/${eventId}/admin/block-seats`,
-      data
-    );
-  }
-
+ // Update the blockSeats method in AdminSeatService:
+blockSeats(eventId: string, seatItems: SeatItemDto[], reason: string = 'Administrative block'): Observable<ApiResponse> {
+  const data: BlockSeatRequestDto = {
+    seats: seatItems,
+    eventId: eventId,
+    reason: reason,
+    blockedBy: 'admin' // Or get from auth service
+  };
+  
+  return this.http.post<ApiResponse>(
+    `${this.apiUrl}/block`,
+    data
+  );
+}
 
   // Unblock seats
-  unblockSeats(eventId: string, seatIds: string[]): Observable<ApiResponse> {
+  unblockSeats(eventId: string, seatItems: SeatItemDto[]): Observable<ApiResponse> 
+  {
+    const data: BlockSeatRequestDto = {
+      seats: seatItems,
+      eventId: eventId
+    };
+  
     return this.http.post<ApiResponse>(
-      `${this.apiUrl}/events/${eventId}/admin/unblock-seats`,
-      { seatIds }
+      `${this.apiUrl}/release`,data
     );
   }
 
@@ -80,9 +81,9 @@ export class AdminSeatService {
   }
 
   // Purchase seats (admin override)
-  purchaseSeats(eventId: string, purchaseData: PurchaseData): Observable<ApiResponse> {
+  purchaseSeats(purchaseData: PurchaseData): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(
-      `${this.apiUrl}/events/${eventId}/admin/purchase-seats`,
+      `${this.apiUrlCheckout}/completeoffline`,
       purchaseData
     );
   }

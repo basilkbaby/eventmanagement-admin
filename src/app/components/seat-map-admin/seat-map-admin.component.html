@@ -31,19 +31,15 @@
     <!-- Admin Actions Panel -->
     <div class="admin-actions-panel">
       <h3>Actions</h3>
-      
+
       <!-- Action Selection -->
       <div class="action-selection">
         <div class="action-buttons">
-          <button class="action-btn" 
-                  [class.active]="adminAction === 'block'"
-                  (click)="setAdminAction('block')">
+          <button class="action-btn" [class.active]="adminAction === 'block'" (click)="setAdminAction('block')">
             <i class="bi bi-slash-circle"></i>
             <span>Block</span>
           </button>
-          <button class="action-btn" 
-                  [class.active]="adminAction === 'unblock'"
-                  (click)="setAdminAction('unblock')">
+          <button class="action-btn" [class.active]="adminAction === 'unblock'" (click)="setAdminAction('unblock')">
             <i class="bi bi-check-circle"></i>
             <span>Unblock</span>
           </button>
@@ -53,9 +49,7 @@
             <i class="bi bi-clock"></i>
             <span>Reserve</span>
           </button> -->
-          <button class="action-btn" 
-                  [class.active]="adminAction === 'purchase'"
-                  (click)="setAdminAction('purchase')">
+          <button class="action-btn" [class.active]="adminAction === 'purchase'" (click)="setAdminAction('purchase')">
             <i class="bi bi-credit-card"></i>
             <span>Purchase</span>
           </button>
@@ -66,12 +60,9 @@
             <span>Release</span>
           </button> -->
         </div>
-        
+
         <!-- Current Action Info -->
         <div class="current-action-info">
-          <div class="action-icon">
-            <i [class]="'bi ' + getActionIcon()"></i>
-          </div>
           <div class="action-details">
             <h4>{{ getActionButtonText() }}</h4>
             <p *ngIf="adminAction === 'reserve' || adminAction === 'purchase'">
@@ -84,40 +75,127 @@
         </div>
       </div>
 
-      <!-- Customer Information (for reserve/purchase) -->
+      <!-- Customer Information Panel -->
       <div class="customer-info-panel" *ngIf="adminAction === 'reserve' || adminAction === 'purchase'">
         <h4>Customer Information</h4>
         <div class="customer-form">
           <div class="form-group">
             <label>Name *</label>
-            <input type="text" 
-                   class="form-control" 
-                   placeholder="Customer Name"
-                   [(ngModel)]="customerInfo.name"
-                   required>
+            <input type="text" class="form-control" placeholder="Customer Name" [(ngModel)]="customerInfo.name"
+              required>
           </div>
+
+
+
           <div class="form-row">
             <div class="form-group">
               <label>Email</label>
-              <input type="email" 
-                     class="form-control" 
-                     placeholder="Email"
-                     [(ngModel)]="customerInfo.email">
+              <input type="email" class="form-control" placeholder="Email" [(ngModel)]="customerInfo.email">
             </div>
             <div class="form-group">
               <label>Phone</label>
-              <input type="tel" 
-                     class="form-control" 
-                     placeholder="Phone"
-                     [(ngModel)]="customerInfo.phone">
+              <input type="tel" class="form-control" placeholder="Phone" [(ngModel)]="customerInfo.phone">
             </div>
           </div>
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea class="form-control" 
-                      rows="2" 
-                      placeholder="Notes (optional)"
-                      [(ngModel)]="customerInfo.notes"></textarea>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Post Code</label>
+              <input type="text" class="form-control" placeholder="Post Code" [(ngModel)]="customerInfo.postCode">
+            </div>
+          </div>
+
+          <!-- Transaction Reference (only for purchase) -->
+          <div class="form-group" *ngIf="adminAction === 'purchase'">
+            <label>Transaction Reference *</label>
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Transaction Reference"
+                [(ngModel)]="customerInfo.transactionRef" required>
+              <button class="btn btn-outline-secondary" type="button" (click)="generateNewTransactionRef()"
+                title="Generate new reference">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Pricing Section (only for purchase) -->
+        <div class="pricing-section" *ngIf="adminAction === 'purchase' && selectedSeats.length > 0">
+          <h4>Pricing Details</h4>
+
+          <div class="price-summary">
+            <div class="price-row">
+              <span>Subtotal:</span>
+              <span>{{ formatPrice(pricingDetails.subtotal) }}</span>
+            </div>
+
+            <div class="price-row" *ngIf="pricingDetails.discount > 0">
+              <span>Discount:</span>
+              <span class="text-danger">-{{ formatPrice(pricingDetails.discount) }}</span>
+            </div>
+
+            <div class="price-row" *ngIf="pricingDetails.serviceFee > 0">
+              <span>Service Fee:</span>
+              <span>{{ formatPrice(pricingDetails.serviceFee) }}</span>
+            </div>
+
+
+            <div class="price-row total-row">
+              <strong>Total Amount:</strong>
+              <strong>{{ formatPrice(pricingDetails.total) }}</strong>
+            </div>
+          </div>
+
+          <div class="pricing-controls">
+            <!-- Discount Controls -->
+            <div class="control-group">
+              <h5>Discount</h5>
+              <div class="form-group">
+                <label>Discount Type:</label>
+                <select class="form-control" [(ngModel)]="pricingDetails.discountType"
+                  (ngModelChange)="updatePricingDetails()">
+                  <option value="none">No Discount</option>
+                  <option value="fixed">Fixed Amount (£)</option>
+                  <option value="percentage">Percentage (%)</option>
+                </select>
+              </div>
+
+              <div class="form-group" *ngIf="pricingDetails.discountType !== 'none'">
+                <label>Discount Value:</label>
+                <div class="input-group">
+                  <span class="input-group-text" *ngIf="pricingDetails.discountType === 'percentage'">%</span>
+                  <span class="input-group-text" *ngIf="pricingDetails.discountType === 'fixed'">£</span>
+                  <input type="number" class="form-control" [(ngModel)]="pricingDetails.discountValue"
+                    (ngModelChange)="updatePricingDetails()" [min]="0"
+                    [max]="pricingDetails.discountType === 'percentage' ? 100 : pricingDetails.subtotal" step="0.01">
+                </div>
+              </div>
+            </div>
+
+            <!-- Service Fee Controls -->
+            <div class="control-group">
+              <h5>Service Fee</h5>
+              <div class="form-group">
+                <label>Service Fee Type:</label>
+                <select class="form-control" [(ngModel)]="pricingDetails.serviceFeeType"
+                  (ngModelChange)="updatePricingDetails()">
+                  <option value="none">No Service Fee</option>
+                  <option value="fixed">Fixed Amount (£)</option>
+                  <option value="percentage">Percentage (%)</option>
+                </select>
+              </div>
+
+              <div class="form-group" *ngIf="pricingDetails.serviceFeeType !== 'none'">
+                <label>Service Fee Value:</label>
+                <div class="input-group">
+                  <span class="input-group-text" *ngIf="pricingDetails.serviceFeeType === 'percentage'">%</span>
+                  <span class="input-group-text" *ngIf="pricingDetails.serviceFeeType === 'fixed'">£</span>
+                  <input type="number" class="form-control" [(ngModel)]="pricingDetails.serviceFeeValue"
+                    (ngModelChange)="updatePricingDetails()" [min]="0" step="0.01">
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -137,7 +215,7 @@
             {{ seat.seatId }}
           </span>
           <span class="seat-label" *ngIf="seat.isStandingArea">
-           {{ seat.seatId }}
+            {{ seat.seatId }}
           </span>
           <button class="remove-tag" (click)="onRemoveSeat(seat.seatId, $event)" title="Remove">×</button>
         </div>
@@ -149,7 +227,7 @@
           <span class="info-icon">ℹ️</span>
           <span>Standing tickets are for general admission areas and don't have specific seats.</span>
         </div>
-        
+
         <button class="add-more-standing-btn" (click)="addAnotherStandingTicket()">
           + Add Another Standing Ticket
         </button>
@@ -177,11 +255,9 @@
 
       <!-- Admin Action Button -->
       <div class="admin-action-section">
-        <button class="btn-admin-action" 
-                [ngClass]="'action-' + adminAction"
-                (click)="applyAdminAction()"
-                [disabled]="isLoading || selectedSeats.length === 0 || (adminAction === 'reserve' || adminAction === 'purchase') && !customerInfo.name">
-          
+        <button class="btn-admin-action" [ngClass]="'action-' + adminAction" (click)="applyAdminAction()"
+          [disabled]="isLoading || selectedSeats.length === 0 || (adminAction === 'reserve' || adminAction === 'purchase') && !customerInfo.name">
+
           <span class="default-content" *ngIf="!isLoading">
             <i [class]="'bi ' + getActionIcon()" class="me-1"></i>
             {{ getActionButtonText() }}
@@ -266,7 +342,7 @@
       </div>
       <div class="modal-body">
         <p>{{ confirmationData.message }}</p>
-        
+
         <div class="modal-alert" [ngClass]="'alert-' + confirmationData.action">
           <i [class]="'bi ' + getActionIcon()" class="me-2"></i>
           <span *ngIf="confirmationData.action === 'block'">
@@ -281,15 +357,11 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-cancel" 
-                (click)="showConfirmationModal = false"
-                [disabled]="isLoading">
+        <button class="btn-cancel" (click)="showConfirmationModal = false" [disabled]="isLoading">
           Cancel
         </button>
-        <button class="btn-confirm" 
-                [ngClass]="'confirm-' + confirmationData.action"
-                (click)="confirmAction()"
-                [disabled]="isLoading">
+        <button class="btn-confirm" [ngClass]="'confirm-' + confirmationData.action" (click)="confirmAction()"
+          [disabled]="isLoading">
           <span *ngIf="!isLoading">Confirm</span>
           <span *ngIf="isLoading">
             <span class="spinner-small"></span>

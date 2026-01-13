@@ -12,14 +12,14 @@
         <h1>Event Management</h1>
         <p>Create and manage your events</p>
       </div>
-      <button mat-raised-button color="primary" routerLink="/admin/events/create" class="create-btn">
+      <!-- <button mat-raised-button color="primary" routerLink="/admin/events/create" class="create-btn">
         <mat-icon>add</mat-icon>
         Create New Event
-      </button>
+      </button> -->
     </div>
 
     <!-- Search and Filter Bar -->
-    <div class="filter-section" *ngIf="events.length > 0">
+    <div class="filter-section" *ngIf="false">
       <div class="search-container">
         <mat-form-field appearance="outline" class="search-field">
           <mat-label>Search events</mat-label>
@@ -100,12 +100,12 @@
           <!-- Event Header -->
           <div class="event-header">
             <h3 class="event-title" [matTooltip]="event.title">{{ event.title }}</h3>
-            <div class="event-meta">
+            <!-- <div class="event-meta">
               <mat-chip [class]="event.isActive ? 'active-chip' : 'inactive-chip'" 
                        (click)="toggleEventStatus(event)">
                 {{ event.isActive ? 'Active' : 'Inactive' }}
               </mat-chip>
-            </div>
+            </div> -->
           </div>
 
           <!-- Event Description -->
@@ -152,7 +152,7 @@
 
         <!-- Card Actions -->
         <mat-card-actions class="card-actions">
-          <button mat-button color="primary" class="action-btn view-btn"
+          <!-- <button mat-button color="primary" class="action-btn view-btn"
                   [routerLink]="['/admin/events', event.id]">
             <mat-icon>visibility</mat-icon>
             View
@@ -163,7 +163,7 @@
                   [disabled]="!canEditEvent(event)">
             <mat-icon>edit</mat-icon>
             Edit
-          </button>
+          </button> -->
           
           <button mat-button color="primary" class="action-btn seats-btn"
                   (click)="navigateToSeatSelection(event)"
@@ -172,7 +172,7 @@
             Seats
           </button>
           
-          <button mat-icon-button [matMenuTriggerFor]="eventMenu" class="menu-btn">
+          <!-- <button mat-icon-button [matMenuTriggerFor]="eventMenu" class="menu-btn">
             <mat-icon>more_vert</mat-icon>
           </button>
           
@@ -200,7 +200,7 @@
               <mat-icon color="warn">delete</mat-icon>
               <span>Delete Event</span>
             </button>
-          </mat-menu>
+          </mat-menu> -->
         </mat-card-actions>
       </mat-card>
     </div>

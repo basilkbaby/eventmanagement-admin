@@ -4,6 +4,7 @@ import { RouterModule, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from '../header/header.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { AdminDashboardComponent } from '../../admin-dashboard/admin-dashboard.component';
+import { NotificationComponent } from '../notification/notification.component';
 
 @Component({
   selector: 'app-authenticated-layout',
@@ -13,7 +14,8 @@ import { AdminDashboardComponent } from '../../admin-dashboard/admin-dashboard.c
       RouterOutlet,
       HeaderComponent,
       SidebarComponent,
-      AdminDashboardComponent],
+      AdminDashboardComponent,
+    NotificationComponent],
   templateUrl: './authenticated-layout.component.html',
   styleUrl: './authenticated-layout.component.scss'
 })

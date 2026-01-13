@@ -99,6 +99,7 @@ export interface Seat {
   sectionConfigId : string;
   ticketType: TicketType;
   status: SeatStatus;
+  originalStatus?: SeatStatus; // To store original status before selection
   price: number;
   color: string; // From row config
   features?: string[];
@@ -152,6 +153,20 @@ export interface SeatStatusConfig {
   tooltip: string;
 }
 
+export interface SeatItemDto {
+  seatId: string;
+  seatSection: string;
+  seatSectionId: string;
+  price: number;
+}
+
+export interface BlockSeatRequestDto {
+  seats: SeatItemDto[];
+  eventId: string;
+  reason?: string;
+  blockedBy?: string;
+}
+
 // Main configuration object
 export const SEAT_STATUS_CONFIG: Record<SeatStatus, SeatStatusConfig> = {
   [SeatStatus.AVAILABLE]: {
@@ -190,8 +205,8 @@ export const SEAT_STATUS_CONFIG: Record<SeatStatus, SeatStatusConfig> = {
     strokeWidth: 1,
     opacity: 0.6,
     displayText: 'Unavailable',
-    cursor: 'not-allowed',
-    canSelect: false,
+    cursor: 'pointer',
+    canSelect: true,
     tooltip: 'Not available for sale'
   },
   [SeatStatus.PARTIAL_VIEW]: {
@@ -210,8 +225,8 @@ export const SEAT_STATUS_CONFIG: Record<SeatStatus, SeatStatusConfig> = {
     strokeWidth: 2,
     opacity: 1,
     displayText: 'Reserved',
-    cursor: 'not-allowed',
-    canSelect: false,
+    cursor: 'pointer',
+    canSelect: true,
     tooltip: 'Reserved for special guests'
   },
   [SeatStatus.BLOCKED]: {
@@ -220,8 +235,8 @@ export const SEAT_STATUS_CONFIG: Record<SeatStatus, SeatStatusConfig> = {
     strokeWidth: 2,
     opacity: 1,
     displayText: 'Blocked',
-    cursor: 'not-allowed',
-    canSelect: false,
+    cursor: 'pointer',
+    canSelect: true,
     tooltip: 'Blocked by venue management'
   },
   [SeatStatus.HOLD]: {
@@ -230,8 +245,8 @@ export const SEAT_STATUS_CONFIG: Record<SeatStatus, SeatStatusConfig> = {
     strokeWidth: 1,
     opacity: 0.8,
     displayText: 'On Hold',
-    cursor: 'not-allowed',
-    canSelect: false,
+    cursor: 'pointer',
+    canSelect: true,
     tooltip: 'Temporarily on hold'
   }
 } as const;

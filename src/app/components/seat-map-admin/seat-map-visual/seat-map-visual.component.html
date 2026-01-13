@@ -45,23 +45,6 @@
             </text>
             </g>
 
-            <!-- Row Labels (only for SEAT sections) -->
-            <!-- <ng-container *ngFor="let section of venueData?.sections || []">
-                <g *ngIf="section.seatSectionType === SeatSectionType.SEAT">
-                    <g *ngFor="let row of getRowArray(section.rows); let i = index">
-                        <text 
-                            [attr.x]="section.x"
-                            [attr.y]="section.y + (i * BASE_SEAT_GAP) + (section.rowOffset || 0) + 4"
-                            font-family="Arial" 
-                            font-size="12" 
-                            font-weight="bold" 
-                            fill="#333">
-                            {{ getRowLetter(i) }}
-                        </text>
-                    </g>
-                </g>
-            </ng-container> -->
-
             <g class="row-labels">
                 <text 
                     *ngFor="let rowLabel of rowLabels" 
@@ -196,7 +179,7 @@
                     </g>
 
                     <!-- Status indicator -->
-                    <text
+                    <!-- <text
                         *ngIf="seat.status === SeatStatus.BOOKED || seat.status === SeatStatus.RESERVED || seat.status === SeatStatus.BLOCKED"
                         [attr.x]="seat.cx" 
                         [attr.y]="seat.cy" 
@@ -204,13 +187,14 @@
                         dominant-baseline="middle"
                         fill="white" 
                         font-size="10" 
+                        [attr.cursor]="getSeatCursor(seat)" 
                         font-weight="bold">
                         {{ 
                             seat.status === SeatStatus.BOOKED ? 'S' :
                             seat.status === SeatStatus.RESERVED ? 'R' :
                             seat.status === SeatStatus.BLOCKED ? 'X' : '' 
                         }}
-                    </text>
+                    </text> -->
                 </ng-container>
             </g>
         </svg>
