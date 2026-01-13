@@ -1,0 +1,679 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.seat-map-visual-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  
+  .svg-container {
+    padding: 20px;
+    // overflow: auto;
+    width: 100%;
+    height: 100%;
+    // cursor: grab;
+
+
+    .seatmap-svg {
+      display: block;
+      margin: 0 auto;
+      background: white;
+      transition: transform 0.2s ease-out;
+      transform-origin: 0 0;
+    }
+  }
+
+  .svg-tooltip {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    max-width: 250px;
+    user-select: none;
+
+    .tooltip-content {
+      h4 {
+        margin: 0 0 4px 0;
+        font-size: 14px;
+        color: #333;
+      }
+
+      p {
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .tooltip-features {
+        font-size: 11px;
+        color: #555;
+        margin-top: 6px;
+
+        .feature {
+          margin-bottom: 2px;
+        }
+      }
+
+      .tooltip-action {
+        margin-top: 8px;
+        
+        .tooltip-select-btn {
+          background: #4CAF50;
+          color: white;
+          border: none;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 12px;
+          cursor: pointer;
+          pointer-events: auto;
+          transition: background-color 0.2s ease;
+
+          &:hover {
+            background: #45a049;
+          }
+        }
+      }
+    }
+
+    .tooltip-arrow {
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 5px solid white;
+
+      &::before {
+        content: '';
+        position: absolute;
+        bottom: 1px;
+        left: -6px;
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid #ddd;
+        z-index: -1;
+      }
+    }
+  }
+
+  // SVG seat styles
+  .seat-circle {
+    transition: all 0.2s ease;
+    
+    &:hover:not(.unavailable):not(.booked):not(.reserved):not(.blocked) {
+      transform: scale(1.1);
+      filter: brightness(1.1);
+    }
+  }
+
+  // Selected seat indicator
+  .selected-indicator {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.8;
+    }
+  }
+
+  // Standing area specific styles
+  .standing-area {
+    fill-opacity: 0.3;
+    stroke-width: 2;
+    stroke-dasharray: 5,5;
+    
+    &:hover:not(.unavailable):not(.booked):not(.reserved):not(.blocked) {
+      fill-opacity: 0.4;
+      stroke-width: 3;
+    }
+  }
+
+  // Partial view seat gradient
+  .partial-view {
+    fill: url(#partial-gradient);
+  }
+
+  // Status indicators
+  .status-indicator {
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: white;
+    font-size: 10px;
+    font-weight: bold;
+  }
+
+  // Section labels
+  .section-label {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    fill: #bebebe;
+    text-anchor: center;
+  }
+
+  // Row labels
+  .row-label {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    fill: #333;
+  }
+
+  // Stage styles
+  .stage {
+    fill: #ffffff;
+    stroke: #bebebe;
+    stroke-width: 2;
+    rx: 8;
+  }
+
+  .stage-text {
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    fill: #bebebe;
+    text-anchor: middle;
+  }
+
+  // FOH section styles
+  .foh-section {
+    fill: #f0f0f0;
+    fill-opacity: 0.5;
+    stroke: #999;
+    stroke-dasharray: 3,3;
+    stroke-width: 1;
+  }
+
+  .foh-text {
+    fill: #666;
+    font-weight: bold;
+    font-size: 14px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+
+  // Standing area text
+  .standing-text {
+    fill: #333;
+    font-weight: bold;
+    font-size: 12px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .seat-map-visual-container {
+    .svg-container {
+      padding: 10px;
+    }
+
+    .svg-tooltip {
+      min-width: 150px;
+      max-width: 200px;
+      padding: 6px 10px;
+      
+      .tooltip-content {
+        h4 {
+          font-size: 12px;
+        }
+        
+        p {
+          font-size: 10px;
+        }
+        
+        .tooltip-select-btn {
+          padding: 4px 8px;
+          font-size: 10px;
+        }
+      }
+    }
+  }
+}
+
+
+.svg-tooltip {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  width: 220px;
+  max-width: 220px;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  
+  &.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .tooltip-content {
+    padding: 16px;
+    
+    .tooltip-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      
+      .header-text {
+        flex: 1;
+        
+        .section-name {
+          margin: 0;
+          font-size: 15px;
+          font-weight: 600;
+          color: #1a1a1a;
+          line-height: 1.3;
+        }
+        
+        .price {
+          margin: 4px 0 0 0;
+          font-size: 16px;
+          font-weight: 700;
+          color: #2e7d32;
+        }
+      }
+    }
+    
+    .tooltip-details {
+      margin-bottom: 16px;
+      
+      p {
+        margin: 0 0 8px 0;
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        .label {
+          color: #666;
+          font-weight: 500;
+        }
+        
+        .value {
+          color: #1a1a1a;
+          font-weight: 500;
+        }
+        
+        &.seat-info .value {
+          font-family: 'Courier New', monospace;
+          font-weight: bold;
+          background: #f8f9fa;
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+        
+        &.status-info .value {
+          color: #666;
+          text-transform: capitalize;
+        }
+      }
+    }
+    
+    .tooltip-actions {
+      .select-btn {
+        width: 100%;
+        padding: 10px;
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+        
+        &:hover {
+          background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        &:active {
+          transform: translateY(0);
+          box-shadow: 0 1px 4px rgba(76, 175, 80, 0.2);
+        }
+        
+        &.selected {
+          background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+          box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+          
+          &:hover {
+            background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+          }
+        }
+      }
+    }
+  }
+  
+  // Remove arrow to make it cleaner
+  // &.tooltip-arrow {
+  //   display: none;
+  // }
+}
+
+// Add subtle hover effect on seats for better UX
+.seat-circle {
+  transition: all 0.15s ease;
+  
+  &:hover:not(.unavailable):not(.booked):not(.reserved):not(.blocked) {
+    transform: scale(1.15);
+    filter: brightness(1.15);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                filter 0.2s ease;
+  }
+}
+
+.standing-area {
+  transition: all 0.15s ease;
+  
+  &:hover:not(.unavailable):not(.booked):not(.reserved):not(.blocked) {
+    fill-opacity: 0.4;
+    stroke-width: 3;
+    transition: fill-opacity 0.2s ease, 
+                stroke-width 0.2s ease;
+  }
+}
+
+// Mobile responsive adjustments
+@media (max-width: 768px) {
+  .svg-tooltip {
+    width: 180px;
+    max-width: 180px;
+    
+    .tooltip-content {
+      padding: 12px;
+      
+      .tooltip-header {
+        gap: 8px;
+        margin-bottom: 10px;
+        
+        .section-name {
+          font-size: 13px;
+        }
+        
+        .price {
+          font-size: 14px;
+        }
+      }
+      
+      .tooltip-details p {
+        font-size: 12px;
+      }
+      
+      .tooltip-actions .select-btn {
+        padding: 8px;
+        font-size: 13px;
+      }
+    }
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .svg-tooltip {
+    background: #2d2d2d;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    
+    .tooltip-content {
+      .tooltip-header {
+        border-bottom-color: #404040;
+        
+        .section-name {
+          color: #f0f0f0;
+        }
+        
+        .price {
+          color: #4caf50;
+        }
+      }
+      
+      .tooltip-details p {
+        .label {
+          color: #aaa;
+        }
+        
+        .value {
+          color: #e0e0e0;
+        }
+        
+        &.seat-info .value {
+          background: #404040;
+          color: #fff;
+        }
+      }
+    }
+  }
+}
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.seat-map-visual-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  
+  .svg-container {
+    width: 100%;
+    height: 100%;
+    // overflow: auto;
+    
+    .seatmap-svg {
+      display: block;
+      margin: 0 auto;
+      background: white;
+    }
+  }
+}
+
+/* Tooltip Styles */
+.tooltip {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  width: 240px;
+  max-width: 240px;
+  opacity: 0;
+  animation: tooltipFadeIn 0.2s ease forwards;
+  
+  .tooltip-inner {
+    padding: 16px;
+    
+    .tooltip-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+      
+      .seat-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      
+      strong {
+        font-size: 16px;
+        color: #222;
+        display: block;
+      }
+      
+      .price {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2e8b57;
+        margin-top: 4px;
+      }
+    }
+    
+    .tooltip-body {
+      margin-bottom: 16px;
+      
+      .seat-details {
+        font-size: 15px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+        
+        span {
+          background: #f8f9fa;
+          padding: 4px 10px;
+          border-radius: 6px;
+          display: inline-block;
+          font-family: 'SF Mono', 'Monaco', monospace;
+        }
+      }
+      
+      .seat-status {
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+      }
+    }
+    
+    .tooltip-footer {
+      .select-btn {
+        width: 100%;
+        padding: 12px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: #45a049;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
+  }
+}
+
+/* Seat hover effects */
+.seat-circle {
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.15);
+  }
+}
+
+.standing-area {
+  transition: all 0.2s ease;
+  
+  &:hover {
+    fill-opacity: 0.4;
+    stroke-width: 3;
+  }
+}
+
+/* Animation */
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tooltip {
+    width: 200px;
+    max-width: 200px;
+    
+    .tooltip-inner {
+      padding: 12px;
+      
+      .tooltip-header {
+        strong {
+          font-size: 14px;
+        }
+        
+        .price {
+          font-size: 16px;
+        }
+      }
+      
+      .tooltip-body {
+        .seat-details {
+          font-size: 13px;
+        }
+        
+        .seat-status {
+          font-size: 12px;
+        }
+      }
+      
+      .tooltip-footer .select-btn {
+        padding: 10px;
+        font-size: 14px;
+      }
+    }
+  }
+}

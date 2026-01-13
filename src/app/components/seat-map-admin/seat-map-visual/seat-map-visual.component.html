@@ -1,0 +1,242 @@
+<div class="seat-map-visual-container">
+    <div class="svg-container" #svgContainer 
+        (mousedown)="dragStarted.emit($event)" 
+        (mousemove)="dragMoved.emit($event)"
+        (mouseup)="dragEnded.emit()" 
+        (mouseleave)="dragEnded.emit()">
+        
+        <svg #svgElement class="seatmap-svg" 
+            [attr.viewBox]="'0 0 ' + CANVAS_WIDTH + ' ' + CANVAS_HEIGHT"
+            preserveAspectRatio="xMidYMid meet" 
+            [style.transform]="'scale(' + scale + ')'"
+            (wheel)="zoomed.emit($event)">
+
+            <!-- Stage -->
+            <rect 
+                [attr.x]="(CANVAS_WIDTH - STAGE_WIDTH) / 2" 
+                [attr.y]="0" [attr.width]="STAGE_WIDTH"
+                [attr.height]="STAGE_HEIGHT" 
+                [attr.rx]="8" fill="#ffffff" 
+                stroke="#bebebe" 
+                [attr.stroke-width]="2" />
+
+            <text 
+                [attr.x]="CANVAS_WIDTH / 2" 
+                [attr.y]="STAGE_HEIGHT / 2 + 6" 
+                text-anchor="middle" 
+                font-family="Arial"
+                [attr.font-size]="18" 
+                font-weight="bold" 
+                fill="#bebebe">
+                STAGE
+            </text>
+
+            <!-- Section Labels -->
+            <g *ngFor="let section of venueData?.sections || []">
+            <text *ngIf="section.seatSectionType != SeatSectionType.FOH && section.seatSectionType != SeatSectionType.STANDING" 
+                [attr.x]="getSectionCenterX(section)" 
+                [attr.y]="section.y - 20"
+                text-anchor="center" 
+                font-family="Arial" 
+                font-size="16" 
+                font-weight="bold" 
+                fill="#bebebe">
+                {{ section.sectionLabel || section.name }}
+            </text>
+            </g>
+
+            <!-- Row Labels (only for SEAT sections) -->
+            <!-- <ng-container *ngFor="let section of venueData?.sections || []">
+                <g *ngIf="section.seatSectionType === SeatSectionType.SEAT">
+                    <g *ngFor="let row of getRowArray(section.rows); let i = index">
+                        <text 
+                            [attr.x]="section.x"
+                            [attr.y]="section.y + (i * BASE_SEAT_GAP) + (section.rowOffset || 0) + 4"
+                            font-family="Arial" 
+                            font-size="12" 
+                            font-weight="bold" 
+                            fill="#333">
+                            {{ getRowLetter(i) }}
+                        </text>
+                    </g>
+                </g>
+            </ng-container> -->
+
+            <g class="row-labels">
+                <text 
+                    *ngFor="let rowLabel of rowLabels" 
+                    [attr.x]="rowLabel.x" 
+                    [attr.y]="rowLabel.y" 
+                    [attr.text-anchor]="rowLabel.side === 'left' ? 'end' : 'start'"
+                    font-family="Arial" 
+                    font-size="12" 
+                    font-weight="bold" 
+                    fill="#333"
+                    [attr.data-side]="rowLabel.side">
+                    {{ rowLabel.label }}
+                </text>
+            </g>
+
+            <!-- FOH Sections -->
+            <g *ngFor="let section of venueData?.sections || []">
+                <ng-container *ngIf="section.seatSectionType === SeatSectionType.FOH">
+                    <rect 
+                        [attr.x]="section.x" 
+                        [attr.y]="section.y - 20" 
+                        [attr.width]="section.seatsPerRow * BASE_SEAT_GAP"
+                        [attr.height]="section.rows * BASE_SEAT_GAP" fill="#f0f0f0" fill-opacity="0.5" stroke="#999"
+                        stroke-dasharray="3,3" 
+                        stroke-width="1" />
+
+                    <text 
+                        [attr.x]="section.x + (section.seatsPerRow * BASE_SEAT_GAP / 2)"
+                        [attr.y]="(section.y- 20) + (section.rows * BASE_SEAT_GAP / 2)" 
+                        text-anchor="middle"
+                        dominant-baseline="middle" 
+                        fill="#666" 
+                        font-weight="bold" 
+                        font-size="14">
+                        FOH
+                    </text>
+                </ng-container>
+            </g>
+
+            <!-- Seats -->
+            <g *ngFor="let seat of seats">
+                <!-- Standing Area -->
+                <rect *ngIf="seat.isStandingArea && seat.gridRow && seat.gridColumn" 
+                    [attr.x]="seat.cx" 
+                    [attr.y]="seat.cy"
+                    [attr.width]="seat.gridColumn * BASE_SEAT_GAP" 
+                    [attr.height]="seat.gridRow * (BASE_SEAT_GAP-1)"
+                    [attr.rx]="4" 
+                    [attr.ry]="4" 
+                    [attr.fill]="seat.color" 
+                    fill-opacity="0.3" 
+                    [attr.stroke]="seat.color"
+                    stroke-width="2" 
+                    stroke-dasharray="5,5" 
+                    [attr.cursor]="getSeatCursor(seat)"
+                    (click)="onSeatClick(seat, $event)" 
+                    class="standing-area">
+                </rect>
+
+                <!-- Standing area label -->
+                <text *ngIf="seat.isStandingArea && seat.gridRow && seat.gridColumn" 
+                    [attr.x]="seat.cx + (seat.gridColumn * BASE_SEAT_GAP) / 2"
+                    [attr.y]="seat.cy + (seat.gridRow * BASE_SEAT_GAP) / 2"
+                    text-anchor="middle"
+                    dominant-baseline="middle" 
+                    fill="#666" 
+                    font-weight="bold" 
+                    font-size="14">
+                    Standing 
+                </text>
+
+                <!-- Regular seats -->
+                <ng-container *ngIf="!seat.isStandingArea">
+                    <!-- Regular seat circle -->
+                    <circle *ngIf="seat.status !== SeatStatus.PARTIAL_VIEW" 
+                        [attr.cx]="seat.cx" 
+                        [attr.cy]="seat.cy"
+                        [attr.r]="BASE_SEAT_RADIUS" 
+                        [attr.fill]="getSeatColor(seat)" 
+                        [attr.stroke]="getSeatStroke(seat)"
+                        [attr.stroke-width]="getSeatStrokeWidth(seat)" 
+                        [attr.opacity]="getSeatOpacity(seat)"
+                        [attr.cursor]="getSeatCursor(seat)" (click)="onSeatClick(seat, $event)">
+                    </circle>
+
+                    <!-- Partial view seats -->
+                    <g *ngIf="seat.status === SeatStatus.PARTIAL_VIEW">
+                        <defs>
+                            <linearGradient 
+                                [attr.id]="'partial-' + seat.id" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" [style.stop-color]="seat.color"></stop>
+                                <stop offset="50%" [style.stop-color]="seat.color"></stop>
+                                <stop offset="50%" [style.stop-color]="'#cccccc'"></stop>
+                                <stop offset="100%" [style.stop-color]="'#cccccc'"></stop>
+                            </linearGradient>
+                        </defs>
+
+                        <circle 
+                            [attr.cx]="seat.cx" 
+                            [attr.cy]="seat.cy" 
+                            [attr.r]="BASE_SEAT_RADIUS"
+                            [attr.fill]="'url(#partial-' + seat.id + ')'" 
+                            [attr.stroke]="getSeatStroke(seat)"
+                            [attr.stroke-width]="getSeatStrokeWidth(seat)" 
+                            [attr.opacity]="getSeatOpacity(seat)"
+                            [attr.cursor]="getSeatCursor(seat)" (click)="onSeatClick(seat, $event)">
+                        </circle>
+                    </g>
+
+                    <!-- Selected indicator for regular seats -->
+                    <g *ngIf="isSeatSelected(seat)">
+                        <circle 
+                            [attr.cx]="seat.cx" 
+                            [attr.cy]="seat.cy" 
+                            [attr.r]="BASE_SEAT_RADIUS * 1.2" 
+                            fill="#4CAF50"
+                            opacity="0.8"  
+                            [attr.cursor]="getSeatCursor(seat)" 
+                            (click)="onSeatClick(seat, $event)" />
+
+                        <text [attr.x]="seat.cx" 
+                            [attr.y]="seat.cy" 
+                            text-anchor="middle" 
+                            dominant-baseline="middle"
+                            fill="white" 
+                            font-weight="bold" 
+                            font-size="12"
+                            [attr.cursor]="getSeatCursor(seat)" 
+                            (click)="onSeatClick(seat, $event)">
+                            ✓
+                        </text>
+                    </g>
+
+                    <!-- Status indicator -->
+                    <text
+                        *ngIf="seat.status === SeatStatus.BOOKED || seat.status === SeatStatus.RESERVED || seat.status === SeatStatus.BLOCKED"
+                        [attr.x]="seat.cx" 
+                        [attr.y]="seat.cy" 
+                        text-anchor="middle" 
+                        dominant-baseline="middle"
+                        fill="white" 
+                        font-size="10" 
+                        font-weight="bold">
+                        {{ 
+                            seat.status === SeatStatus.BOOKED ? 'S' :
+                            seat.status === SeatStatus.RESERVED ? 'R' :
+                            seat.status === SeatStatus.BLOCKED ? 'X' : '' 
+                        }}
+                    </text>
+                </ng-container>
+            </g>
+        </svg>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="svg-tooltip desktop-tooltip" *ngIf="shouldShowTooltip()" [style.left.px]="tooltipLeft"
+        [style.top.px]="tooltipTop">
+        <div class="tooltip-content" *ngIf="getSeatById(hoveredSeatId || '') as seat">
+            <h4>{{ seat.sectionName }} {{ formatPrice(seat.price) }}</h4>
+
+            <p *ngIf="seat.isStandingArea">
+                Standing Area - {{ getSeatStatusText(seat.status, seat.ticketType) }}
+            </p>
+            <p *ngIf="!seat.isStandingArea">
+                {{ seat.rowLabel }}{{ seat.seatNumber }},
+                {{ getSeatStatusText(seat.status, seat.ticketType) }}
+            </p>
+
+            <div class="tooltip-action" *ngIf="seat.status === SeatStatus.AVAILABLE">
+                <button class="tooltip-select-btn" (click)="onSeatClick(seat, $event)">
+                    <span *ngIf="seat.isStandingArea">Select Area</span>
+                    <span *ngIf="!seat.isStandingArea">Select Seat</span>
+                </button>
+            </div>
+        </div>
+        <div class="tooltip-arrow"></div>
+    </div>
+</div>

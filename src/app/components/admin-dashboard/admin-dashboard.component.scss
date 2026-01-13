@@ -1,0 +1,342 @@
+.dashboard-container {
+  // padding: 24px;
+  background: var(--bg-color);
+  min-height: 100%;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  
+  .header-content {
+    .dashboard-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-color);
+      margin: 0 0 8px 0;
+    }
+    
+    .dashboard-subtitle {
+      color: var(--text-secondary);
+      margin: 0;
+      font-size: 1rem;
+    }
+  }
+  
+  .event-filter {
+    .event-select {
+      width: 250px;
+      
+      ::ng-deep .mat-mdc-form-field-outline {
+        color: var(--border-color);
+      }
+      
+      ::ng-deep .mat-mdc-form-field-flex {
+        background: var(--card-bg);
+      }
+    }
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+  border: 1px solid var(--border-color);
+  
+  .card-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+    
+    .card-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        color: white;
+      }
+    }
+    
+    .revenue-card .card-icon {
+      background: linear-gradient(135deg, #00d68f 0%, #0095ff 100%);
+    }
+    
+    .tickets-card .card-icon {
+      background: linear-gradient(135deg, #ffaa00 0%, #ff3d71 100%);
+    }
+    
+    .events-card .card-icon {
+      background: linear-gradient(135deg, #3366ff 0%, #764ba2 100%);
+    }
+    
+    .card-info {
+      flex: 1;
+      
+      .card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin: 0 0 4px 0;
+        line-height: 1;
+      }
+      
+      .card-label {
+        color: var(--text-secondary);
+        margin: 0 0 12px 0;
+        font-size: 0.9rem;
+      }
+      
+      .growth-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        
+        &.positive {
+          background: #f0fff4;
+          color: #00d68f;
+        }
+        
+        &.negative {
+          background: #fff5f5;
+          color: #ff3d71;
+        }
+        
+        .mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+      
+      .attendance-rate,
+      .popular-event {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        
+        .mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+  }
+}
+
+.events-section {
+  margin-bottom: 32px;
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0;
+    }
+  }
+  
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 24px;
+  }
+}
+
+.event-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+  border: 1px solid var(--border-color);
+  
+  .event-header {
+    padding: 20px 20px 16px 20px;
+    
+    .event-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0 0 8px 0;
+    }
+    
+    .event-date {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+  }
+  
+  .event-details {
+    padding: 0 20px 16px 20px;
+    
+    .event-venue,
+    .event-revenue {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      
+      .mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+      
+      .revenue-amount {
+        font-weight: 600;
+        color: var(--text-color);
+      }
+    }
+    
+    .ticket-progress {
+      .progress-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        
+        .sold-tickets {
+          color: var(--text-secondary);
+          font-size: 0.9rem;
+        }
+        
+        .progress-percent {
+          color: var(--primary-color);
+          font-weight: 600;
+          font-size: 0.9rem;
+        }
+      }
+      
+      .progress-bar {
+        ::ng-deep .mdc-linear-progress__bar-inner {
+          border-color: var(--primary-color);
+        }
+      }
+    }
+  }
+  
+  .event-actions {
+    padding: 16px 20px;
+    display: flex;
+    gap: 12px;
+    
+    button {
+      flex: 1;
+      
+      .mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        margin-right: 4px;
+      }
+    }
+  }
+}
+
+.quick-actions-section {
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 24px 0;
+  }
+  
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    
+    .action-button {
+      height: 80px;
+      border-radius: 12px;
+      border: 2px dashed var(--border-color);
+      font-size: 1rem;
+      font-weight: 500;
+      
+      .mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+        color: var(--text-secondary);
+      }
+      
+      &:hover {
+        border-color: var(--primary-color);
+        background: var(--hover-color);
+        
+        .mat-icon {
+          color: var(--primary-color);
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    gap: 16px;
+    
+    .event-filter {
+      width: 100%;
+      
+      .event-select {
+        width: 100%;
+      }
+    }
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .events-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .actions-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start !important;
+  }
+}

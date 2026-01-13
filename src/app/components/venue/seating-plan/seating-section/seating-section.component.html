@@ -1,0 +1,39 @@
+<div class="seating-section" [ngStyle]="getSectionStyle()">
+  <div class="section-header">
+    <div class="section-info">
+      <h4>{{ section.name }}</h4>
+      <span class="section-stats">{{ section.capacity }} seats ({{ section.rowCount }} rows × {{ section.seatsPerRow }} seats)</span>
+    </div>
+    <div class="section-controls">
+      <select [value]="section.priceTier" 
+              (change)="onPriceTierChange($event)"
+              class="price-tier-select">
+        <option value="">Select Price Tier</option>
+        <option *ngFor="let tier of priceTiers" [value]="tier.id">
+          {{ tier.name }} - ${{ tier.price }}
+        </option>
+      </select>
+      
+      <div class="section-actions">
+        <button class="action-btn" (click)="onAddRows()" title="Add Rows">➕ Rows</button>
+        <button class="action-btn" (click)="onAdjustColumns()" title="Adjust Columns">🔧 Columns</button>
+        <button class="action-btn" (click)="onDuplicate()" title="Duplicate Section">📋 Duplicate</button>
+        <button class="action-btn delete" (click)="onDelete()" title="Delete Section">🗑️</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="seating-rows">
+    <div *ngFor="let row of getUniqueRows()" class="seating-row">
+      <div class="row-label">{{ row }}</div>
+      <div class="seats-in-row">
+        <app-seat *ngFor="let seat of getSeatsForRow(row)"
+                 [seat]="seat"
+                 [sectionColor]="section.color"
+                 [isSelected]="isSeatSelected(seat)"
+                 (seatClick)="onSeatClicked($event)">
+        </app-seat>
+      </div>
+    </div>
+  </div>
+</div>

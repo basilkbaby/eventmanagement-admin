@@ -1,0 +1,297 @@
+<div class="ticket-details-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <div class="back-nav">
+        <button mat-button routerLink="/admin/orders" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+          Back to Tickets
+        </button>
+      </div>
+      
+      <div class="title-section">
+        <div class="title-and-status">
+          <h1 class="ticket-title">Ticket #{{ ticket.ticketNumber }}</h1>
+          <div class="status-badges">
+            <mat-chip [class]="getStatusClass(ticket.status)" class="status-chip">
+              {{ getStatusText(ticket.status) }}
+            </mat-chip>
+            <span class="event-name">{{ ticket.eventName }}</span>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button mat-icon-button [matMenuTriggerFor]="actionMenu" class="menu-button">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          
+          <mat-menu #actionMenu="matMenu">
+            <button mat-menu-item (click)="printTicket()">
+              <mat-icon>print</mat-icon>
+              <span>Print Ticket</span>
+            </button>
+            <button mat-menu-item (click)="sendEmail()">
+              <mat-icon>email</mat-icon>
+              <span>Send via Email</span>
+            </button>
+            <mat-divider></mat-divider>
+            <button mat-menu-item 
+                    (click)="scanTicket()"
+                    [disabled]="!canScan()">
+              <mat-icon>qr_code_scanner</mat-icon>
+              <span>Scan Ticket</span>
+            </button>
+            <button mat-menu-item 
+                    (click)="cancelTicket()"
+                    [disabled]="!canCancel()">
+              <mat-icon>cancel</mat-icon>
+              <span>Cancel Ticket</span>
+            </button>
+            <button mat-menu-item 
+                    (click)="refundTicket()"
+                    [disabled]="!canRefund()">
+              <mat-icon>money_off</mat-icon>
+              <span>Refund Ticket</span>
+            </button>
+          </mat-menu>
+
+          <button mat-raised-button 
+                  color="primary" 
+                  (click)="scanTicket()"
+                  [disabled]="!canScan()"
+                  class="scan-button">
+            <mat-icon>qr_code_scanner</mat-icon>
+            Scan Ticket
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Left Column - Ticket Details -->
+    <div class="left-column">
+      <!-- Ticket Information Card -->
+      <mat-card class="detail-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>confirmation_number</mat-icon>
+            Ticket Information
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <mat-icon>tag</mat-icon>
+              <div class="detail-content">
+                <span class="detail-label">Ticket Number</span>
+                <span class="detail-value ticket-number">{{ ticket.ticketNumber }}</span>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <mat-icon>event</mat-icon>
+              <div class="detail-content">
+                <span class="detail-label">Event</span>
+                <span class="detail-value">
+                  <strong>{{ ticket.eventName }}</strong>
+                  <button mat-button color="primary" routerLink="/admin/events/{{ticket.eventId}}" class="event-link">
+                    View Event
+                  </button>
+                </span>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <mat-icon>category</mat-icon>
+              <div class="detail-content">
+                <span class="detail-label">Ticket Type</span>
+                <span class="detail-value">
+                  <strong>{{ ticket.ticketType.name }}</strong>
+                  <span class="type-description">{{ ticket.ticketType.description }}</span>
+                </span>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <mat-icon>attach_money</mat-icon>
+              <div class="detail-content">
+                <span class="detail-label">Price</span>
+                <span class="detail-value price">{{ formatCurrency(ticket.price) }}</span>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <mat-icon>shopping_cart</mat-icon>
+              <div class="detail-content">
+                <span class="detail-label">Order ID</span>
+                <span class="detail-value order-id">{{ ticket.orderId }}</span>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <mat-icon>calendar_today</mat-icon>
+              <div class="detail-content">
+                <span class="detail-label">Purchase Date</span>
+                <span class="detail-value">{{ formatDate(ticket.purchaseDate) }}</span>
+              </div>
+            </div>
+            
+            <div class="detail-item" *ngIf="ticket.scannedAt">
+              <mat-icon>qr_code_scanner</mat-icon>
+              <div class="detail-content">
+                <span class="detail-label">Scanned At</span>
+                <span class="detail-value">{{ formatDate(ticket.scannedAt) }}</span>
+                <span class="scanned-by" *ngIf="ticket.scannedBy">by {{ ticket.scannedBy }}</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Attendee Information Card -->
+      <mat-card class="detail-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>person</mat-icon>
+            Attendee Information
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="attendee-info">
+            <div class="attendee-avatar">
+              {{ ticket.attendee.name.charAt(0) }}
+            </div>
+            <div class="attendee-details">
+              <h3 class="attendee-name">{{ ticket.attendee.name }}</h3>
+              <div class="attendee-contact">
+                <div class="contact-item">
+                  <mat-icon>email</mat-icon>
+                  <span>{{ ticket.attendee.email }}</span>
+                </div>
+                <div class="contact-item" *ngIf="ticket.attendee.phone">
+                  <mat-icon>phone</mat-icon>
+                  <span>{{ ticket.attendee.phone }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+        
+        <mat-card-actions>
+          <button mat-stroked-button color="primary">
+            <mat-icon>email</mat-icon>
+            Contact Attendee
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- Right Column - Checkout Answers & Actions -->
+    <div class="right-column">
+      <!-- Checkout Answers Card -->
+      <mat-card class="answers-card" *ngIf="ticket.checkoutAnswers.length > 0">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>question_answer</mat-icon>
+            Checkout Answers
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="answers-list">
+            <div *ngFor="let answer of ticket.checkoutAnswers" class="answer-item">
+              <div class="question">{{ answer.question }}</div>
+              <div class="answer">{{ getAnswerDisplay(answer.answer) }}</div>
+              <mat-divider></mat-divider>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Quick Actions Card -->
+      <mat-card class="actions-card">
+        <mat-card-header>
+          <mat-card-title>Quick Actions</mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="actions-list">
+            <button mat-raised-button 
+                    color="primary" 
+                    class="action-button full-width"
+                    (click)="scanTicket()"
+                    [disabled]="!canScan()">
+              <mat-icon>qr_code_scanner</mat-icon>
+              Scan Ticket
+            </button>
+            
+            <button mat-stroked-button 
+                    color="basic" 
+                    class="action-button full-width"
+                    (click)="cancelTicket()"
+                    [disabled]="!canCancel()">
+              <mat-icon>cancel</mat-icon>
+              Cancel Ticket
+            </button>
+            
+            <button mat-stroked-button 
+                    color="warn" 
+                    class="action-button full-width"
+                    (click)="refundTicket()"
+                    [disabled]="!canRefund()">
+              <mat-icon>money_off</mat-icon>
+              Refund Ticket
+            </button>
+            
+            <button mat-stroked-button 
+                    color="basic" 
+                    class="action-button full-width"
+                    (click)="printTicket()">
+              <mat-icon>print</mat-icon>
+              Print Ticket
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Ticket Type Details Card -->
+      <mat-card class="type-card">
+        <mat-card-header>
+          <mat-card-title>Ticket Type Details</mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="type-details">
+            <div class="type-item">
+              <span class="type-label">Sales Period</span>
+              <span class="type-value">
+                {{ formatShortDate(ticket.ticketType.salesStart) }} - 
+                {{ formatShortDate(ticket.ticketType.salesEnd) }}
+              </span>
+            </div>
+            
+            <div class="type-item">
+              <span class="type-label">Quantity Available</span>
+              <span class="type-value">
+                {{ ticket.ticketType.sold }}/{{ ticket.ticketType.quantity }} sold
+              </span>
+            </div>
+            
+            <div class="type-item">
+              <span class="type-label">Status</span>
+              <span class="type-value">
+                <mat-chip class="type-status" [class.active]="ticket.ticketType.isActive">
+                  {{ ticket.ticketType.isActive ? 'Active' : 'Inactive' }}
+                </mat-chip>
+              </span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

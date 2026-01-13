@@ -1,0 +1,325 @@
+<div class="reports-page">
+  <div class="reports-header">
+    <div class="header-content">
+      <h1>Analytics & Reports</h1>
+      <p>Comprehensive insights into your venue performance</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="exportReport()" class="export-btn">
+      <mat-icon>download</mat-icon>
+      Export Report
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <mat-card>
+      <mat-card-content>
+        <div class="filter-row">
+          <div class="filter-group">
+            <mat-form-field appearance="outline">
+              <mat-label>Report Type</mat-label>
+              <mat-select [(ngModel)]="filter.reportType" (selectionChange)="onFilterChange()">
+                <mat-option *ngFor="let type of reportTypes" [value]="type.value">
+                  {{ type.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="filter-group">
+            <mat-form-field appearance="outline">
+              <mat-label>Event</mat-label>
+              <mat-select [(ngModel)]="filter.eventId" (selectionChange)="onFilterChange()">
+                <mat-option *ngFor="let event of events" [value]="event.id">
+                  {{ event.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="filter-group">
+            <mat-form-field appearance="outline">
+              <mat-label>Start Date</mat-label>
+              <input matInput [matDatepicker]="startPicker" [(ngModel)]="filter.dateRange.start" 
+                     (dateChange)="onFilterChange()">
+              <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <div class="filter-group">
+            <mat-form-field appearance="outline">
+              <mat-label>End Date</mat-label>
+              <input matInput [matDatepicker]="endPicker" [(ngModel)]="filter.dateRange.end" 
+                     (dateChange)="onFilterChange()">
+              <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Key Metrics -->
+  <div class="metrics-section">
+    <div class="metrics-grid">
+      <mat-card class="metric-card">
+        <mat-card-content>
+          <div class="metric-icon revenue">
+            <mat-icon>attach_money</mat-icon>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value">{{ formatCurrency(getTotalSales()) }}</div>
+            <div class="metric-label">Total Sales</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="metric-card">
+        <mat-card-content>
+          <div class="metric-icon tickets">
+            <mat-icon>confirmation_number</mat-icon>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value">{{ formatNumber(getTotalTickets()) }}</div>
+            <div class="metric-label">Tickets Sold</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="metric-card">
+        <mat-card-content>
+          <div class="metric-icon utilization">
+            <mat-icon>event_seat</mat-icon>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value">{{ getAverageUtilization() | number:'1.1-1' }}%</div>
+            <div class="metric-label">Avg Utilization</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="metric-card">
+        <mat-card-content>
+          <div class="metric-icon profit">
+            <mat-icon>trending_up</mat-icon>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value">{{ formatCurrency(getTotalProfit()) }}</div>
+            <div class="metric-label">Total Profit</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="charts-section">
+    <mat-tab-group>
+      <!-- Sales Tab -->
+      <mat-tab label="Sales">
+        <div class="tab-content">
+          <div class="chart-row">
+            <mat-card class="chart-card">
+              <mat-card-header>
+                <mat-card-title>Sales Trend (in thousands)</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="chart-container">
+                  <canvas baseChart
+                          [data]="salesChartData"
+                          [type]="'line'"
+                          [options]="lineChartOptions">
+                  </canvas>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="table-card">
+              <mat-card-header>
+                <mat-card-title>Sales Details</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Period</th>
+                      <th>Sales</th>
+                      <th>Tickets</th>
+                      <th>Avg Price</th>
+                      <th>Growth</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let report of salesReport">
+                      <td>{{ report.period }}</td>
+                      <td>{{ formatCurrency(report.totalSales) }}</td>
+                      <td>{{ formatNumber(report.ticketCount) }}</td>
+                      <td>{{ formatCurrency(report.averageTicketPrice) }}</td>
+                      <td [class.positive]="report.growth > 0" [class.negative]="report.growth < 0">
+                        {{ report.growth > 0 ? '+' : '' }}{{ report.growth | number:'1.1-1' }}%
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Revenue Tab -->
+      <mat-tab label="Revenue">
+        <div class="tab-content">
+          <div class="chart-row">
+            <mat-card class="chart-card">
+              <mat-card-header>
+                <mat-card-title>Revenue Analysis (in thousands)</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="chart-container">
+                  <canvas baseChart
+                          [data]="revenueChartData"
+                          [type]="'bar'"
+                          [options]="barChartOptions">
+                  </canvas>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="table-card">
+              <mat-card-header>
+                <mat-card-title>Revenue Details</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Period</th>
+                      <th>Revenue</th>
+                      <th>Expenses</th>
+                      <th>Profit</th>
+                      <th>Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let report of revenueReport">
+                      <td>{{ report.period }}</td>
+                      <td>{{ formatCurrency(report.revenue) }}</td>
+                      <td>{{ formatCurrency(report.expenses) }}</td>
+                      <td>{{ formatCurrency(report.profit) }}</td>
+                      <td>{{ report.margin | number:'1.1-1' }}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Utilization Tab -->
+      <mat-tab label="Seat Utilization">
+        <div class="tab-content">
+          <div class="chart-row">
+            <mat-card class="chart-card">
+              <mat-card-header>
+                <mat-card-title>Seat Utilization by Section</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="chart-container">
+                  <canvas baseChart
+                          [data]="utilizationChartData"
+                          [type]="'doughnut'"
+                          [options]="doughnutChartOptions">
+                  </canvas>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="table-card">
+              <mat-card-header>
+                <mat-card-title>Utilization Details</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Section</th>
+                      <th>Total Seats</th>
+                      <th>Booked</th>
+                      <th>Utilization</th>
+                      <th>Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let report of utilizationReport">
+                      <td>{{ report.sectionName }}</td>
+                      <td>{{ formatNumber(report.totalSeats) }}</td>
+                      <td>{{ formatNumber(report.bookedSeats) }}</td>
+                      <td>{{ report.utilizationRate | number:'1.1-1' }}%</td>
+                      <td>{{ formatCurrency(report.revenue) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Attendance Tab -->
+      <mat-tab label="Attendance">
+        <div class="tab-content">
+          <div class="chart-row">
+            <mat-card class="chart-card">
+              <mat-card-header>
+                <mat-card-title>Event Attendance Rates</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="chart-container">
+                  <canvas baseChart
+                          [data]="attendanceChartData"
+                          [type]="'line'"
+                          [options]="lineChartOptions">
+                  </canvas>
+                </div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="table-card">
+              <mat-card-header>
+                <mat-card-title>Attendance Details</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th>
+                      <th>Date</th>
+                      <th>Capacity</th>
+                      <th>Booked</th>
+                      <th>Attendance</th>
+                      <th>Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let report of attendanceReport">
+                      <td>{{ report.eventName }}</td>
+                      <td>{{ report.date | date:'MMM d, y' }}</td>
+                      <td>{{ formatNumber(report.totalCapacity) }}</td>
+                      <td>{{ formatNumber(report.bookedSeats) }}</td>
+                      <td>{{ report.attendanceRate | number:'1.1-1' }}%</td>
+                      <td>{{ formatCurrency(report.revenue) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

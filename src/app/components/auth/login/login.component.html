@@ -1,0 +1,103 @@
+<!-- src/app/auth/login/login.component.html -->
+<div class="login-page">
+  <div class="login-container">
+    <mat-card class="login-card">
+      <mat-card-header>
+        <div class="login-header">
+          <div class="logo">
+            <mat-icon class="logo-icon">event</mat-icon>
+            <span class="logo-text">Event Management</span>
+          </div>
+          <mat-card-title>Sign In to Your Account</mat-card-title>
+          <mat-card-subtitle>Enter your credentials to access the platform</mat-card-subtitle>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+<!-- Remove the errorStateMatcher and use simpler validation -->
+        <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Email Address</mat-label>
+        <input 
+            matInput 
+            formControlName="email" 
+            type="email" 
+            placeholder="Enter your email"
+            autocomplete="email">
+        <mat-icon matPrefix>mail</mat-icon>
+        <mat-error *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+            <span *ngIf="loginForm.get('email')?.hasError('required')">Email is required</span>
+            <span *ngIf="loginForm.get('email')?.hasError('email')">Please enter a valid email</span>
+        </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Password</mat-label>
+        <input 
+            matInput 
+            formControlName="password" 
+            [type]="hidePassword ? 'password' : 'text'"
+            placeholder="Enter your password"
+            autocomplete="current-password">
+        <mat-icon matPrefix>lock</mat-icon>
+        <button 
+            mat-icon-button 
+            matSuffix 
+            type="button"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="'Hide password'"
+            [attr.aria-pressed]="hidePassword">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            Password is required
+        </mat-error>
+        </mat-form-field>
+
+          <!-- Error Message -->
+          <div *ngIf="error" class="error-message">
+            <mat-icon class="error-icon">error</mat-icon>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- Submit Button -->
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="submit" 
+            class="login-button"
+            [disabled]="loginForm.invalid || loading">
+            <span *ngIf="!loading">Sign In</span>
+            <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+          </button>
+
+
+        </form>
+      </mat-card-content>
+
+      <mat-card-footer>
+        <div class="login-footer">
+          <p>By signing in, you agree to our 
+            <a href="#">Terms of Service</a> and 
+            <a href="#">Privacy Policy</a>
+          </p>
+        </div>
+      </mat-card-footer>
+    </mat-card>
+
+    <!-- Background Image/Illustration -->
+    <div class="login-illustration">
+      <div class="illustration-content">
+        <mat-icon class="illustration-icon">calendar_today</mat-icon>
+        <h2>Manage Events Efficiently</h2>
+        <p>Create, organize, and track events with our comprehensive platform</p>
+        <ul class="feature-list">
+          <li><mat-icon>check_circle</mat-icon> Create and manage events</li>
+          <li><mat-icon>check_circle</mat-icon> Real-time ticket management</li>
+          <li><mat-icon>check_circle</mat-icon> Detailed analytics and reports</li>
+          <li><mat-icon>check_circle</mat-icon> Secure payment processing</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

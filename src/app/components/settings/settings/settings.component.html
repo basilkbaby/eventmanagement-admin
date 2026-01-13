@@ -1,0 +1,432 @@
+<div class="settings-page">
+  <div class="settings-header">
+    <div class="header-content">
+      <h1>System Settings</h1>
+      <p>Configure your venue management system preferences</p>
+    </div>
+    <div class="header-actions">
+      <button mat-button (click)="resetToDefaults()" class="reset-btn">
+        <mat-icon>restart_alt</mat-icon>
+        Reset to Defaults
+      </button>
+      <button mat-raised-button color="primary" (click)="saveAllSettings()" class="save-all-btn">
+        <mat-icon>save</mat-icon>
+        Save All Settings
+      </button>
+    </div>
+  </div>
+
+  <mat-tab-group class="settings-tabs">
+    <!-- General Settings Tab -->
+    <mat-tab label="General">
+      <div class="tab-content">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>business</mat-icon>
+              Venue Information
+            </mat-card-title>
+            <mat-card-subtitle>Basic information about your venue</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <form class="settings-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Venue Name</mat-label>
+                  <input matInput [(ngModel)]="generalSettings.venueName" name="venueName" required>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Contact Email</mat-label>
+                  <input matInput [(ngModel)]="generalSettings.contactEmail" name="contactEmail" type="email" required>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Contact Phone</mat-label>
+                  <input matInput [(ngModel)]="generalSettings.contactPhone" name="contactPhone">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Timezone</mat-label>
+                  <mat-select [(ngModel)]="generalSettings.timezone" name="timezone">
+                    <mat-option *ngFor="let tz of timezones" [value]="tz">
+                      {{ tz }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="form-field full-width">
+                <mat-label>Address</mat-label>
+                <textarea matInput [(ngModel)]="generalSettings.address" name="address" rows="3"></textarea>
+              </mat-form-field>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Currency</mat-label>
+                  <mat-select [(ngModel)]="generalSettings.currency" name="currency">
+                    <mat-option *ngFor="let currency of currencies" [value]="currency.code">
+                      {{ currency.name }} ({{ currency.code }})
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Date Format</mat-label>
+                  <mat-select [(ngModel)]="generalSettings.dateFormat" name="dateFormat">
+                    <mat-option *ngFor="let format of dateFormats" [value]="format">
+                      {{ format }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Language</mat-label>
+                  <mat-select [(ngModel)]="generalSettings.language" name="language">
+                    <mat-option *ngFor="let lang of languages" [value]="lang.code">
+                      {{ lang.name }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </form>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="saveGeneralSettings()">
+              Save General Settings
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Booking Settings Tab -->
+    <mat-tab label="Booking">
+      <div class="tab-content">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>book_online</mat-icon>
+              Booking Configuration
+            </mat-card-title>
+            <mat-card-subtitle>Configure how customers book tickets</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <form class="settings-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Max Tickets Per Order</mat-label>
+                  <input matInput [(ngModel)]="bookingSettings.maxTicketsPerOrder" name="maxTickets" type="number" min="1" max="50">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Booking Timeout (minutes)</mat-label>
+                  <input matInput [(ngModel)]="bookingSettings.bookingTimeoutMinutes" name="timeout" type="number" min="1" max="60">
+                </mat-form-field>
+              </div>
+
+              <div class="toggle-group">
+                <mat-slide-toggle [(ngModel)]="bookingSettings.allowSeatSelection" name="allowSeatSelection">
+                  Allow Seat Selection
+                </mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="bookingSettings.requireAccount" name="requireAccount">
+                  Require User Account
+                </mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="bookingSettings.allowGuestCheckout" name="allowGuestCheckout">
+                  Allow Guest Checkout
+                </mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="bookingSettings.autoCancelUnpaid" name="autoCancelUnpaid">
+                  Auto-cancel Unpaid Bookings
+                </mat-slide-toggle>
+              </div>
+
+              <mat-form-field appearance="outline" class="form-field full-width">
+                <mat-label>Cancellation Policy</mat-label>
+                <textarea matInput [(ngModel)]="bookingSettings.cancellationPolicy" name="cancellationPolicy" rows="3" placeholder="Describe your cancellation policy..."></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field full-width">
+                <mat-label>Refund Policy</mat-label>
+                <textarea matInput [(ngModel)]="bookingSettings.refundPolicy" name="refundPolicy" rows="3" placeholder="Describe your refund policy..."></textarea>
+              </mat-form-field>
+            </form>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="saveBookingSettings()">
+              Save Booking Settings
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Notifications Tab -->
+    <mat-tab label="Notifications">
+      <div class="tab-content">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>notifications</mat-icon>
+              Notification Settings
+            </mat-card-title>
+            <mat-card-subtitle>Configure system notifications and alerts</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <form class="settings-form">
+              <div class="toggle-group">
+                <mat-slide-toggle [(ngModel)]="notificationSettings.emailNotifications" name="emailNotifications">
+                  Enable Email Notifications
+                </mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="notificationSettings.smsNotifications" name="smsNotifications">
+                  Enable SMS Notifications
+                </mat-slide-toggle>
+              </div>
+
+              <div class="notification-section">
+                <h4>Email Notifications</h4>
+                <div class="checkbox-group">
+                  <mat-checkbox [(ngModel)]="notificationSettings.bookingConfirmation" name="bookingConfirmation">
+                    Booking Confirmations
+                  </mat-checkbox>
+                  <mat-checkbox [(ngModel)]="notificationSettings.bookingReminder" name="bookingReminder">
+                    Booking Reminders
+                  </mat-checkbox>
+                  <mat-checkbox [(ngModel)]="notificationSettings.eventUpdates" name="eventUpdates">
+                    Event Updates
+                  </mat-checkbox>
+                  <mat-checkbox [(ngModel)]="notificationSettings.systemAlerts" name="systemAlerts">
+                    System Alerts
+                  </mat-checkbox>
+                  <mat-checkbox [(ngModel)]="notificationSettings.lowSeatAlerts" name="lowSeatAlerts">
+                    Low Seat Availability Alerts
+                  </mat-checkbox>
+                  <mat-checkbox [(ngModel)]="notificationSettings.adminNotifications" name="adminNotifications">
+                    Admin Notifications
+                  </mat-checkbox>
+                </div>
+              </div>
+            </form>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="saveNotificationSettings()">
+              Save Notification Settings
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Payments Tab -->
+    <mat-tab label="Payments">
+      <div class="tab-content">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>payments</mat-icon>
+              Payment Configuration
+            </mat-card-title>
+            <mat-card-subtitle>Configure payment gateways and settings</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <form class="settings-form">
+              <div class="toggle-group">
+                <mat-slide-toggle [(ngModel)]="paymentSettings.stripeEnabled" name="stripeEnabled">
+                  Enable Stripe Payments
+                </mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="paymentSettings.paypalEnabled" name="paypalEnabled">
+                  Enable PayPal Payments
+                </mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="paymentSettings.testMode" name="testMode">
+                  Test Mode
+                </mat-slide-toggle>
+              </div>
+
+              <div class="payment-methods">
+                <h4>Accepted Payment Methods</h4>
+                <div class="checkbox-group">
+                  <mat-checkbox *ngFor="let method of paymentMethodOptions"
+                              [checked]="paymentSettings.paymentMethods.includes(method.value)"
+                              (change)="togglePaymentMethod(method.value)">
+                    {{ method.label }}
+                  </mat-checkbox>
+                </div>
+              </div>
+
+              <div class="form-row" *ngIf="paymentSettings.stripeEnabled">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Stripe Public Key</mat-label>
+                  <input matInput [(ngModel)]="paymentSettings.stripePublicKey" name="stripePublicKey" type="password">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Stripe Secret Key</mat-label>
+                  <input matInput [(ngModel)]="paymentSettings.stripeSecretKey" name="stripeSecretKey" type="password">
+                </mat-form-field>
+
+                <button mat-button (click)="testStripeConnection()" class="test-btn">
+                  Test Connection
+                </button>
+              </div>
+
+              <div class="form-row" *ngIf="paymentSettings.paypalEnabled">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>PayPal Client ID</mat-label>
+                  <input matInput [(ngModel)]="paymentSettings.paypalClientId" name="paypalClientId" type="password">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>PayPal Secret</mat-label>
+                  <input matInput [(ngModel)]="paymentSettings.paypalSecret" name="paypalSecret" type="password">
+                </mat-form-field>
+
+                <button mat-button (click)="testPaypalConnection()" class="test-btn">
+                  Test Connection
+                </button>
+              </div>
+
+              <mat-form-field appearance="outline" class="form-field tax-field">
+                <mat-label>Tax Rate (%)</mat-label>
+                <input matInput [(ngModel)]="paymentSettings.taxRate" name="taxRate" type="number" min="0" max="100" step="0.1">
+              </mat-form-field>
+            </form>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="savePaymentSettings()">
+              Save Payment Settings
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Security Tab -->
+    <mat-tab label="Security">
+      <div class="tab-content">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>security</mat-icon>
+              Security Settings
+            </mat-card-title>
+            <mat-card-subtitle>Configure system security and access controls</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <form class="settings-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Session Timeout (minutes)</mat-label>
+                  <input matInput [(ngModel)]="securitySettings.sessionTimeout" name="sessionTimeout" type="number" min="5" max="480">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Max Login Attempts</mat-label>
+                  <input matInput [(ngModel)]="securitySettings.loginAttempts" name="loginAttempts" type="number" min="1" max="10">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Account Lockout (minutes)</mat-label>
+                  <input matInput [(ngModel)]="securitySettings.accountLockout" name="accountLockout" type="number" min="1" max="1440">
+                </mat-form-field>
+              </div>
+
+              <div class="toggle-group">
+                <mat-slide-toggle [(ngModel)]="securitySettings.twoFactorAuth" name="twoFactorAuth">
+                  Enable Two-Factor Authentication
+                </mat-slide-toggle>
+              </div>
+
+              <div class="password-policy">
+                <h4>Password Policy</h4>
+                <p class="policy-description">{{ getPasswordPolicyDescription() }}</p>
+                <div class="policy-settings">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Minimum Length</mat-label>
+                    <input matInput [(ngModel)]="securitySettings.passwordPolicy.minLength" name="minLength" type="number" min="6" max="20">
+                  </mat-form-field>
+
+                  <div class="policy-checkboxes">
+                    <mat-checkbox [(ngModel)]="securitySettings.passwordPolicy.requireUppercase" name="requireUppercase">
+                      Require Uppercase
+                    </mat-checkbox>
+                    <mat-checkbox [(ngModel)]="securitySettings.passwordPolicy.requireLowercase" name="requireLowercase">
+                      Require Lowercase
+                    </mat-checkbox>
+                    <mat-checkbox [(ngModel)]="securitySettings.passwordPolicy.requireNumbers" name="requireNumbers">
+                      Require Numbers
+                    </mat-checkbox>
+                    <mat-checkbox [(ngModel)]="securitySettings.passwordPolicy.requireSpecialChars" name="requireSpecialChars">
+                      Require Special Characters
+                    </mat-checkbox>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="saveSecuritySettings()">
+              Save Security Settings
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- System Tab -->
+    <mat-tab label="System">
+      <div class="tab-content">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>settings</mat-icon>
+              System Configuration
+            </mat-card-title>
+            <mat-card-subtitle>Advanced system settings and maintenance</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <form class="settings-form">
+              <div class="toggle-group">
+                <mat-slide-toggle [(ngModel)]="systemSettings.maintenanceMode" name="maintenanceMode" (change)="toggleMaintenanceMode()">
+                  Maintenance Mode
+                </mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="systemSettings.cacheEnabled" name="cacheEnabled">
+                  Enable Caching
+                </mat-slide-toggle>
+                <mat-slide-toggle [(ngModel)]="systemSettings.analyticsEnabled" name="analyticsEnabled">
+                  Enable Analytics
+                </mat-slide-toggle>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Backup Frequency</mat-label>
+                  <mat-select [(ngModel)]="systemSettings.backupFrequency" name="backupFrequency">
+                    <mat-option *ngFor="let freq of backupFrequencies" [value]="freq.value">
+                      {{ freq.label }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Log Retention (days)</mat-label>
+                  <input matInput [(ngModel)]="systemSettings.logRetention" name="logRetention" type="number" min="1" max="365">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>API Rate Limit</mat-label>
+                  <input matInput [(ngModel)]="systemSettings.apiRateLimit" name="apiRateLimit" type="number" min="100" max="10000">
+                </mat-form-field>
+              </div>
+            </form>
+          </mat-card-content>
+          <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="saveSystemSettings()">
+              Save System Settings
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

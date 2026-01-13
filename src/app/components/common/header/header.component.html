@@ -1,0 +1,111 @@
+<mat-toolbar class="header-toolbar">
+  <!-- Left Section - Menu toggle & Brand -->
+  <div class="header-left">
+    <button 
+      mat-icon-button 
+      class="menu-button" 
+      (click)="onToggleSidenav()"
+      aria-label="Toggle menu">
+      <mat-icon>menu</mat-icon>
+    </button>
+    
+    <div class="brand-section">
+      <div class="brand-logo">
+        <mat-icon>confirmation_number</mat-icon>
+      </div>
+      <span class="brand-text" *ngIf="!sidebarOpen">Event Admin</span>
+    </div>
+  </div>
+
+  
+
+  <!-- Right Section - User Actions -->
+  <div class="header-right">
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <ng-container *ngFor="let action of quickActions">
+        <button 
+          mat-raised-button 
+          [color]="action.color"
+          class="quick-action-button"
+          [routerLink]="action.route"
+          [matTooltip]="action.label"
+          *ngIf="action.enabled">
+          <mat-icon>{{ action.icon }}</mat-icon>
+          <span class="action-label">{{ action.label }}</span>
+        </button>
+      </ng-container>
+    </div>
+
+
+  <ng-container *ngIf="authService.isAuthenticated() && currentUser">
+
+    <!-- User Menu -->
+<button 
+  mat-button 
+  class="user-menu-button"
+  [matMenuTriggerFor]="userMenu"
+  matTooltip="Account menu" >
+  
+  <div class="user-content">
+    <div class="user-avatar">            
+      {{ getAvatarInitials() }}
+    </div>
+    <div class="user-info">
+      <span class="user-name">{{ currentUser.firstName + ' ' +  currentUser.lastName}}</span>
+      <span class="user-role">{{ currentUser.roles }}</span>
+    </div>
+    
+    <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+  </div>
+  
+</button>
+  </ng-container>
+ <!-- Login/Register (When not authenticated) -->
+  <ng-container *ngIf="!authService.isAuthenticated()">
+    <button mat-button routerLink="/auth/login">
+      <mat-icon>login</mat-icon>
+      <span>Sign In</span>
+    </button>
+    
+    <button mat-raised-button color="accent" routerLink="/auth/register">
+      <mat-icon>person_add</mat-icon>
+      <span>Get Started</span>
+    </button>
+  </ng-container>
+  </div>
+</mat-toolbar>
+
+
+<!-- User Menu -->
+<mat-menu #userMenu="matMenu" class="user-menu" xPosition="before">
+  <div class="user-menu-header">
+    <div class="user-avatar-large">            
+      {{ getAvatarInitials() }}
+    </div>
+    <div class="user-details">
+      <h4>{{ currentUser?.firstName + ' ' +  currentUser?.lastName}}</h4>
+      <p>{{ currentUser?.email }}</p>
+      <span class="user-role-badge">{{ currentUser?.roles }}</span>
+    </div>
+  </div>
+  
+  <mat-divider></mat-divider>
+  
+  <button mat-menu-item routerLink="/admin/profile">
+    <mat-icon>person</mat-icon>
+    <span>My Profile</span>
+  </button>
+  
+  <button mat-menu-item routerLink="/admin/settings">
+    <mat-icon>settings</mat-icon>
+    <span>Account Settings</span>
+  </button>
+  
+  <mat-divider></mat-divider>
+  
+  <button mat-menu-item (click)="logout()" class="logout-button">
+    <mat-icon>logout</mat-icon>
+    <span>Sign Out</span>
+  </button>
+</mat-menu>

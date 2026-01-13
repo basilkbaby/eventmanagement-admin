@@ -1,0 +1,407 @@
+<!-- seat-section-editor.component.html -->
+<div class="seat-section-editor">
+  <!-- Header -->
+  <div class="editor-header">
+    <div class="header-left">
+      <h2 class="editor-title">Venue Layout Editor</h2>
+      <div class="layout-info">
+        <span class="info-item">
+          <span class="info-label">Sections:</span>
+          <span class="info-value">{{ sections.length }}</span>
+        </span>
+        <span class="info-item">
+          <span class="info-label">Capacity:</span>
+          <span class="info-value">{{ layout.totalCapacity | number }}</span>
+        </span>
+        <span class="info-item">
+          <span class="info-label">Grid:</span>
+          <span class="info-value">{{ rows }}×{{ cols }}</span>
+        </span>
+      </div>
+    </div>
+    
+    <div class="header-right">
+      <div class="save-status" [class.unsaved]="hasUnsavedChanges">
+        {{ hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved' }}
+      </div>
+      <button 
+        class="btn btn-primary" 
+        [disabled]="!hasUnsavedChanges || isLoading"
+        (click)="saveLayout()">
+        <span *ngIf="!isLoading">Save Layout</span>
+        <span *ngIf="isLoading">Saving...</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="editor-main">
+    <!-- Left Panel - Controls -->
+    <div class="editor-sidebar">
+      <!-- Section Creation Form -->
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">
+          {{ isEditing ? 'Edit Section' : 'Create New Section' }}
+        </h3>
+        
+        <div class="form-group">
+          <label class="form-label">Section Name</label>
+          <input 
+            type="text" 
+            class="form-control"
+            [(ngModel)]="sectionForm.name"
+            placeholder="Enter section name">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Section Type</label>
+          <div class="type-grid">
+            <button 
+              *ngFor="let type of sectionTypes"
+              class="type-button"
+              [class.active]="sectionForm.type === type.id"
+              (click)="onSectionTypeSelect(type.id)">
+              <span class="type-icon">{{ type.icon }}</span>
+              <span class="type-name">{{ type.name }}</span>
+              <span class="type-price" *ngIf="type.defaultPrice > 0">
+                £{{ type.defaultPrice }}
+              </span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Price (£)</label>
+          <input 
+            type="number" 
+            class="form-control"
+            [(ngModel)]="sectionForm.price"
+            min="0"
+            step="5">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Capacity</label>
+          <input 
+            type="number" 
+            class="form-control"
+            [(ngModel)]="sectionForm.capacity"
+            min="0">
+        </div>
+        
+        <!-- Seating Configuration -->
+        <div class="form-group" *ngIf="sectionForm.type === 'seated'">
+          <label class="form-label">Seating Configuration</label>
+          <div class="row-group">
+            <div class="row-item">
+              <label>Rows</label>
+              <input 
+                type="number" 
+                [(ngModel)]="sectionForm.rows"
+                min="1" 
+                max="50">
+            </div>
+            <div class="row-item">
+              <label>Seats per Row</label>
+              <input 
+                type="number" 
+                [(ngModel)]="sectionForm.seatsPerRow"
+                min="1" 
+                max="30">
+            </div>
+          </div>
+          
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox"
+                [(ngModel)]="sectionForm.hasAisle">
+              <span>Include Aisle</span>
+            </label>
+          </div>
+          
+          <div class="form-group" *ngIf="sectionForm.hasAisle">
+            <label class="form-label">Aisle Position</label>
+            <input 
+              type="range"
+              [(ngModel)]="sectionForm.aislePosition"
+              [min]="1"
+              [max]="sectionForm.seatsPerRow - 1">
+            <span class="range-value">After seat {{ sectionForm.aislePosition }}</span>
+          </div>
+        </div>
+        
+        <!-- Color Picker -->
+        <div class="form-group">
+          <label class="form-label">Section Color</label>
+          <div class="color-picker">
+            <input 
+              type="color"
+              [(ngModel)]="sectionForm.color">
+            <div class="color-preview" [style.background]="sectionForm.color"></div>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button 
+            *ngIf="isEditing"
+            class="btn btn-secondary"
+            (click)="cancelEdit()">
+            Cancel
+          </button>
+          <button 
+            *ngIf="isEditing"
+            class="btn btn-primary"
+            [disabled]="!sectionForm.name"
+            (click)="updateSection()">
+            Update Section
+          </button>
+          <div class="help-text" *ngIf="!isEditing && sectionForm.name">
+            <i>📌</i>
+            Click and drag on grid to place section
+          </div>
+        </div>
+      </div>
+      
+      <!-- Grid Settings -->
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Grid Settings</h3>
+        
+        <div class="form-group">
+          <label class="form-label">Template</label>
+          <select 
+            class="form-control"
+            [(ngModel)]="selectedTemplate"
+            (change)="onTemplateChange()">
+            <option *ngFor="let template of gridTemplates" [value]="template.id">
+              {{ template.name }} ({{ template.rows }}×{{ template.cols }})
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-group" *ngIf="selectedTemplate === 'custom'">
+          <div class="row-group">
+            <div class="row-item">
+              <label>Rows</label>
+              <input 
+                type="number"
+                [(ngModel)]="rows"
+                min="1" 
+                max="20">
+            </div>
+            <div class="row-item">
+              <label>Columns</label>
+              <input 
+                type="number"
+                [(ngModel)]="cols"
+                min="1" 
+                max="20">
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Cell Size</label>
+          <input 
+            type="range"
+            [(ngModel)]="cellSize"
+            min="30"
+            max="100">
+          <span class="range-value">{{ cellSize }}px</span>
+        </div>
+        
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox"
+              [(ngModel)]="showGrid">
+            <span>Show Grid</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Grid Area -->
+    <div class="editor-content">
+      <div class="grid-header">
+        <h3 class="grid-title">Venue Layout</h3>
+        <div class="grid-actions">
+          <button class="btn btn-outline" title="Zoom In" (click)="cellSize = Math.min(100, cellSize + 10)">
+            <i>🔍</i>
+          </button>
+          <button class="btn btn-outline" title="Zoom Out" (click)="cellSize = Math.max(30, cellSize - 10)">
+            <i>🔎</i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="grid-container">
+        <!-- Column Headers -->
+        <div class="grid-headers">
+          <div class="corner"></div>
+          <div 
+            *ngFor="let col of [].constructor(cols); let colIndex = index"
+            class="col-header"
+            [style.width.px]="cellSize">
+            {{ colIndex + 1 }}
+          </div>
+        </div>
+        
+        <!-- Grid Rows -->
+        <div 
+          *ngFor="let row of [].constructor(rows); let rowIndex = index"
+          class="grid-row">
+          <!-- Row Header -->
+          <div class="row-header" [style.height.px]="cellSize">
+            {{ rowIndex + 1 }}
+          </div>
+          
+          <!-- Grid Cells -->
+          <div 
+            *ngFor="let col of [].constructor(cols); let colIndex = index"
+            class="grid-cell"
+            [style.width.px]="cellSize"
+            [style.height.px]="cellSize"
+            [style.background]="getCellColor(rowIndex, colIndex)"
+            [class.grid-line]="showGrid"
+            (mousedown)="startDrag(rowIndex, colIndex)"
+            (mouseenter)="extendDrag(rowIndex, colIndex)"
+            (mouseup)="endDrag()"
+            (click)="onCellClick(rowIndex, colIndex)">
+            
+            <!-- Cell Content -->
+            <div class="cell-content">
+              <span class="cell-type">
+                {{ getCellType(rowIndex, colIndex) }}
+              </span>
+              <span class="cell-capacity" *ngIf="getCellCapacity(rowIndex, colIndex) > 0">
+                {{ getCellCapacity(rowIndex, colIndex) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Instructions -->
+      <div class="grid-instructions" *ngIf="!isEditing && sectionForm.name">
+        <div class="instruction">
+          <i>🖱️</i>
+          Click and drag on grid to place "{{ sectionForm.name }}" section
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Panel - Sections List -->
+    <div class="editor-sidebar right-sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Sections ({{ sections.length }})</h3>
+        
+        <div class="sections-list">
+          <div 
+            *ngFor="let section of sections"
+            class="section-item"
+            [class.active]="selectedSection?.id === section.id"
+            (click)="onSectionClick(section)">
+            
+            <div class="section-color" [style.background]="section.color"></div>
+            
+            <div class="section-info">
+              <div class="section-header">
+                <span class="section-name">{{ section.name }}</span>
+                <span class="section-type">{{ section.type | titlecase }}</span>
+              </div>
+              
+              <div class="section-details">
+                <span class="detail">
+                  <i>👥</i>
+                  {{ section.capacity }} seats
+                </span>
+                <span class="detail" *ngIf="section.price > 0">
+                  <i>£</i>
+                  {{ section.price }}
+                </span>
+                <span class="detail">
+                  <i>📏</i>
+                  {{ section.gridArea.endRow - section.gridArea.startRow + 1 }}×
+                  {{ section.gridArea.endCol - section.gridArea.startCol + 1 }}
+                </span>
+              </div>
+            </div>
+            
+            <button 
+              class="delete-btn"
+              (click)="deleteSection(section.id); $event.stopPropagation()"
+              title="Delete section">
+              ×
+            </button>
+          </div>
+        </div>
+        
+        <div class="empty-state" *ngIf="sections.length === 0">
+          <div class="empty-icon">🎭</div>
+          <h4>No sections added</h4>
+          <p>Create a new section to start building your venue layout</p>
+        </div>
+      </div>
+      
+      <!-- Selected Section Details -->
+      <div class="sidebar-section" *ngIf="selectedSection">
+        <h3 class="sidebar-title">Section Details</h3>
+        
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Name</span>
+            <span class="detail-value">{{ selectedSection.name }}</span>
+          </div>
+          
+          <div class="detail-item">
+            <span class="detail-label">Type</span>
+            <span class="detail-value">{{ selectedSection.type | titlecase }}</span>
+          </div>
+          
+          <div class="detail-item">
+            <span class="detail-label">Price</span>
+            <span class="detail-value">£{{ selectedSection.price }}</span>
+          </div>
+          
+          <div class="detail-item">
+            <span class="detail-label">Capacity</span>
+            <span class="detail-value">{{ selectedSection.capacity }} seats</span>
+          </div>
+          
+          <div class="detail-item">
+            <span class="detail-label">Grid Position</span>
+            <span class="detail-value">
+              R{{ selectedSection.gridArea.startRow + 1 }}-{{ selectedSection.gridArea.endRow + 1 }},
+              C{{ selectedSection.gridArea.startCol + 1 }}-{{ selectedSection.gridArea.endCol + 1 }}
+            </span>
+          </div>
+          
+          <div class="detail-item" *ngIf="selectedSection.seatingConfig">
+            <span class="detail-label">Seating</span>
+            <span class="detail-value">
+              {{ selectedSection.seatingConfig.rows }} rows × 
+              {{ selectedSection.seatingConfig.seatsPerRow }} seats
+            </span>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button 
+            class="btn btn-outline"
+            (click)="sectionSelect.emit(selectedSection)">
+            <i>🪑</i>
+            Edit Seats
+          </button>
+          <button 
+            class="btn btn-outline"
+            (click)="onSectionClick(selectedSection)">
+            <i>✏️</i>
+            Edit Section
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

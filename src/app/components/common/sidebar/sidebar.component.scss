@@ -1,0 +1,174 @@
+.sidebar {
+  width: 280px;
+  height: calc(100vh - 70px); // Full height minus header
+  position: fixed;
+  left: 0;
+  top: 70px; // Start below header
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-color);
+  box-shadow: var(--shadow-2);
+  transition: transform 0.3s ease;
+  z-index: 90;
+  overflow-y: auto;
+  
+  &.sidebar-collapsed {
+    width: 72px;
+  }
+  
+  // Mobile sidebar - overlay style
+  &.mobile-sidebar {
+    transform: translateX(-100%);
+    z-index: 1000;
+    
+    &:not(.sidebar-collapsed) {
+      transform: translateX(0);
+    }
+  }
+  
+  // Desktop sidebar - always visible
+  &:not(.mobile-sidebar) {
+    transform: translateX(0);
+    
+    &.sidebar-collapsed {
+      width: 72px;
+    }
+  }
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 0;
+  
+  .nav-list {
+    padding: 0;
+    
+    .nav-item {
+      margin: 4px 8px;
+      border-radius: 8px;
+      
+      .nav-icon {
+        color: var(--text-secondary);
+      }
+      
+      .nav-label {
+        font-weight: 500;
+        color: var(--text-color);
+        
+        .nav-badge {
+          background: var(--primary-color);
+          color: white;
+          padding: 2px 6px;
+          border-radius: 10px;
+          font-size: 10px;
+          font-weight: 600;
+          margin-left: 8px;
+        }
+      }
+      
+      &.active {
+        background: var(--hover-color);
+        
+        .nav-icon {
+          color: var(--primary-color);
+        }
+        
+        .nav-label {
+          color: var(--primary-color);
+          font-weight: 600;
+        }
+      }
+      
+      &:hover:not(.active) {
+        background: var(--hover-color);
+      }
+    }
+    
+    .nav-badge-mini {
+      background: var(--primary-color);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+  }
+}
+
+.sidebar-footer {
+  padding: 16px;
+  
+  .upgrade-card {
+    background: var(--bg-color);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    
+    .upgrade-icon {
+      color: var(--primary-color);
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      margin-bottom: 8px;
+    }
+    
+    .upgrade-info {
+      margin-bottom: 12px;
+      
+      strong {
+        display: block;
+        color: var(--text-color);
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      
+      span {
+        color: var(--text-secondary);
+        font-size: 12px;
+      }
+    }
+    
+    .upgrade-btn {
+      width: 100%;
+      font-size: 12px;
+      font-weight: 500;
+    }
+  }
+}
+
+.copyright {
+  margin-top: 16px;
+}
+
+.copyright-content {
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.copyright-text {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  font-family: inherit;
+}
+
+/* For dark theme support */
+.dark-theme .copyright-text {
+  color: rgba(255, 255, 255, 0.6);
+}
+// Mobile overlay when sidebar is open
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 95;
+  }
+}

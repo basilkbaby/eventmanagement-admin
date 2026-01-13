@@ -1,0 +1,303 @@
+<div class="seat-selection-layout" *ngIf="!loading">
+
+  <!-- Main Canvas Area -->
+  <main class="canvas-area">
+    <div class="canvas-wrapper">
+      <!-- SVG Component -->
+      <app-seat-map-visual [venueData]="venueData" [seats]="seats" [selectedSeatIds]="selectedSeatIds"
+        [hoveredSeatId]="hoveredSeatId" [scale]="scale" [offsetX]="offsetX" [offsetY]="offsetY" [rowLabels]="rowLabels"
+        (seatClicked)="onSeatClicked($event)" (seatHovered)="onSeatHovered($event)"
+        (dragStarted)="onDragStarted($event)" (dragMoved)="onDragMoved($event)" (dragEnded)="onDragEnded()"
+        (zoomed)="onZoomed($event)" class="seat-map-visual">
+      </app-seat-map-visual>
+    </div>
+  </main>
+
+  <!-- Sidebar / Mobile Bottom Sheet -->
+  <aside class="controls-sidebar expanded">
+
+    <!-- Desktop Header -->
+    <div class="compact-header">
+      <div class="event-info-ultra-compact">
+        <h1>{{ venueData.eventName }}</h1>
+        <div class="event-details-minimal">
+          <span class="detail-item">
+            {{ venueData.eventDate | formatDate }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Actions Panel -->
+    <div class="admin-actions-panel">
+      <h3>Actions</h3>
+      
+      <!-- Action Selection -->
+      <div class="action-selection">
+        <div class="action-buttons">
+          <button class="action-btn" 
+                  [class.active]="adminAction === 'block'"
+                  (click)="setAdminAction('block')">
+            <i class="bi bi-slash-circle"></i>
+            <span>Block</span>
+          </button>
+          <button class="action-btn" 
+                  [class.active]="adminAction === 'unblock'"
+                  (click)="setAdminAction('unblock')">
+            <i class="bi bi-check-circle"></i>
+            <span>Unblock</span>
+          </button>
+          <!-- <button class="action-btn" 
+                  [class.active]="adminAction === 'reserve'"
+                  (click)="setAdminAction('reserve')">
+            <i class="bi bi-clock"></i>
+            <span>Reserve</span>
+          </button> -->
+          <button class="action-btn" 
+                  [class.active]="adminAction === 'purchase'"
+                  (click)="setAdminAction('purchase')">
+            <i class="bi bi-credit-card"></i>
+            <span>Purchase</span>
+          </button>
+          <!-- <button class="action-btn" 
+                  [class.active]="adminAction === 'release'"
+                  (click)="setAdminAction('release')">
+            <i class="bi bi-arrow-clockwise"></i>
+            <span>Release</span>
+          </button> -->
+        </div>
+        
+        <!-- Current Action Info -->
+        <div class="current-action-info">
+          <div class="action-icon">
+            <i [class]="'bi ' + getActionIcon()"></i>
+          </div>
+          <div class="action-details">
+            <h4>{{ getActionButtonText() }}</h4>
+            <p *ngIf="adminAction === 'reserve' || adminAction === 'purchase'">
+              Select seats and enter customer information below
+            </p>
+            <p *ngIf="adminAction === 'block' || adminAction === 'unblock' || adminAction === 'release'">
+              Select seats to apply action
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer Information (for reserve/purchase) -->
+      <div class="customer-info-panel" *ngIf="adminAction === 'reserve' || adminAction === 'purchase'">
+        <h4>Customer Information</h4>
+        <div class="customer-form">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" 
+                   class="form-control" 
+                   placeholder="Customer Name"
+                   [(ngModel)]="customerInfo.name"
+                   required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" 
+                     class="form-control" 
+                     placeholder="Email"
+                     [(ngModel)]="customerInfo.email">
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" 
+                     class="form-control" 
+                     placeholder="Phone"
+                     [(ngModel)]="customerInfo.phone">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" 
+                      rows="2" 
+                      placeholder="Notes (optional)"
+                      [(ngModel)]="customerInfo.notes"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected Seats Summary -->
+    <div class="selected-summary" *ngIf="selectedSeats.length > 0">
+
+      <div class="summary-header">
+        <h3>Selected Seats ({{ selectedSeats.length }})</h3>
+        <button class="clear-btn" (click)="clearSelection()">Clear All</button>
+      </div>
+
+      <div class="seats-grid">
+        <div class="seat-tag" *ngFor="let seat of selectedSeats; let i = index">
+          <span class="seat-label" *ngIf="!seat.isStandingArea">
+            {{ seat.seatId }}
+          </span>
+          <span class="seat-label" *ngIf="seat.isStandingArea">
+           {{ seat.seatId }}
+          </span>
+          <button class="remove-tag" (click)="onRemoveSeat(seat.seatId, $event)" title="Remove">×</button>
+        </div>
+      </div>
+
+      <!-- Standing ticket message and add button -->
+      <div class="standing-info-section" *ngIf="hasStandingTickets()">
+        <div class="standing-message">
+          <span class="info-icon">ℹ️</span>
+          <span>Standing tickets are for general admission areas and don't have specific seats.</span>
+        </div>
+        
+        <button class="add-more-standing-btn" (click)="addAnotherStandingTicket()">
+          + Add Another Standing Ticket
+        </button>
+      </div>
+
+      <div class="quick-summary" *ngIf="adminAction=='reserve' || adminAction==='purchase'">
+        <div class="price-breakdown">
+          <div class="price-item" *ngFor="let seat of selectedSeats">
+            <span>
+              <span *ngIf="!seat.isStandingArea">
+                {{ seat.seatId }}
+              </span>
+              <span *ngIf="seat.isStandingArea">
+                {{ seat.seatId }}
+              </span>
+            </span>
+            <span>{{ formatPrice(seat.price) }}</span>
+          </div>
+        </div>
+        <div class="total-price">
+          <span>Total:</span>
+          <span class="amount">{{ formatPrice(getTotalPrice()) }}</span>
+        </div>
+      </div>
+
+      <!-- Admin Action Button -->
+      <div class="admin-action-section">
+        <button class="btn-admin-action" 
+                [ngClass]="'action-' + adminAction"
+                (click)="applyAdminAction()"
+                [disabled]="isLoading || selectedSeats.length === 0 || (adminAction === 'reserve' || adminAction === 'purchase') && !customerInfo.name">
+          
+          <span class="default-content" *ngIf="!isLoading">
+            <i [class]="'bi ' + getActionIcon()" class="me-1"></i>
+            {{ getActionButtonText() }}
+          </span>
+
+          <span class="loading-content" *ngIf="isLoading">
+            <span class="spinner"></span>
+            Processing...
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state-compact" *ngIf="selectedSeats.length === 0">
+      <div class="empty-icon">👆</div>
+      <p>Click on seats to select them for {{ adminAction === 'reserve' ? 'reservation' : adminAction }}</p>
+      <p class="hint" *ngIf="getUniqueTicketTiers().length > 0">
+        Available seats are shown in
+        <span *ngFor="let tier of getUniqueTicketTiers(); let last = last">
+          <span [style.color]="tier.color">{{ tier.name.toLowerCase() }}</span>
+          <span *ngIf="!last">, </span>
+        </span>
+      </p>
+    </div>
+
+    <!-- Legend -->
+    <div class="compact-legend">
+      <h4>Seat Types</h4>
+
+      <!-- Ticket Tiers -->
+      <div class="legend-container">
+        <div class="legend-item-compact" *ngFor="let tier of getUniqueTicketTiers()">
+          <div class="legend-color-compact" [style.background-color]="tier.color"></div>
+          <span class="legend-label-compact">{{ tier.name }}</span>
+          <span class="legend-price-compact">{{ formatPrice(tier.price) }}</span>
+        </div>
+      </div>
+
+      <!-- Seat Status -->
+      <div class="legend-container">
+        <div class="legend-item-compact" *ngFor="let status of getDisplayStatuses()">
+          <div class="legend-color-compact" [style.background-color]="seatStatusConfig[status.status].color"
+            [style.border]="status.status === SeatStatus.PARTIAL_VIEW ? '1px solid #999' : 'none'">
+            <div *ngIf="status.status === SeatStatus.PARTIAL_VIEW" class="partial-view-compact">
+              <div class="half-left" [style.background-color]="seatStatusConfig[SeatStatus.AVAILABLE].color"></div>
+              <div class="half-right" [style.background-color]="seatStatusConfig[SeatStatus.UNAVAILABLE].color"></div>
+            </div>
+          </div>
+          <span class="legend-label-compact">{{ status.displayText }}</span>
+          <span class="legend-price-compact">{{ status.price }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Zoom Controls -->
+    <div class="zoom-controls-compact">
+      <h4>Controls</h4>
+      <div class="zoom-buttons-compact">
+        <button (click)="zoomIn()" title="Zoom In">
+          <span class="zoom-icon">+</span>
+          <span>Zoom In</span>
+        </button>
+        <button (click)="zoomOut()" title="Zoom Out">
+          <span class="zoom-icon">−</span>
+          <span>Zoom Out</span>
+        </button>
+        <button (click)="resetView()" title="Reset View">
+          <span class="zoom-icon">↺</span>
+          <span>Reset</span>
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showConfirmationModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>{{ confirmationData.title }}</h3>
+      </div>
+      <div class="modal-body">
+        <p>{{ confirmationData.message }}</p>
+        
+        <div class="modal-alert" [ngClass]="'alert-' + confirmationData.action">
+          <i [class]="'bi ' + getActionIcon()" class="me-2"></i>
+          <span *ngIf="confirmationData.action === 'block'">
+            Blocked seats will be unavailable for customers.
+          </span>
+          <span *ngIf="confirmationData.action === 'reserve'">
+            Reservation expires in 24 hours.
+          </span>
+          <span *ngIf="confirmationData.action === 'purchase'">
+            This action cannot be undone.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" 
+                (click)="showConfirmationModal = false"
+                [disabled]="isLoading">
+          Cancel
+        </button>
+        <button class="btn-confirm" 
+                [ngClass]="'confirm-' + confirmationData.action"
+                (click)="confirmAction()"
+                [disabled]="isLoading">
+          <span *ngIf="!isLoading">Confirm</span>
+          <span *ngIf="isLoading">
+            <span class="spinner-small"></span>
+            Processing...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

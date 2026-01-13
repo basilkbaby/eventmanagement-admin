@@ -1,0 +1,204 @@
+.design-tools {
+  background: white;
+  border-right: 1px solid #e0e0e0;
+  padding: 20px;
+  overflow-y: auto;
+  height: 100%;
+
+  h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: 2px solid #0056b3;
+    padding-bottom: 8px;
+  }
+
+  .tool-section {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    h4 {
+      margin: 0 0 12px 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .layout-description {
+      font-size: 12px;
+      color: #666;
+      margin: 4px 0 0 0;
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    .tool-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .tool-btn {
+        justify-content: flex-start;
+        padding: 8px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        background: white;
+        cursor: pointer;
+        font-size: 14px;
+        
+        &.active {
+          background: #0056b3;
+          color: white;
+          border-color: #0056b3;
+        }
+
+        &:hover:not(.active) {
+          background: #f8f9fa;
+          border-color: #0056b3;
+        }
+      }
+    }
+
+    .custom-section-form {
+      .form-group {
+        margin-bottom: 12px;
+
+        label {
+          display: block;
+          color: #666;
+          font-size: 12px;
+          margin-bottom: 4px;
+          font-weight: 500;
+        }
+
+        input, select {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+          transition: border-color 0.3s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
+          }
+        }
+
+        input[type="color"] {
+          height: 40px;
+          cursor: pointer;
+        }
+      }
+
+      .form-row {
+        display: flex;
+        gap: 8px;
+
+        .form-group {
+          flex: 1;
+        }
+      }
+
+      .create-btn {
+        width: 100%;
+        background: #0056b3;
+        color: white;
+        margin-top: 8px;
+        font-weight: 500;
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        
+        &:hover:not(:disabled) {
+          background: #004494;
+        }
+        
+        &:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+      }
+    }
+
+    .section-templates {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .template-card {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+
+        &:hover {
+          border-color: #0056b3;
+          background: #f8f9fa;
+          transform: translateY(-1px);
+        }
+
+        .template-color {
+          width: 16px;
+          height: 16px;
+          border-radius: 2px;
+          margin-right: 12px;
+          border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .template-info {
+          display: flex;
+          flex-direction: column;
+          
+          .template-name {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+          }
+
+          .template-position {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+          }
+        }
+      }
+    }
+
+    .stats {
+      .stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .stat-label {
+          color: #666;
+          font-size: 14px;
+        }
+
+        .stat-value {
+          color: #333;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}

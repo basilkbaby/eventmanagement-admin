@@ -1,0 +1,169 @@
+<div class="venue-form-page">
+  <div class="venue-form-container">
+    <!-- Header -->
+    <div class="form-header">
+      <div class="header-content">
+        <button mat-button (click)="onCancel()" class="back-btn">
+          ← Back to Venues
+        </button>
+        <h1>{{ title }}</h1>
+        <div class="header-actions">
+          <button mat-button (click)="onCancel()" class="cancel-btn">Cancel</button>
+          <button mat-raised-button 
+                  (click)="onSubmit()" 
+                  [disabled]="!isFormValid()"
+                  class="submit-btn">
+            {{ submitButtonText }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Content -->
+    <div class="form-content">
+      <!-- Basic Information -->
+      <div class="form-section">
+        <h3>Basic Information</h3>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="venueName">Venue Name *</label>
+            <input type="text" 
+                   id="venueName"
+                   [(ngModel)]="formData.name"
+                   placeholder="Enter venue name">
+          </div>
+
+          <div class="form-group full-width">
+            <label for="venueAddress">Address *</label>
+            <textarea id="venueAddress"
+                      [(ngModel)]="formData.address"
+                      placeholder="Enter full address"
+                      rows="2"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="venueCity">City *</label>
+            <input type="text" 
+                   id="venueCity"
+                   [(ngModel)]="formData.city"
+                   placeholder="Enter city">
+          </div>
+
+          <div class="form-group">
+            <label for="venueCapacity">Capacity *</label>
+            <input type="number" 
+                   id="venueCapacity"
+                   [(ngModel)]="formData.capacity"
+                   min="1"
+                   placeholder="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Information -->
+      <div class="form-section">
+        <h3>Contact Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="contactEmail">Email *</label>
+            <input type="email" 
+                   id="contactEmail"
+                   [(ngModel)]="formData.contactEmail"
+                   placeholder="venue@example.com">
+          </div>
+
+          <div class="form-group">
+            <label for="contactPhone">Phone *</label>
+            <input type="tel" 
+                   id="contactPhone"
+                   [(ngModel)]="formData.contactPhone"
+                   placeholder="+1 (555) 123-4567">
+          </div>
+        </div>
+      </div>
+
+      <!-- Seating Plan -->
+      <div class="form-section">
+        <h3>Seating Configuration</h3>
+        <div class="form-group">
+          <label for="seatingPlan">Seating Plan Type *</label>
+          <select id="seatingPlan" [(ngModel)]="formData.seatingPlan">
+            <option value="">Select seating plan</option>
+            <option *ngFor="let plan of seatingPlanOptions" [value]="plan">
+              {{ plan }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Amenities -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3>Amenities & Features</h3>
+          <span class="selected-count">{{ getAmenitiesCount() }} selected</span>
+        </div>
+        <div class="amenities-grid">
+          <div *ngFor="let amenity of availableAmenities" 
+               class="amenity-option"
+               [class.selected]="isAmenitySelected(amenity)"
+               (click)="onAmenityToggle(amenity)">
+            <span class="amenity-checkbox">
+              {{ isAmenitySelected(amenity) ? '✓' : '' }}
+            </span>
+            <span class="amenity-label">{{ amenity }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="form-section" *ngIf="mode === 'edit'">
+        <h3>Status</h3>
+        <div class="status-options">
+          <label class="status-option">
+            <input type="radio" 
+                   name="status" 
+                   value="active"
+                   [(ngModel)]="formData.status">
+            <span class="radio-label">
+              <span class="status-indicator active"></span>
+              Active
+            </span>
+          </label>
+          
+          <label class="status-option">
+            <input type="radio" 
+                   name="status" 
+                   value="inactive"
+                   [(ngModel)]="formData.status">
+            <span class="radio-label">
+              <span class="status-indicator inactive"></span>
+              Inactive
+            </span>
+          </label>
+          
+          <label class="status-option">
+            <input type="radio" 
+                   name="status" 
+                   value="maintenance"
+                   [(ngModel)]="formData.status">
+            <span class="radio-label">
+              <span class="status-indicator maintenance"></span>
+              Under Maintenance
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Footer -->
+    <div class="form-footer">
+      <button mat-button (click)="onCancel()" class="cancel-btn">Cancel</button>
+      <button mat-raised-button 
+              (click)="onSubmit()" 
+              [disabled]="!isFormValid()"
+              class="submit-btn">
+        {{ submitButtonText }}
+      </button>
+    </div>
+  </div>
+</div>

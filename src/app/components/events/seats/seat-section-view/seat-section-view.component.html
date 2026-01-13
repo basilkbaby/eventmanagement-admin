@@ -1,0 +1,352 @@
+<div class="seat-section-view">
+  <!-- Header with Legend -->
+  <div class="view-header">
+    <div class="header-content">
+      <div class="venue-info">
+        <h1>{{ layout?.name || 'Venue Layout' }}</h1>
+        <p class="venue-description">Total Capacity: {{ getTotalCapacity() }} seats • {{ getTotalAvailable() }} available</p>
+      </div>
+      
+      <!-- Legend moved to header -->
+      <div class="header-legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: #1e293b;"></div>
+          <span>Stage Area</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #3b82f6;"></div>
+          <span>Middle Sections (£150)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #10b981;"></div>
+          <span>Wing Sections (£120)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #ef4444;"></div>
+          <span>Standing Area (£80)</span>
+        </div>
+      </div>
+      
+      <div class="venue-stats">
+        <div class="stat-item">
+          <div class="stat-value">{{ getOverallOccupancy() }}%</div>
+          <div class="stat-label">Occupied</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ currentSections.length || 0 }}</div>
+          <div class="stat-label">Sections</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="view-main">
+    <!-- Floor Plan -->
+    <div class="floor-plan-container">
+      <div class="floor-plan">
+        
+        <!-- Simple container for all sections -->
+        <div class="venue-container">
+          
+          <!-- Stage -->
+          <div class="section stage-section"
+               [ngStyle]="{
+                 'top': '5%',
+                 'left': '25%',
+                 'width': '50%',
+                 'height': '15%',
+                 'background': '#1e293b'
+               }"
+               (click)="selectSection(getSectionByType('stage')!)">
+            <div class="stage-label">STAGE</div>
+          </div>
+          
+          <!-- All other sections -->
+          <ng-container *ngFor="let section of getSeatingSections()">
+            <div class="section seating-section"
+                 [class.selected]="selectedSection?.id === section.id"
+                 [ngStyle]="getSectionStyle(section)"
+                 (click)="selectSection(section)">
+              <div class="section-label">
+                <div class="section-name">{{ section.name }}</div>
+                <div class="section-info">{{ section.capacity }} seats • £{{ section.price }}</div>
+                <div class="section-available">{{ section.available }} available</div>
+              </div>
+            </div>
+          </ng-container>
+          
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- Side Panel with Multiple Views -->
+    <div class="side-panel">
+      
+      <!-- Overview View -->
+      <div class="panel-view" *ngIf="viewMode === 'overview'">
+        <div class="panel-header">
+          <h2>{{ selectedSection ? selectedSection.name : 'Venue Overview' }}</h2>
+          <span *ngIf="selectedSection" class="section-type">
+            {{ selectedSection.type }}
+          </span>
+        </div>
+        
+        <div class="selected-section" *ngIf="selectedSection; else noSelection">
+          <div class="section-preview" [style.background]="selectedSection.color">
+            <h3>{{ selectedSection.name }}</h3>
+            <div class="preview-info">
+              <span class="price">{{ getPriceDisplay(selectedSection) }}</span>
+              <span class="capacity">{{ selectedSection.capacity }} seats</span>
+            </div>
+          </div>
+          
+          <div class="section-details">
+            <div class="detail-row">
+              <span class="detail-label">Section:</span>
+              <span class="detail-value">{{ selectedSection.name }}</span>
+            </div>
+            
+            <div class="detail-row">
+              <span class="detail-label">Type:</span>
+              <span class="detail-value">{{ selectedSection.type }}</span>
+            </div>
+            
+            <div class="detail-row" *ngIf="selectedSection.price > 0">
+              <span class="detail-label">Price per Seat:</span>
+              <span class="detail-value">£{{ selectedSection.price }}</span>
+            </div>
+            
+            <div class="detail-row" *ngIf="hasSeats(selectedSection)">
+              <span class="detail-label">Total Capacity:</span>
+              <span class="detail-value">{{ selectedSection.capacity }} seats</span>
+            </div>
+            
+            <div class="detail-row" *ngIf="hasSeats(selectedSection)">
+              <span class="detail-label">Available Seats:</span>
+              <span class="detail-value">{{ selectedSection.available }}</span>
+            </div>
+            
+            <div class="detail-row" *ngIf="hasSeats(selectedSection)">
+              <span class="detail-label">Occupancy:</span>
+              <span class="detail-value">{{ getOccupancyPercentage(selectedSection) }}%</span>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="section-actions">
+              <button class="btn btn-primary" 
+                      *ngIf="hasSeats(selectedSection) && selectedSection.available > 0"
+                      (click)="goToSeatSelection(selectedSection)">
+                Select Seats
+              </button>
+              
+              <button class="btn btn-secondary" 
+                      (click)="startEdit(selectedSection)">
+                Edit Section
+              </button>
+              
+              <button class="btn btn-outline" 
+                      *ngIf="!hasSeats(selectedSection)">
+                View Area Details
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <ng-template #noSelection>
+          <div class="no-selection">
+            <div class="empty-state">
+              <div class="empty-icon">🏟️</div>
+              <h3>No Section Selected</h3>
+              <p>Click on any section in the floor plan to view details</p>
+              
+              <!-- All Sections List -->
+              <div class="all-sections-mini">
+                <h4>All Sections</h4>
+                <div class="sections-list-mini">
+                  <div *ngFor="let section of currentSections" 
+                       class="section-item-mini"
+                       (click)="selectSection(section)">
+                    <div class="item-color" [style.background]="section.color"></div>
+                    <div class="item-info">
+                      <div class="item-name">{{ section.name }}</div>
+                      <div class="item-details">
+                        <span>{{ section.capacity }} seats</span>
+                        <span *ngIf="section.price > 0">• £{{ section.price }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+      
+      <!-- Edit View -->
+      <div class="panel-view" *ngIf="viewMode === 'edit' && editedSection">
+        <div class="panel-header">
+          <h2>Edit {{ editedSection.name }}</h2>
+          <button class="btn-back" (click)="cancelEdit()">← Back</button>
+        </div>
+        
+        <div class="edit-form">
+          <div class="form-group">
+            <label for="sectionName">Section Name</label>
+            <input type="text" id="sectionName" 
+                   [(ngModel)]="editedSection.name"
+                   class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label for="sectionPrice">Price per Seat (£)</label>
+            <input type="number" id="sectionPrice" 
+                   [(ngModel)]="editedSection.price"
+                   min="0" step="10"
+                   class="form-control">
+          </div>
+          
+          <div class="form-group" *ngIf="hasSeats(editedSection)">
+            <label for="sectionCapacity">Total Capacity</label>
+            <input type="number" id="sectionCapacity" 
+                   [(ngModel)]="editedSection.capacity"
+                   min="1"
+                   class="form-control"
+                   (change)="updateAvailableOnCapacityChange()">
+          </div>
+          
+          <div class="form-group" *ngIf="hasSeats(editedSection)">
+            <label for="sectionAvailable">Available Seats</label>
+            <input type="number" id="sectionAvailable" 
+                   [(ngModel)]="editedSection.available"
+                   [max]="editedSection.capacity"
+                   min="0"
+                   class="form-control">
+            <small class="form-hint">
+              Max: {{ editedSection.capacity }} seats
+            </small>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group" *ngIf="editedSection.seatingConfig">
+              <label for="sectionRows">Number of Rows</label>
+              <input type="number" id="sectionRows" 
+                     [(ngModel)]="editedSection.seatingConfig.rows"
+                     min="1"
+                     class="form-control">
+            </div>
+            
+            <div class="form-group" *ngIf="editedSection.seatingConfig">
+              <label for="seatsPerRow">Seats per Row</label>
+              <input type="number" id="seatsPerRow" 
+                     [(ngModel)]="editedSection.seatingConfig.seatsPerRow"
+                     min="1"
+                     class="form-control">
+            </div>
+          </div>
+          
+          <div class="form-group" *ngIf="editedSection.rowOffset !== undefined">
+            <label for="rowOffset">Row Offset</label>
+            <input type="number" id="rowOffset" 
+                   [(ngModel)]="editedSection.rowOffset"
+                   min="0"
+                   class="form-control">
+            <small class="form-hint">
+              Section starts from row {{ (editedSection.rowOffset || 0) + 1 }}
+            </small>
+          </div>
+          
+          <div class="form-actions">
+            <button class="btn btn-primary" (click)="saveEdit()">
+              Save Changes
+            </button>
+            <button class="btn btn-outline" (click)="cancelEdit()">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Seat Selection View -->
+      <div class="panel-view" *ngIf="viewMode === 'seats' && selectedSection">
+        <div class="panel-header">
+          <h2>Select Seats</h2>
+          <button class="btn-back" (click)="backToOverview()">← Back</button>
+        </div>
+        
+        <div class="seat-selection-view">
+          <div class="selection-header">
+            <h3>{{ selectedSection.name }}</h3>
+            <p class="price-info">£{{ selectedSection.price }} per seat</p>
+          </div>
+          
+          <div class="seat-map-container" *ngIf="selectedSection.seatingConfig">
+            <!-- Simple seat grid -->
+            <div class="seat-grid">
+              <div class="stage-indicator">Stage</div>
+              
+              <div class="rows-container">
+                <div *ngFor="let row of getRowsArray(selectedSection.seatingConfig.rows); let rowIndex = index"
+                     class="seat-row">
+                  <div class="row-label">Row {{ rowIndex + 1 + (selectedSection.rowOffset || 0) }}</div>
+                  <div class="seats-in-row">
+                    <div *ngFor="let seat of getSeatsArray(selectedSection.seatingConfig.seatsPerRow); let seatIndex = index"
+                         class="seat"
+                         [class.aisle]="isAisleSeat(seatIndex, selectedSection.seatingConfig!)"
+                         (click)="toggleSeatSelection(rowIndex, seatIndex)">
+                      <span class="seat-number">{{ seatIndex + 1 }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="seat-legend">
+              <div class="legend-item">
+                <div class="seat-sample available"></div>
+                <span>Available</span>
+              </div>
+              <div class="legend-item">
+                <div class="seat-sample selected"></div>
+                <span>Selected</span>
+              </div>
+              <div class="legend-item">
+                <div class="seat-sample aisle"></div>
+                <span>Aisle</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="selection-summary">
+            <div class="summary-header">
+              <h4>Your Selection</h4>
+              <span class="seat-count">0 seats selected</span>
+            </div>
+            
+            <div class="selected-seats-list">
+              <!-- Selected seats will appear here -->
+              <div class="no-seats-selected">
+                No seats selected yet
+              </div>
+            </div>
+            
+            <div class="total-price">
+              <div class="price-label">Total:</div>
+              <div class="price-amount">£0</div>
+            </div>
+            
+            <div class="selection-actions">
+              <button class="btn btn-primary" [disabled]="true">
+                Confirm Selection
+              </button>
+              <button class="btn btn-outline" (click)="backToOverview()">
+                Back to Section
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

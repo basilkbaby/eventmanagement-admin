@@ -1,0 +1,74 @@
+<div class="user-form">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        {{ user ? 'Edit User' : 'Add New User' }}
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form class="user-form-fields">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>First Name</mat-label>
+            <input matInput [(ngModel)]="formData.firstName" name="firstName" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Last Name</mat-label>
+            <input matInput [(ngModel)]="formData.lastName" name="lastName" required>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="form-field full-width">
+          <mat-label>Email</mat-label>
+          <input matInput [(ngModel)]="formData.email" name="email" type="email" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field full-width">
+          <mat-label>Phone</mat-label>
+          <input matInput [(ngModel)]="formData.phone" name="phone">
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Role</mat-label>
+            <mat-select [(ngModel)]="formData.role" name="role">
+              <mat-option value="user">User</mat-option>
+              <mat-option value="manager">Manager</mat-option>
+              <mat-option value="admin">Administrator</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Status</mat-label>
+            <mat-select [(ngModel)]="formData.status" name="status">
+              <mat-option value="active">Active</mat-option>
+              <mat-option value="inactive">Inactive</mat-option>
+              <mat-option value="suspended">Suspended</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Permissions Section -->
+        <div class="permissions-section">
+          <h4>Permissions</h4>
+          <div class="permissions-grid">
+            <mat-checkbox *ngFor="let permission of permissionOptions"
+                         [checked]="formData.permissions.includes(permission.value)"
+                         (change)="togglePermission(permission.value)">
+              {{ permission.label }}
+            </mat-checkbox>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-button (click)="onCancel()">Cancel</button>
+      <button mat-raised-button color="primary" (click)="onSave()">
+        {{ user ? 'Update User' : 'Create User' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

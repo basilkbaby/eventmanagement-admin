@@ -1,0 +1,24 @@
+<div class="app-container">
+  <!-- Header -->
+  <app-header 
+    [sidebarOpen]="isSidebarOpen"
+    [isMobile]="isMobile"
+    (toggleSidebar)="onSidebarToggle()">
+  </app-header>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Sidebar -->
+    <app-sidebar 
+      [isOpen]="isSidebarOpen"
+      [isMobile]="isMobile">
+    </app-sidebar>
+
+    <!-- Content Area -->
+    <main class="content-area" [class.content-shifted]="isSidebarOpen && !isMobile">
+      <div class="content-wrapper">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
+</div>

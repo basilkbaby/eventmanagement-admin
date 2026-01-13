@@ -1,0 +1,150 @@
+<div class="venues-list-container">
+  <!-- Header -->
+  <div class="header-section">
+    <div class="header-title">
+      <h2>Manage Venues</h2>
+      <span class="admin-badge">Sarah Wilson Administrator</span>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button class="create-btn" (click)="createVenue()">
+        + Create Venue
+      </button>
+      <button mat-button class="export-btn" (click)="exportReport()">
+        Export Report
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-section">
+    <div class="stat-card">
+      <span class="stat-number">{{ venues.length }}</span>
+      <span class="stat-label">Total Venues</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">{{ activeVenuesCount }}</span>
+      <span class="stat-label">Active Venues</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">{{ totalCapacity.toLocaleString() }}</span>
+      <span class="stat-label">Total Capacity</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">{{ filteredVenues.length }}</span>
+      <span class="stat-label">Showing</span>
+    </div>
+  </div>
+
+  <!-- Controls Section -->
+  <div class="controls-section">
+    <div class="filters">
+      <div class="filter-group">
+        <label>Search</label>
+        <div class="search-box">
+          <input type="text" placeholder="Search venues by name, address, or city..." 
+                 [(ngModel)]="searchTerm">
+        </div>
+      </div>
+      
+      <div class="filter-group">
+        <label>Status</label>
+        <select [(ngModel)]="selectedStatus">
+          <option *ngFor="let option of statusFilterOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Sort By</label>
+        <div class="sort-controls">
+          <select [(ngModel)]="sortBy" (change)="onSortChange()">
+            <option *ngFor="let option of sortOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <button mat-icon-button class="sort-order-btn" (click)="toggleSortOrder()">
+            {{ sortOrder === 'asc' ? '↑' : '↓' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Venues List -->
+  <div class="content-section">
+    <div class="list-header">
+      <h3>Venue List ({{ filteredVenues.length }})</h3>
+    </div>
+
+    <div class="venues-grid">
+      <div *ngFor="let venue of filteredVenues" class="venue-card">
+        <div class="venue-header">
+          <div class="venue-title">
+            <h4>{{ venue.name }}</h4>
+            <span class="venue-city">{{ venue.city }}</span>
+          </div>
+          <div class="venue-meta">
+            <span class="capacity-badge">{{ venue.capacity.toLocaleString() }} seats</span>
+            <span class="status-badge" [class]="getStatusClass(venue.status)">
+              {{ getStatusIcon(venue.status) }} {{ venue.status | titlecase }}
+            </span>
+          </div>
+        </div>
+
+        <div class="venue-details">
+          <div class="detail-row">
+            <span class="label">Address:</span>
+            <span class="value">{{ venue.address }}, {{ venue.city }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Seating Plan:</span>
+            <span class="value seating-plan">{{ venue.seatingPlan }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Contact:</span>
+            <span class="value">{{ venue.contactPhone }} • {{ venue.contactEmail }}</span>
+          </div>
+          
+          <div class="amenities-section">
+            <span class="label">Amenities:</span>
+            <div class="amenities-list">
+              <span *ngFor="let amenity of venue.amenities" class="amenity-tag">
+                {{ amenity }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="venue-footer">
+          <div class="timestamp">
+            Updated: {{ venue.lastModified | date:'medium' }}
+          </div>
+          <div class="venue-actions">
+            <button mat-button (click)="editVenue(venue)" class="edit-btn">
+              Edit
+            </button>
+            <button mat-button (click)="manageSeating(venue)" class="seating-btn">
+              Seating Plan
+            </button>
+            <button mat-button (click)="toggleVenueStatus(venue)" 
+                    [class]="venue.status === 'active' ? 'deactivate-btn' : 'activate-btn'">
+              {{ venue.status === 'active' ? 'Deactivate' : 'Activate' }}
+            </button>
+            <button mat-button color="warn" (click)="deleteVenue(venue)" class="delete-btn">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredVenues.length === 0" class="empty-state">
+      <div class="empty-icon">🏟️</div>
+      <h3>No venues found</h3>
+      <p>No venues match your current filters. Try adjusting your search criteria or create a new venue.</p>
+      <button mat-raised-button (click)="createVenue()">+ Create First Venue</button>
+    </div>
+  </div>
+</div>

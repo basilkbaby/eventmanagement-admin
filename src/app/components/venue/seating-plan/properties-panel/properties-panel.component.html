@@ -1,0 +1,39 @@
+<div class="properties-panel" *ngIf="selectedSeat">
+  <button class="close-button" (click)="closePanelProperty()" title="Close">×</button>
+  
+  <h3>Seat Properties</h3>
+  
+  <div class="property-content">
+    <div class="property-group">
+      <label>Seat ID:</label>
+      <span class="property-value">{{ selectedSeat.id }}</span>
+    </div>
+    <div class="property-group">
+      <label>Position:</label>
+      <span class="property-value">{{ selectedSeat.row }}{{ selectedSeat.number }}</span>
+    </div>
+    <div class="property-group">
+      <label>Type:</label>
+      <span class="property-value">{{ selectedSeat.type | titlecase }}</span>
+    </div>
+    <div class="property-group">
+      <label>Status:</label>
+      <span class="property-value">{{ selectedSeat.status | titlecase }}</span>
+    </div>
+    <div class="property-group">
+      <label>Section:</label>
+      <span class="property-value">
+        {{ getSectionName(selectedSeat.section) }}
+      </span>
+    </div>
+  </div>
+
+  <div class="property-actions">
+    <button (click)="onAccessibilityToggle()">
+      {{ getAccessibilityButtonText() }}
+    </button>
+    <button (click)="onBlockToggle()">
+      {{ getBlockButtonText() }}
+    </button>
+  </div>
+</div>

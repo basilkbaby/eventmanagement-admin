@@ -1,0 +1,623 @@
+.coupons-page {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.coupons-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+  .header-content {
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    p {
+      margin: 8px 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+
+  .add-coupon-btn {
+    height: 48px;
+    padding: 0 24px;
+    font-weight: 500;
+
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+.filters-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+  .filter-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+
+      &.search-field {
+        flex: 2;
+      }
+    }
+
+    .filter-actions {
+      .clear-filters {
+        color: #666;
+      }
+    }
+  }
+}
+
+.coupons-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+  .table-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .table-info {
+      .total-count {
+        color: #666;
+        font-size: 14px;
+      }
+    }
+  }
+
+  .coupons-table {
+    width: 100%;
+
+    th.mat-header-cell {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+      padding: 16px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    td.mat-cell {
+      padding: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .coupon-code {
+      .code-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .code-text {
+          font-family: 'Courier New', monospace;
+          font-size: 15px;
+          letter-spacing: 1px;
+        }
+
+        .copy-btn {
+          width: 24px;
+          height: 24px;
+          line-height: 24px;
+
+          mat-icon {
+            font-size: 16px;
+            width: 16px;
+            height: 16px;
+          }
+        }
+      }
+
+      .coupon-applicable {
+        margin-top: 8px;
+      }
+    }
+
+    .description-cell {
+      .description-content {
+        .coupon-name {
+          font-weight: 500;
+          color: #333;
+          margin-bottom: 4px;
+        }
+
+        .coupon-desc {
+          color: #666;
+          font-size: 13px;
+          line-height: 1.4;
+        }
+
+        .applicable-events {
+          margin-top: 8px;
+
+          .event-count {
+            font-size: 12px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 12px;
+          }
+        }
+      }
+    }
+
+    .discount-info {
+      .discount-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2e7d32;
+        margin-bottom: 4px;
+      }
+
+      .discount-details {
+        font-size: 12px;
+        color: #666;
+        line-height: 1.4;
+      }
+    }
+
+    .date-info {
+      .date-range {
+        font-size: 13px;
+        color: #333;
+        margin-bottom: 4px;
+      }
+
+      .date-status {
+        .expired-badge, .upcoming-badge, .active-badge {
+          font-size: 11px;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-weight: 500;
+        }
+
+        .expired-badge {
+          background: #ffebee;
+          color: #c62828;
+        }
+
+        .upcoming-badge {
+          background: #fff8e1;
+          color: #ff8f00;
+        }
+
+        .active-badge {
+          background: #e8f5e9;
+          color: #2e7d32;
+        }
+      }
+    }
+
+    .usage-info {
+      .usage-count {
+        font-size: 13px;
+        color: #333;
+        margin-bottom: 4px;
+      }
+
+      .usage-bar {
+        height: 6px;
+        background: #e0e0e0;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 8px 0;
+
+        .usage-progress {
+          height: 100%;
+          background: linear-gradient(90deg, #4caf50, #8bc34a);
+          transition: width 0.3s ease;
+        }
+      }
+
+      .usage-percentage {
+        font-size: 11px;
+        color: #666;
+      }
+
+      .reset-btn {
+        margin-top: 8px;
+        height: 24px;
+        font-size: 12px;
+        line-height: 24px;
+        padding: 0 12px;
+      }
+    }
+
+    .status-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+
+        &.status-active {
+          background: #e8f5e9;
+          color: #2e7d32;
+        }
+
+        &.status-inactive {
+          background: #f5f5f5;
+          color: #666;
+        }
+
+        &.status-expired {
+          background: #ffebee;
+          color: #c62828;
+        }
+
+        &.status-upcoming {
+          background: #fff8e1;
+          color: #ff8f00;
+        }
+      }
+
+      .status-toggle {
+        transform: scale(0.8);
+      }
+    }
+
+    .action-btn {
+      color: #666;
+    }
+  }
+
+  mat-paginator {
+    border-top: 1px solid #e0e0e0;
+  }
+}
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+  background: white;
+  border-radius: 8px;
+
+  p {
+    margin-top: 16px;
+    color: #666;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+
+  .empty-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #bdbdbd;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    color: #333;
+    font-weight: 500;
+  }
+
+  p {
+    color: #666;
+    margin-bottom: 24px;
+  }
+}
+
+// Dialog Styles
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px 0;
+
+  .close-btn {
+    margin: -12px -12px 0 0;
+  }
+}
+
+.coupon-form {
+  padding: 8px 0;
+
+  .form-section {
+    padding: 16px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+
+    .form-field {
+      flex: 1;
+
+      &.full-width {
+        flex: 100%;
+      }
+    }
+  }
+
+  .form-control-group {
+    margin-bottom: 24px;
+
+    .form-hint {
+      margin: 4px 0 0;
+      color: #666;
+      font-size: 12px;
+    }
+  }
+
+  .events-section {
+    h3 {
+      margin: 0 0 16px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .events-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+
+      .event-selection {
+        padding: 0;
+
+        .event-option {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 0;
+
+          .event-name {
+            flex: 1;
+          }
+
+          .event-date {
+            font-size: 12px;
+            color: #666;
+          }
+        }
+      }
+    }
+  }
+
+  .current-stats {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 4px;
+
+    h4 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+
+      .stat-item {
+        .stat-label {
+          display: block;
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 2px;
+        }
+
+        .stat-value {
+          display: block;
+          font-size: 13px;
+          color: #333;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+.delete-dialog-content {
+  text-align: center;
+  padding: 16px;
+
+  .warning-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0 0 16px;
+    line-height: 1.5;
+  }
+
+  .warning-text {
+    color: #666;
+    font-size: 14px;
+  }
+
+  .coupon-details {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    background: #fff8e1;
+    border-radius: 4px;
+    margin-top: 16px;
+
+    mat-icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 13px;
+      color: #5d4037;
+    }
+  }
+}
+
+// Chips
+mat-chip {
+  &.global-chip {
+    background: #e3f2fd !important;
+    color: #1565c0 !important;
+  }
+
+  &.specific-chip {
+    background: #f3e5f5 !important;
+    color: #7b1fa2 !important;
+  }
+}
+
+// Spinner in button
+.spinner-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+
+// Snackbar
+.snackbar-success {
+  background: #4caf50 !important;
+  color: white !important;
+}
+
+.snackbar-error {
+  background: #f44336 !important;
+  color: white !important;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .coupons-header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .filter-row {
+    flex-direction: column;
+
+    .filter-group {
+      width: 100%;
+    }
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .coupons-table {
+    display: block;
+    overflow-x: auto;
+
+    th, td {
+      white-space: nowrap;
+    }
+  }
+}
+
+
+// Ticket Rules Styles
+.ticket-rules-info {
+  .ticket-rule-text {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 4px;
+  }
+  
+  .ticket-rule-details {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  
+  .rule-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+    
+    &.min-badge {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+    
+    &.max-badge {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+  }
+}
+
+// Form styles for ticket rules
+.rule-examples {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  
+  h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    
+    li {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.5;
+      margin-bottom: 4px;
+      
+      strong {
+        color: #333;
+      }
+    }
+  }
+}
+
+.ticket-rule-toggle {
+  margin-bottom: 8px;
+}

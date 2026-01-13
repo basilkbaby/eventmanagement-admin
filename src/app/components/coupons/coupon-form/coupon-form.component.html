@@ -1,0 +1,172 @@
+<div class="coupon-form">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        {{ coupon ? 'Edit Coupon' : 'Create New Coupon' }}
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <!-- Expiration Warning -->
+      <div *ngIf="wouldBeExpired()" class="expiration-warning">
+        <mat-icon>warning</mat-icon>
+        <span>This coupon's end date has passed. It will show as expired.</span>
+      </div>
+
+      <form class="coupon-form-fields">
+        <!-- Basic Information -->
+        <div class="form-section">
+          <h3>Basic Information</h3>
+          
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field code-field">
+              <mat-label>Coupon Code</mat-label>
+              <input matInput [(ngModel)]="formData.code" name="code" required 
+                     placeholder="e.g., WELCOME20">
+              <button matSuffix mat-icon-button type="button" (click)="generateCode()" 
+                      matTooltip="Generate random code">
+                <mat-icon>autorenew</mat-icon>
+              </button>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Description</mat-label>
+              <input matInput [(ngModel)]="formData.description" name="description" 
+                     placeholder="Describe the coupon purpose">
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Discount Settings -->
+        <div class="form-section">
+          <h3>Discount Settings</h3>
+          
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Discount Type</mat-label>
+              <mat-select [(ngModel)]="formData.discountType" name="discountType">
+                <mat-option value="percentage">Percentage</mat-option>
+                <mat-option value="fixed">Fixed Amount</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>
+                {{ formData.discountType === 'percentage' ? 'Discount Percentage' : 'Discount Amount' }}
+              </mat-label>
+              <input matInput type="number" [(ngModel)]="formData.discountValue" 
+                     name="discountValue" required min="0" 
+                     [max]="formData.discountType === 'percentage' ? 100 : null">
+              <span matSuffix>
+                {{ formData.discountType === 'percentage' ? '%' : '£' }}
+              </span>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Minimum Order Amount</mat-label>
+              <input matInput type="number" [(ngModel)]="formData.minOrderAmount" 
+                     name="minOrderAmount" min="0">
+              <span matSuffix>£</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field" 
+                           *ngIf="formData.discountType === 'percentage'">
+              <mat-label>Maximum Discount Amount</mat-label>
+              <input matInput type="number" [(ngModel)]="formData.maxDiscountAmount" 
+                     name="maxDiscountAmount" min="0">
+              <span matSuffix>£</span>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Validity Period -->
+        <div class="form-section">
+          <h3>Validity Period</h3>
+          
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Start Date</mat-label>
+              <input matInput [matDatepicker]="startPicker" [(ngModel)]="formData.startDate" 
+                     name="startDate" required>
+              <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+              <mat-datepicker #startPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>End Date</mat-label>
+              <input matInput [matDatepicker]="endPicker" [(ngModel)]="formData.endDate" 
+                     name="endDate" required>
+              <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+              <mat-datepicker #endPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Usage Limits -->
+        <div class="form-section">
+          <h3>Usage Limits</h3>
+          
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>Total Usage Limit</mat-label>
+            <input matInput type="number" [(ngModel)]="formData.usageLimit" 
+                   name="usageLimit" required min="1">
+            <span matSuffix>times</span>
+          </mat-form-field>
+        </div>
+
+        <!-- Applicability -->
+        <div class="form-section">
+          <h3>Applicability</h3>
+          
+          <mat-radio-group [(ngModel)]="formData.applicableTo" name="applicableTo" class="applicability-radio">
+            <mat-radio-button value="all">Apply to all events and sections</mat-radio-button>
+            <mat-radio-button value="specific">Apply to specific events/sections</mat-radio-button>
+          </mat-radio-group>
+
+          <div *ngIf="formData.applicableTo === 'specific'" class="specific-applicability">
+            <div class="applicability-section">
+              <h4>Applicable Events</h4>
+              <div class="checkbox-group">
+                <mat-checkbox *ngFor="let event of events"
+                            [checked]="formData.applicableEvents.includes(event.id)"
+                            (change)="toggleEvent(event.id)">
+                  {{ event.name }}
+                </mat-checkbox>
+              </div>
+            </div>
+
+            <div class="applicability-section">
+              <h4>Applicable Sections</h4>
+              <div class="checkbox-group">
+                <mat-checkbox *ngFor="let section of sections"
+                            [checked]="formData.applicableSections.includes(section.id)"
+                            (change)="toggleSection(section.id)">
+                  {{ section.name }}
+                </mat-checkbox>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-section">
+          <h3>Status</h3>
+          
+          <mat-radio-group [(ngModel)]="formData.status" name="status" class="status-radio">
+            <mat-radio-button value="active">Active</mat-radio-button>
+            <mat-radio-button value="inactive">Inactive</mat-radio-button>
+          </mat-radio-group>
+        </div>
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <button mat-button (click)="onCancel()">Cancel</button>
+      <button mat-raised-button color="primary" (click)="onSave()">
+        {{ coupon ? 'Update Coupon' : 'Create Coupon' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>

@@ -1,0 +1,54 @@
+.app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-color);
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.content-area {
+  flex: 1;
+  transition: all 0.3s ease;
+  background: var(--bg-color);
+  min-height: calc(100vh - 70px); // Subtract header height
+
+  
+  // Default state - sidebar closed or mobile
+  width: 100%;
+  margin-left: 0;
+  
+  // When sidebar is open on desktop
+  &.content-shifted {
+    width: calc(100% - 280px);
+    margin-left: 280px;
+  }
+}
+
+.content-wrapper {
+  padding: 24px;
+  height: 100%;
+  background: var(--bg-color);
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
+
+// Mobile styles
+@media (max-width: 768px) {
+  .content-area {
+    width: 100% !important;
+    margin-left: 0 !important;
+    
+    &.content-shifted {
+      width: 100% !important;
+      margin-left: 0 !important;
+    }
+  }
+}

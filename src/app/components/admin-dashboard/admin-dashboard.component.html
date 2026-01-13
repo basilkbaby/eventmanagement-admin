@@ -1,0 +1,153 @@
+<div class="dashboard-container">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="dashboard-title">Dashboard Overview</h1>
+      <p class="dashboard-subtitle">Welcome back! Here's what's happening with your events.</p>
+    </div>
+    
+    <!-- Event Filter -->
+    <div class="event-filter">
+      <mat-form-field appearance="outline" class="event-select">
+        <mat-label>Select Event</mat-label>
+        <mat-select [(value)]="selectedEvent" (selectionChange)="onEventChange()">
+          <mat-option value="all">All Events</mat-option>
+          <mat-option *ngFor="let event of events" [value]="event.id">
+            {{ event.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <!-- Total Revenue -->
+    <mat-card class="stat-card revenue-card">
+      <div class="card-content">
+        <div class="card-icon">
+          <mat-icon>attach_money</mat-icon>
+        </div>
+        <div class="card-info">
+          <h3 class="card-value">{{ formatCurrency(currentStats?.totalRevenue ?? 0) }}</h3>
+          <p class="card-label">Total Revenue</p>
+          <div class="growth-badge" [class]="getRevenueGrowthClass(currentStats?.revenueGrowth ?? 0)">
+            <mat-icon>{{ currentStats?.revenueGrowth ?? 0 >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+            <span>{{ Math.abs(currentStats?.revenueGrowth ?? 0) }}%</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Tickets Sold -->
+    <mat-card class="stat-card tickets-card">
+      <div class="card-content">
+        <div class="card-icon">
+          <mat-icon>confirmation_number</mat-icon>
+        </div>
+        <div class="card-info">
+          <h3 class="card-value">{{ formatNumber(currentStats?.totalTicketsSold ?? 0) }}</h3>
+          <p class="card-label">Tickets Sold</p>
+          <div class="attendance-rate">
+            <span>{{ currentStats?.attendanceRate }}% Attendance Rate</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Total Events -->
+    <mat-card class="stat-card events-card">
+      <div class="card-content">
+        <div class="card-icon">
+          <mat-icon>event</mat-icon>
+        </div>
+        <div class="card-info">
+          <h3 class="card-value">{{ currentStats?.totalEvents }}</h3>
+          <p class="card-label">Total Events</p>
+          <div class="popular-event">
+            <mat-icon>star</mat-icon>
+            <span>Popular: {{ currentStats?.popularEvent }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Events List -->
+  <div class="events-section">
+    <div class="section-header">
+      <h2>Upcoming Events</h2>
+    </div>
+
+    <div class="events-grid">
+      <mat-card *ngFor="let event of events" class="event-card">
+        <div class="event-header">
+          <h3 class="event-name">{{ event.name }}</h3>
+          <span class="event-date">{{ event.date | date:'MMM d, y' }}</span>
+        </div>
+        
+        <div class="event-details">
+          <div class="event-venue">
+            <mat-icon>location_on</mat-icon>
+            <span>{{ event.venue }}</span>
+          </div>
+          
+          <div class="ticket-progress">
+            <div class="progress-info">
+              <span class="sold-tickets">{{ event.soldTickets }} / {{ event.totalTickets }} sold</span>
+              <span class="progress-percent">{{ getEventProgress(event) | number:'1.0-0' }}%</span>
+            </div>
+            <mat-progress-bar 
+              [value]="getEventProgress(event)" 
+              mode="determinate"
+              class="progress-bar">
+            </mat-progress-bar>
+          </div>
+
+          <div class="event-revenue">
+            <mat-icon>payments</mat-icon>
+            <span class="revenue-amount">{{ formatCurrency(event.revenue) }}</span>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div class="event-actions">
+          <button mat-button color="primary" [routerLink]="['/admin/events', event.id]">
+            <mat-icon>visibility</mat-icon>
+            View Details
+          </button>
+          <button mat-button color="basic" [routerLink]="['/admin/orders']">
+            <mat-icon>confirmation_number</mat-icon>
+            Manage Tickets
+          </button>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions-section">
+    <h2>Quick Actions</h2>
+    <div class="actions-grid">
+      <button mat-stroked-button class="action-button" routerLink="/admin/orders">
+        <mat-icon>qr_code_scanner</mat-icon>
+        Tickets
+      </button>
+      <button mat-stroked-button class="action-button" routerLink="/admin/reports">
+        <mat-icon>assessment</mat-icon>
+        View Reports
+      </button>
+      <button mat-stroked-button class="action-button" routerLink="/admin/venues">
+        <mat-icon>location_on</mat-icon>
+        View Venues
+      </button>
+      <button mat-stroked-button class="action-button" routerLink="/admin/users">
+        <mat-icon>people</mat-icon>
+        Manage Users
+      </button>
+    </div>
+  </div>
+  <br>
+  <mat-divider></mat-divider>
+</div>

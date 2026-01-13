@@ -1,0 +1,130 @@
+<div class="design-tools">
+  <h3>Design Tools</h3>
+  
+  <!-- Layout Info -->
+  <div class="tool-section">
+    <h4>Layout: {{ seatingPlan.layout | titlecase }}</h4>
+    <p class="layout-description">
+      {{ getLayoutDescription() }}
+    </p>
+  </div>
+
+  <!-- Tool Selection -->
+  <div class="tool-section">
+    <h4>Tools</h4>
+    <div class="tool-buttons">
+      <button class="tool-btn" 
+              [class.active]="selectedTool === 'select'"
+              (click)="selectTool('select')">
+        👆 Select
+      </button>
+      <button class="tool-btn" 
+              [class.active]="selectedTool === 'accessible'"
+              (click)="selectTool('accessible')">
+        ♿ Accessible
+      </button>
+      <button class="tool-btn" 
+              [class.active]="selectedTool === 'block'"
+              (click)="selectTool('block')">
+        🚫 Block
+      </button>
+    </div>
+  </div>
+
+  <!-- Custom Section Creation -->
+  <div class="tool-section">
+    <h4>Create Custom Section</h4>
+    <div class="custom-section-form">
+      <div class="form-group">
+        <label>Section Name</label>
+        <input type="text" [(ngModel)]="newSectionConfig.name" placeholder="e.g., Orchestra Center">
+      </div>
+      <div class="form-group">
+        <label>Section Type</label>
+        <select [(ngModel)]="newSectionConfig.type">
+          <option value="general">General</option>
+          <option value="vip">VIP</option>
+          <option value="box">Box</option>
+          <option value="balcony">Balcony</option>
+          <option value="side">Side Section</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Position</label>
+        <select [(ngModel)]="newSectionConfig.position">
+          <option value="center">Center</option>
+          <option value="left">Left</option>
+          <option value="right">Right</option>
+          <option value="upper">Upper Level</option>
+          <option value="lower">Lower Level</option>
+        </select>
+      </div>
+      <div class="form-group" *ngIf="newSectionConfig.position === 'left' || newSectionConfig.position === 'right' || newSectionConfig.position === 'center'">
+        <label>Width (%)</label>
+        <input type="number" [(ngModel)]="newSectionConfig.width" min="10" max="100">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Row</label>
+          <input type="text" [(ngModel)]="newSectionConfig.startRow" maxlength="2">
+        </div>
+        <div class="form-group">
+          <label>Rows</label>
+          <input type="number" [(ngModel)]="newSectionConfig.rowCount" min="1" max="50">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Seats per Row</label>
+        <input type="number" [(ngModel)]="newSectionConfig.seatsPerRow" min="1" max="50">
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <input type="color" [(ngModel)]="newSectionConfig.color">
+      </div>
+      <button class="create-btn" 
+              (click)="createCustomSection()"
+              [disabled]="!newSectionConfig.name.trim()">
+        Create Section
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Section Templates -->
+  <div class="tool-section">
+    <h4>Quick Sections</h4>
+    <div class="section-templates">
+      <div *ngFor="let template of sectionTemplates" 
+           class="template-card"
+           (click)="addTemplateSection(template)">
+        <div class="template-color" [style.background]="template.color"></div>
+        <div class="template-info">
+          <span class="template-name">{{ template.name }}</span>
+          <span class="template-position">{{ template.position | titlecase }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="tool-section">
+    <h4>Statistics</h4>
+    <div class="stats">
+      <div class="stat-item">
+        <span class="stat-label">Total Seats:</span>
+        <span class="stat-value">{{ seatingPlan.totalSeats }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Accessible Seats:</span>
+        <span class="stat-value">{{ seatingPlan.accessibleSeats }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Sections:</span>
+        <span class="stat-value">{{ seatingPlan.sections.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Layout:</span>
+        <span class="stat-value">{{ seatingPlan.layout | titlecase }}</span>
+      </div>
+    </div>
+  </div>
+</div>

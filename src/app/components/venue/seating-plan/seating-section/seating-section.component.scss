@@ -1,0 +1,129 @@
+.seating-section {
+  border: 2px solid;
+  border-radius: 8px;
+  padding: 15px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  width: 100%;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+    width: 100%;
+
+    .section-info {
+      flex: 1;
+      
+      h4 {
+        margin: 0 0 4px 0;
+        color: #333;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .section-stats {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+
+    .section-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+      min-width: 150px;
+
+      .price-tier-select {
+        padding: 6px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        font-size: 12px;
+        width: 100%;
+        
+        &:focus {
+          outline: none;
+          border-color: #0056b3;
+        }
+      }
+
+      .section-actions {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+
+        .action-btn {
+          font-size: 11px;
+          padding: 4px 8px;
+          min-width: auto;
+          border: 1px solid #e0e0e0;
+          border-radius: 3px;
+          transition: all 0.3s ease;
+          background: white;
+          cursor: pointer;
+          white-space: nowrap;
+
+          &:hover {
+            background: #f8f9fa;
+            border-color: #0056b3;
+          }
+
+          &.delete {
+            color: #d32f2f;
+            border-color: #ffcdd2;
+            
+            &:hover {
+              background: #ffebee;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .seating-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .seating-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+
+    .row-label {
+      font-weight: bold;
+      color: #333;
+      min-width: 30px;
+      text-align: center;
+      font-size: 12px;
+      background: #f5f5f5;
+      padding: 4px;
+      border-radius: 3px;
+    }
+
+    .seats-in-row {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+      flex: 1;
+      justify-content: flex-start;
+    }
+  }
+}

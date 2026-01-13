@@ -1,0 +1,1082 @@
+<div class="event-form-container">
+    <!-- Header Section -->
+    <div class="header-section">
+        <button mat-button routerLink="/admin/events" class="back-button">
+            <mat-icon>arrow_back</mat-icon>
+            Back to Events
+        </button>
+        <div class="header-content">
+            <h1>{{ isEditMode ? 'Edit Event' : 'Create New Event' }}</h1>
+            <p>Step {{ currentStep + 1 }} of {{ totalSteps }} - {{ getStepTitle(currentStep) }}</p>
+        </div>
+    </div>
+
+    <!-- Progress Stepper -->
+    <mat-stepper linear #stepper class="event-stepper">
+
+        <!-- Step 1: Basic Information -->
+        <mat-step [stepControl]="basicInfoForm">
+            <ng-template matStepLabel>Basic Info</ng-template>
+            <!-- Error list at top -->
+            <div *ngIf="formErrors.length > 0" class="error-list">
+                <div class="error-header">
+                    <mat-icon color="warn">error</mat-icon>
+                    <span>Please fix the following errors:</span>
+                </div>
+
+                <ul class="error-items">
+                    <li *ngFor="let error of formErrors" class="error-item">
+                        {{ error }}
+                    </li>
+                </ul>
+            </div>
+
+            <form [formGroup]="basicInfoForm" class="step-form">
+                <div class="form-row">
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Event Title</mat-label>
+                        <input matInput formControlName="title" placeholder="Enter event title">
+                        <mat-error *ngIf="basicInfoForm.get('title')?.hasError('required')">
+                            Event title is required
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                    <mat-form-field appearance="outline" class="half-width">
+                        <mat-label>Event Type</mat-label>
+                        <mat-select formControlName="type">
+                            <mat-option *ngFor="let type of eventTypes" [value]="type.value">
+                                {{ type.name }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="basicInfoForm.get('type')?.hasError('required')">
+                            Event type is required
+                        </mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="half-width">
+                        <mat-label>Status</mat-label>
+                        <mat-select formControlName="status">
+                            <mat-option *ngFor="let status of eventStatuses" [value]="status.value">
+                                {{ status.name }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+
+                <!-- Date & Time Section -->
+                <div class="form-section">
+                    <h3>Date & Time</h3>
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="half-width">
+                            <mat-label>Start Date</mat-label>
+                            <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+                            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                            <mat-datepicker #startPicker></mat-datepicker>
+                            <mat-error *ngIf="basicInfoForm.get('startDate')?.hasError('required')">
+                                Start date is required
+                            </mat-error>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="half-width">
+                            <mat-label>End Date</mat-label>
+                            <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+                            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                            <mat-datepicker #endPicker></mat-datepicker>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="half-width">
+                            <mat-label>Start Time</mat-label>
+                            <input matInput type="time" formControlName="startTime">
+                            <mat-error *ngIf="basicInfoForm.get('startTime')?.hasError('required')">
+                                Start time is required
+                            </mat-error>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="half-width">
+                            <mat-label>End Time</mat-label>
+                            <input matInput type="time" formControlName="endTime">
+                            <mat-error *ngIf="basicInfoForm.get('endTime')?.hasError('required')">
+                                End time is required
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="half-width">
+                            <mat-label>Gate Open Time</mat-label>
+                            <input matInput type="time" formControlName="gateOpenTime">
+                            <mat-error *ngIf="basicInfoForm.get('gateOpenTime')?.hasError('required')">
+                                Gate open time is required
+                            </mat-error>
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Timezone</mat-label>
+                            <mat-select formControlName="timezone">
+                                <mat-option *ngFor="let tz of timezones" [value]="tz">
+                                    {{ tz }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Description</mat-label>
+                        <textarea matInput formControlName="description" rows="4"
+                            placeholder="Describe your event in detail"></textarea>
+                        <mat-error *ngIf="basicInfoForm.get('description')?.hasError('required')">
+                            Event description is required
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Short Description</mat-label>
+                        <textarea matInput formControlName="shortDescription" rows="2"
+                            placeholder="Brief description for cards and previews"></textarea>
+                        <mat-hint>Keep it short for better display in event cards</mat-hint>
+                    </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                    <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Max Tickets Per Order</mat-label>
+                        <input matInput type="number" formControlName="maxTicketsPerOrder" min="1">
+                        <mat-error *ngIf="basicInfoForm.get('maxTicketsPerOrder')?.hasError('required')">
+                            Max tickets per order is required
+                        </mat-error>
+                        <mat-error *ngIf="basicInfoForm.get('maxTicketsPerOrder')?.hasError('min')">
+                            Minimum 1 ticket per order
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                    <mat-checkbox formControlName="featured" class="full-width">
+                        Feature this event
+                    </mat-checkbox>
+                    <mat-checkbox formControlName="isActive" class="full-width">
+                        Activate this event
+                    </mat-checkbox>
+                    <mat-checkbox formControlName="allowCancellations" class="full-width">
+                        Allow ticket cancellations
+                    </mat-checkbox>
+                </div>
+
+                <div class="form-row">
+                    <mat-form-field appearance="outline" class="half-width">
+                        <mat-label>Thumbnail Image URL</mat-label>
+                        <input matInput formControlName="thumbnailImage"
+                            placeholder="https://example.com/thumbnail.jpg">
+                        <mat-hint>URL for event thumbnail (400x300px recommended)</mat-hint>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="half-width">
+                        <mat-label>Banner Image URL</mat-label>
+                        <input matInput formControlName="bannerImage" placeholder="https://example.com/banner.jpg">
+                        <mat-hint>URL for event banner (1200x400px recommended)</mat-hint>
+                    </mat-form-field>
+                </div>
+            </form>
+
+            <div class="step-actions">
+                <button mat-button (click)="saveBasicInfo()" [disabled]="!basicInfoForm.valid" color="primary">
+                    Save & Continue
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
+        </mat-step>
+
+        <!-- Step 2: Organizations (Combined Venues, Organizers, Sponsors) -->
+        <mat-step [stepControl]="organizationsForm">
+            <ng-template matStepLabel>Organizations</ng-template>
+
+            <!-- Error list at top -->
+            <div *ngIf="formErrors.length > 0" class="error-list">
+                <div class="error-header">
+                    <mat-icon color="warn">error</mat-icon>
+                    <span>Please fix the following errors:</span>
+                </div>
+
+                <ul class="error-items">
+                    <li *ngFor="let error of formErrors" class="error-item">
+                        {{ error }}
+                    </li>
+                </ul>
+            </div>
+
+            <div class="step-form">
+                <!-- Organization Form Section -->
+                <div class="form-section">
+                    <h3>{{ editingOrganizationIndex !== null ? 'Edit' : 'Add' }} Organization</h3>
+                    <form [formGroup]="organizationsForm" class="organization-form">
+
+
+
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Organization Type *</mat-label>
+                                <mat-select formControlName="type" >
+                                <mat-option *ngFor="let orgType of organizationTypes" [value]="orgType.value">
+                                    {{ orgType.name }}
+                                </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="organizationsForm.get('type')?.hasError('required')">
+                                Organization type is required
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+
+                        <!-- Basic Info -->
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Name *</mat-label>
+                                <input matInput formControlName="name" placeholder="Enter organization name">
+                                <mat-error *ngIf="organizationsForm.get('name')?.hasError('required')">
+                                    Name is required
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="half-width">
+                                <mat-label>Logo URL</mat-label>
+                                <input matInput formControlName="logoUrl" placeholder="https://example.com/logo.png">
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" class="half-width">
+                                <mat-label>Website</mat-label>
+                                <input matInput formControlName="website" placeholder="https://example.com">
+                            </mat-form-field>
+                        </div>
+
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Description</mat-label>
+                                <textarea matInput formControlName="description" rows="3"
+                                    placeholder="Organization description"></textarea>
+                            </mat-form-field>
+                        </div>
+
+                        <!-- Contact Info (for Venue and Organizer) -->
+                        <div *ngIf="showContactFields()" class="contact-section">
+                            <h4>Contact Information</h4>
+                            <div class="form-row">
+                                <mat-form-field appearance="outline" class="third-width">
+                                    <mat-label>Contact Person</mat-label>
+                                    <input matInput formControlName="contactPerson" placeholder="John Doe">
+                                </mat-form-field>
+
+                                <mat-form-field appearance="outline" class="third-width">
+                                    <mat-label>Contact Email</mat-label>
+                                    <input matInput type="email" formControlName="contactEmail"
+                                        placeholder="contact@example.com">
+                                </mat-form-field>
+
+                                <mat-form-field appearance="outline" class="third-width">
+                                    <mat-label>Contact Phone</mat-label>
+                                    <input matInput formControlName="contactPhone" placeholder="+1 (555) 123-4567">
+                                </mat-form-field>
+                            </div>
+                        </div>
+
+                        <!-- Location Info (for Venue and Organizer) -->
+                        <div *ngIf="showLocationFields()" class="location-section">
+                            <h4>Location Information</h4>
+                            <div class="form-row">
+                                <mat-form-field appearance="outline" class="full-width">
+                                    <mat-label>Address</mat-label>
+                                    <input matInput formControlName="address" placeholder="Street address">
+                                </mat-form-field>
+                            </div>
+
+                            <div class="form-row">
+                                <mat-form-field appearance="outline" class="third-width">
+                                    <mat-label>City</mat-label>
+                                    <input matInput formControlName="city" placeholder="City">
+                                </mat-form-field>
+
+                                <mat-form-field appearance="outline" class="third-width">
+                                    <mat-label>State/Region</mat-label>
+                                    <input matInput formControlName="state" placeholder="State or region">
+                                </mat-form-field>
+
+                                <mat-form-field appearance="outline" class="third-width">
+                                    <mat-label>Postal Code</mat-label>
+                                    <input matInput formControlName="postalCode" placeholder="Postal code">
+                                </mat-form-field>
+                            </div>
+
+                            <div class="form-row">
+                                <mat-form-field appearance="outline" class="half-width">
+                                    <mat-label>Country</mat-label>
+                                    <input matInput formControlName="country" placeholder="Country">
+                                </mat-form-field>
+
+                                <!-- Map URL for Venue -->
+                                <mat-form-field *ngIf="organizationsForm.get('type')?.value === OrganizationType.Venue"
+                                    appearance="outline" class="half-width">
+                                    <mat-label>Map URL</mat-label>
+                                    <input matInput formControlName="mapUrl" placeholder="https://maps.google.com/...">
+                                </mat-form-field>
+
+                                <!-- Capacity for Venue -->
+                                <mat-form-field *ngIf="organizationsForm.get('type')?.value === OrganizationType.Venue"
+                                    appearance="outline" class="half-width">
+                                    <mat-label>Capacity</mat-label>
+                                    <input matInput type="number" formControlName="capacity"
+                                        placeholder="Maximum capacity">
+                                </mat-form-field>
+
+                                <!-- Registration Number for Organizer -->
+                                <mat-form-field
+                                    *ngIf="organizationsForm.get('type')?.value === OrganizationType.Organizer"
+                                    appearance="outline" class="half-width">
+                                    <mat-label>Registration Number</mat-label>
+                                    <input matInput formControlName="registrationNumber"
+                                        placeholder="Business registration number">
+                                </mat-form-field>
+                            </div>
+                        </div>
+
+                        <!-- Display Order and Primary Flag -->
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="half-width">
+                                <mat-label>Display Order</mat-label>
+                                <input matInput type="number" formControlName="displayOrder" min="0">
+                                <mat-hint>Lower numbers appear first</mat-hint>
+                            </mat-form-field>
+
+                            <div class="half-width">
+                                <mat-checkbox formControlName="isPrimary"
+                                    *ngIf="organizationsForm.get('type')?.value === OrganizationType.Venue">
+                                    Primary Venue
+                                </mat-checkbox>
+                                <mat-checkbox formControlName="isPrimary"
+                                    *ngIf="organizationsForm.get('type')?.value === OrganizationType.Organizer">
+                                    Primary Organizer
+                                </mat-checkbox>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-actions">
+                            <button mat-button type="button" (click)="resetOrganizationForm()" color="basic">
+                                <mat-icon>clear</mat-icon>
+                                Clear
+                            </button>
+                            <button mat-raised-button type="button" (click)="saveOrganization()"
+                                [disabled]="!organizationsForm.valid" color="primary">
+                                <mat-icon>{{ editingOrganizationIndex !== null ? 'save' : 'add' }}</mat-icon>
+                                {{ editingOrganizationIndex !== null ? 'Update' : 'Add' }} {{
+                                organizationsForm.get('type')?.value || 'Organization' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Organizations List Section -->
+                <div class="form-section">
+                    <div class="organizations-header">
+                        <h3>Organizations ({{ organizations.length }})</h3>
+
+                        <!-- Filter Buttons -->
+                        <div class="filter-buttons">
+                            <button mat-button [class.active]="organizationFilter === 'All'"
+                                (click)="organizationFilter = 'All'">
+                                All
+                                <mat-badge *ngIf="getOrganizationCount('All') > 0"
+                                    [matBadge]="getOrganizationCount('All')" size="small"
+                                    class="filter-badge"></mat-badge>
+                            </button>
+
+                            <button mat-button [class.active]="organizationFilter === OrganizationType.Venue"
+                                (click)="organizationFilter = OrganizationType.Venue">
+                                <mat-icon>location_on</mat-icon>
+                                Venues
+                                <mat-badge *ngIf="getOrganizationCount(OrganizationType.Venue) > 0"
+                                    [matBadge]="getOrganizationCount(OrganizationType.Venue)" size="small"
+                                    class="filter-badge"></mat-badge>
+                            </button>
+
+                            <button mat-button [class.active]="organizationFilter === OrganizationType.Organizer"
+                                (click)="organizationFilter = OrganizationType.Organizer">
+                                <mat-icon>business</mat-icon>
+                                Organizers
+                                <mat-badge *ngIf="getOrganizationCount(OrganizationType.Organizer) > 0"
+                                    [matBadge]="getOrganizationCount(OrganizationType.Organizer)" size="small"
+                                    class="filter-badge"></mat-badge>
+                            </button>
+
+                            <button mat-button [class.active]="organizationFilter === OrganizationType.Sponsor"
+                                (click)="organizationFilter = OrganizationType.Sponsor">
+                                <mat-icon>attach_money</mat-icon>
+                                Sponsors
+                                <mat-badge *ngIf="getOrganizationCount(OrganizationType.Sponsor) > 0"
+                                    [matBadge]="getOrganizationCount(OrganizationType.Sponsor)" size="small"
+                                    class="filter-badge"></mat-badge>
+                            </button>
+
+                            <button mat-button [class.active]="organizationFilter === OrganizationType.Partner"
+                                (click)="organizationFilter = OrganizationType.Partner">
+                                <mat-icon>handshake</mat-icon>
+                                Partners
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Organizations List -->
+                    <div *ngIf="getFilteredOrganizations().length > 0" class="organizations-list">
+                        <mat-card *ngFor="let org of getFilteredOrganizations(); let i = index"
+                            class="organization-card" [ngClass]="{
+                       'venue-card': org.type === OrganizationType.Venue,
+                       'organizer-card': org.type === OrganizationType.Organizer,
+                       'sponsor-card': org.type === OrganizationType.Sponsor,
+                       'partner-card': org.type === OrganizationType.Partner,
+                       'primary-card': org.isPrimary
+                     }">
+                            <mat-card-header>
+                                <div mat-card-avatar class="organization-avatar" [ngClass]="'avatar-' + org.typeColor">
+                                    <span *ngIf="!org.logoUrl">{{ org.typeIcon }}</span>
+                                    <img *ngIf="org.logoUrl" [src]="org.logoUrl" [alt]="org.name">
+                                </div>
+                                <mat-card-title>
+                                    {{ org.name }}
+                                    <span *ngIf="org.isPrimary" class="primary-badge">
+                                        <mat-icon>star</mat-icon>
+                                        Primary
+                                    </span>
+                                    <span class="type-badge" [ngClass]="'badge-' + org.typeColor">
+                                        {{ org.typeDisplay }}
+                                    </span>
+                                </mat-card-title>
+                                <mat-card-subtitle>
+                                    Order: {{ org.displayOrder }}
+                                    <span *ngIf="org.city && org.country"> • {{ org.city }}, {{ org.country }}</span>
+                                    <span *ngIf="org.website"> • {{ org.website }}</span>
+                                </mat-card-subtitle>
+                            </mat-card-header>
+
+                            <mat-card-content>
+                                <!-- Venue Details -->
+                                <div *ngIf="org.type === OrganizationType.Venue" class="organization-details">
+                                    <p *ngIf="org.address"><strong>Address:</strong> {{ org.address }}</p>
+                                    <p *ngIf="org.description">{{ org.description }}</p>
+                                    <p *ngIf="org.contactPhone"><strong>Phone:</strong> {{ org.contactPhone }}</p>
+                                    <p *ngIf="org.contactEmail"><strong>Email:</strong> {{ org.contactEmail }}</p>
+                                    <p *ngIf="org.mapUrl"><strong>Map:</strong> <a [href]="org.mapUrl"
+                                            target="_blank">View Map</a></p>
+                                </div>
+
+                                <!-- Organizer Details -->
+                                <div *ngIf="org.type === OrganizationType.Organizer" class="organization-details">
+                                    <p *ngIf="org.contactPerson"><strong>Contact Person:</strong> {{ org.contactPerson
+                                        }}</p>
+                                    <p *ngIf="org.contactEmail"><strong>Email:</strong> {{ org.contactEmail }}</p>
+                                    <p *ngIf="org.contactPhone"><strong>Phone:</strong> {{ org.contactPhone }}</p>
+                                    <p *ngIf="org.address"><strong>Address:</strong> {{ org.address }}</p>
+                                    <p *ngIf="org.description">{{ org.description }}</p>
+                                </div>
+
+                                <!-- Sponsor/Partner Details -->
+                                <div *ngIf="org.type === OrganizationType.Sponsor || org.type === OrganizationType.Partner"
+                                    class="organization-details">
+                                    <p *ngIf="org.description">{{ org.description }}</p>
+                                    <p *ngIf="org.website"><strong>Website:</strong> <a [href]="org.website"
+                                            target="_blank">{{ org.website }}</a></p>
+                                </div>
+                            </mat-card-content>
+
+                            <mat-card-actions align="end">
+                                <button mat-button color="primary" (click)="editOrganization(i)">
+                                    <mat-icon>edit</mat-icon>
+                                    Edit
+                                </button>
+                                <button mat-button color="warn" (click)="deleteOrganization(i)">
+                                    <mat-icon>delete</mat-icon>
+                                    Delete
+                                </button>
+                            </mat-card-actions>
+                        </mat-card>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div *ngIf="getFilteredOrganizations().length === 0" class="empty-state">
+                        <mat-icon class="empty-icon">group_work</mat-icon>
+                        <h4>No Organizations Found</h4>
+                        <p *ngIf="organizationFilter === 'All'">
+                            No organizations added yet. Add venues, organizers, or sponsors for your event.
+                        </p>
+                        <p *ngIf="organizationFilter !== 'All'">
+                            No {{ organizationFilter | organizationTypeDisplay | lowercase }}s added yet.
+                        </p>
+                        <button mat-raised-button color="primary" (click)="resetOrganizationForm()">
+                            <mat-icon>add</mat-icon>
+                            Add Your First {{ organizationFilter === 'All' ? 'Organization' : organizationFilter }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-actions">
+                <button mat-button matStepperPrevious color="basic">
+                    <mat-icon>arrow_back</mat-icon>
+                    Back
+                </button>
+                <button mat-button (click)="saveOrganizations()" color="primary">
+                    Save & Continue
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
+        </mat-step>
+
+
+        <!-- Step 3: Event Settings & Policies -->
+        <mat-step [stepControl]="settingsForm">
+            <ng-template matStepLabel>Settings & Policies</ng-template>
+            <!-- Error list at top -->
+            <div *ngIf="formErrors.length > 0" class="error-list">
+                <div class="error-header">
+                    <mat-icon color="warn">error</mat-icon>
+                    <span>Please fix the following errors:</span>
+                </div>
+
+                <ul class="error-items">
+                    <li *ngFor="let error of formErrors" class="error-item">
+                        {{ error }}
+                    </li>
+                </ul>
+            </div>
+
+            <form [formGroup]="settingsForm" class="step-form">
+                <div class="form-section">
+                    <h3>Ticket Settings</h3>
+                    <div class="form-row">
+                        <mat-checkbox formControlName="showRemainingTickets" class="full-width">
+                            Show remaining ticket count
+                        </mat-checkbox>
+                        <mat-checkbox formControlName="requireApproval" class="full-width">
+                            Require approval for registrations
+                        </mat-checkbox>
+                    </div>
+                </div>
+
+                <div class="">
+                    <div class="form-section">
+                        <h3>Tags</h3>
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Tags</mat-label>
+                                <mat-chip-grid #chipGrid aria-label="Tags selection">
+                                    <mat-chip-row *ngFor="let tag of tagsArray" (removed)="removeTag(tag)">
+                                        {{ tag }}
+                                        <button matChipRemove>
+                                            <mat-icon>cancel</mat-icon>
+                                        </button>
+                                    </mat-chip-row>
+                                    <input placeholder="New tag..." [matChipInputFor]="chipGrid"
+                                        (matChipInputTokenEnd)="addTag($event)">
+                                </mat-chip-grid>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Waitlist Settings</h3>
+                    <div class="form-row">
+                        <mat-checkbox formControlName="enableWaitlist" class="full-width">
+                            Enable waitlist
+                        </mat-checkbox>
+                    </div>
+
+                    <div class="form-row" *ngIf="settingsForm.get('enableWaitlist')?.value">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Waitlist Capacity</mat-label>
+                            <input matInput type="number" formControlName="waitlistCapacity" min="1">
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Reminder Settings</h3>
+                    <div class="form-row">
+                        <mat-checkbox formControlName="sendReminders" class="full-width">
+                            Send reminder emails
+                        </mat-checkbox>
+                    </div>
+
+                    <div class="form-row" *ngIf="settingsForm.get('sendReminders')?.value">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Reminder Days Before Event</mat-label>
+                            <input matInput type="number" formControlName="reminderDaysBefore" min="1" max="30">
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Attendee Information</h3>
+                    <div class="form-row">
+                        <mat-checkbox formControlName="collectAttendeeInfo" class="full-width">
+                            Collect attendee information
+                        </mat-checkbox>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Required Fields</mat-label>
+                            <input matInput formControlName="requiredFields" placeholder="FullName,Email,Phone">
+                            <mat-hint>Comma-separated list of required fields</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Age Restrictions</h3>
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="half-width">
+                            <mat-label>Minimum Age</mat-label>
+                            <input matInput type="number" formControlName="ageMin" min="0">
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="half-width">
+                            <mat-label>Maximum Age</mat-label>
+                            <input matInput type="number" formControlName="ageMax" min="1">
+                            <mat-hint>Leave empty for no maximum age</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Ticket Transfer & Resale</h3>
+                    <div class="form-row">
+                        <mat-checkbox formControlName="allowTicketTransfers" class="full-width">
+                            Allow ticket transfers
+                        </mat-checkbox>
+                        <mat-checkbox formControlName="allowResales" class="full-width">
+                            Allow ticket resales
+                        </mat-checkbox>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Cancellation Policy</h3>
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Cancellation Deadline (hours)</mat-label>
+                            <input matInput type="number" formControlName="cancellationDeadline" min="1">
+                            <mat-hint>Hours before event when cancellations are allowed</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </form>
+
+            <div class="step-actions">
+                <button mat-button matStepperPrevious color="basic">
+                    <mat-icon>arrow_back</mat-icon>
+                    Back
+                </button>
+                <button mat-button (click)="saveSettings()" [disabled]="!settingsForm.valid" color="primary">
+                    Save & Continue
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
+        </mat-step>
+
+        <!-- Step 4: Media & Links -->
+        <mat-step [stepControl]="mediaLinksForm">
+            <ng-template matStepLabel>Media & Links</ng-template>
+
+            <form [formGroup]="mediaLinksForm" class="step-form">
+                <div class="form-section">
+                    <h3>Event Images</h3>
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Banner Image URL</mat-label>
+                            <input matInput formControlName="bannerImage" placeholder="https://example.com/banner.jpg">
+                            <mat-hint>URL for the event banner image (recommended: 1200x400px)</mat-hint>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Thumbnail Image URL</mat-label>
+                            <input matInput formControlName="thumbnailImage"
+                                placeholder="https://example.com/thumbnail.jpg">
+                            <mat-hint>URL for the event thumbnail (recommended: 400x300px)</mat-hint>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Gallery Images</mat-label>
+                            <mat-chip-grid #galleryChipGrid aria-label="Gallery images selection">
+                                <mat-chip-row *ngFor="let image of galleryArray; let i = index"
+                                    (removed)="removeGalleryImage(i)">
+                                    {{ image }}
+                                    <button matChipRemove>
+                                        <mat-icon>cancel</mat-icon>
+                                    </button>
+                                </mat-chip-row>
+                                <input placeholder="Add image URL..." [matChipInputFor]="galleryChipGrid"
+                                    (matChipInputTokenEnd)="addGalleryImage($event)">
+                            </mat-chip-grid>
+                            <mat-hint>Add multiple gallery image URLs</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Social Media & Links</h3>
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Event Website</mat-label>
+                            <input matInput formControlName="website" placeholder="https://example.com/event">
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Facebook URL</mat-label>
+                            <input matInput formControlName="facebook" placeholder="https://facebook.com/event">
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Instagram URL</mat-label>
+                            <input matInput formControlName="instagram" placeholder="https://instagram.com/event">
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Twitter URL</mat-label>
+                            <input matInput formControlName="twitter" placeholder="https://twitter.com/event">
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>SEO & Additional Info</h3>
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>SEO Description</mat-label>
+                            <textarea matInput formControlName="seoDescription" rows="3"
+                                placeholder="SEO-friendly description for search engines"></textarea>
+                            <mat-hint>Keep it under 160 characters for best results</mat-hint>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="form-row">
+                        <mat-form-field appearance="outline" class="full-width">
+                            <mat-label>Keywords</mat-label>
+                            <mat-chip-grid #keywordChipGrid aria-label="Keywords selection">
+                                <mat-chip-row *ngFor="let keyword of keywordsArray; let i = index"
+                                    (removed)="removeKeyword(i)">
+                                    {{ keyword }}
+                                    <button matChipRemove>
+                                        <mat-icon>cancel</mat-icon>
+                                    </button>
+                                </mat-chip-row>
+                                <input placeholder="Add keyword..." [matChipInputFor]="keywordChipGrid"
+                                    (matChipInputTokenEnd)="addKeyword($event)">
+                            </mat-chip-grid>
+                            <mat-hint>Add SEO keywords for better search visibility</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </form>
+
+            <div class="step-actions">
+                <button mat-button matStepperPrevious color="basic">
+                    <mat-icon>arrow_back</mat-icon>
+                    Back
+                </button>
+                <button mat-button matStepperNext color="primary">
+                    Next: Sponsors & Additional Details
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
+        </mat-step>
+
+        <!-- Step 5: Additional Details -->
+        <mat-step [stepControl]="additionalDetailsForm">
+            <ng-template matStepLabel>Additional Details</ng-template>
+            <div *ngIf="formErrors.length > 0" class="error-list">
+                <div class="error-header">
+                    <mat-icon color="warn">error</mat-icon>
+                    <span>Please fix the following errors:</span>
+                </div>
+
+                <ul class="error-items">
+                    <li *ngFor="let error of formErrors" class="error-item">
+                        {{ error }}
+                    </li>
+                </ul>
+            </div>
+            <div class="step-form">
+                <div class="form-section">
+                    <h3>Add/Edit Additional Detail</h3>
+                    <form [formGroup]="additionalDetailsForm" class="detail-form">
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Title *</mat-label>
+                                <input matInput formControlName="title" placeholder="Enter detail title">
+                                <mat-error *ngIf="additionalDetailsForm.get('title')?.hasError('required')">
+                                    Title is required
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="full-width">
+                                <mat-label>Content *</mat-label>
+                                <textarea matInput formControlName="content" rows="4"
+                                    placeholder="Enter detail content"></textarea>
+                                <mat-error *ngIf="additionalDetailsForm.get('content')?.hasError('required')">
+                                    Content is required
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+
+                        <div class="form-row">
+                            <mat-form-field appearance="outline" class="half-width">
+                                <mat-label>Type</mat-label>
+                                <mat-select formControlName="type" >
+                                    <mat-option *ngFor="let detailType of detailType" [value]="detailType.value">
+                                        {{ detailType.name }}
+                                    </mat-option>
+                                </mat-select>
+
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" class="half-width">
+                                <mat-label>Display Order</mat-label>
+                                <input matInput type="number" formControlName="displayOrder" min="0">
+                                <mat-hint>Lower numbers appear first</mat-hint>
+                            </mat-form-field>
+                        </div>
+
+                        <div class="form-row">
+                            <mat-checkbox formControlName="isVisible" class="full-width">
+                                Visible to attendees
+                            </mat-checkbox>
+                        </div>
+
+                        <div class="form-actions">
+                            <button mat-button type="button" (click)="resetAdditionalDetailForm()" color="basic">
+                                Clear
+                            </button>
+                            <button mat-raised-button type="button" (click)="saveAdditionalDetail()"
+                                [disabled]="!additionalDetailsForm.valid" color="primary">
+                                {{ editingDetailIndex !== null ? 'Update' : 'Add' }} Detail
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="form-section" *ngIf="additionalDetails.length > 0">
+                    <h3>Additional Details ({{ additionalDetails.length }})</h3>
+                    <div class="details-list">
+                        <mat-card *ngFor="let detail of additionalDetails; let i = index" class="detail-card">
+                            <mat-card-header>
+                                <mat-card-title>{{ detail.title }}</mat-card-title>
+                                <mat-card-subtitle>
+                                    Type: {{ detail.type }} |
+                                    Order: {{ detail.displayOrder }} |
+                                    {{ detail.isVisible ? 'Visible' : 'Hidden' }}
+                                </mat-card-subtitle>
+                            </mat-card-header>
+
+                            <mat-card-content>
+                                <p class="detail-content">{{ detail.content }}</p>
+                            </mat-card-content>
+
+                            <mat-card-actions align="end">
+                                <button mat-button color="primary" (click)="editAdditionalDetail(i)">
+                                    <mat-icon>edit</mat-icon>
+                                    Edit
+                                </button>
+                                <button mat-button color="warn" (click)="deleteAdditionalDetail(i)">
+                                    <mat-icon>delete</mat-icon>
+                                    Delete
+                                </button>
+                            </mat-card-actions>
+                        </mat-card>
+                    </div>
+                </div>
+
+                <div class="form-section" *ngIf="additionalDetails.length === 0">
+                    <div class="empty-state">
+                        <mat-icon class="empty-icon">info</mat-icon>
+                        <h4>No Additional Details Added Yet</h4>
+                        <p>Add additional details like policies, FAQs, or important notes for attendees</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-actions">
+                <button mat-button matStepperPrevious color="basic">
+                    <mat-icon>arrow_back</mat-icon>
+                    Back
+                </button>
+                <button mat-button matStepperNext color="primary">
+                    Next: Review & Submit
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+            </div>
+        </mat-step>
+        <!-- Step 6: Review & Submit -->
+        <mat-step>
+            <ng-template matStepLabel>Review & Submit</ng-template>
+
+            <div class="review-section">
+                <h3>Review Your Event</h3>
+
+                <mat-card class="review-card">
+                    <mat-card-header>
+                        <mat-card-title>{{ basicInfoForm.get('title')?.value || 'Untitled Event' }}</mat-card-title>
+                        <mat-card-subtitle>
+                            {{ basicInfoForm.get('type')?.value }} •
+                            {{ basicInfoForm.get('status')?.value }} •
+                            {{ basicInfoForm.get('featured')?.value ? 'Featured' : 'Not Featured' }} •
+                            {{ basicInfoForm.get('isActive')?.value ? 'Active' : 'Inactive' }}
+                        </mat-card-subtitle>
+                    </mat-card-header>
+
+                    <mat-card-content>
+                        <div class="review-grid">
+                            <!-- Basic Info -->
+                            <div class="review-item">
+                                <strong>Description:</strong>
+                                <p>{{ basicInfoForm.get('description')?.value || 'No description provided' }}</p>
+                                <p *ngIf="basicInfoForm.get('shortDescription')?.value" class="short-desc">
+                                    <em>{{ basicInfoForm.get('shortDescription')?.value }}</em>
+                                </p>
+                            </div>
+
+                            <!-- Organizations Review -->
+                            <div class="review-item" *ngIf="organizations.length > 0">
+                                <strong>Organizations ({{ organizations.length }}):</strong>
+                                <div class="organizations-review">
+                                    <div *ngIf="getOrganizationCount(OrganizationType.Venue) > 0"
+                                        class="organization-type-review">
+                                        <h4>Venues ({{ getOrganizationCount(OrganizationType.Venue) }})</h4>
+                                        <mat-accordion>
+                                            <mat-expansion-panel *ngFor="let venue of getVenues()">
+                                                <mat-expansion-panel-header>
+                                                    <mat-panel-title>
+                                                        {{ venue.name }}
+                                                        <span class="venue-meta"
+                                                            *ngIf="venue.isPrimary">(Primary)</span>
+                                                    </mat-panel-title>
+                                                </mat-expansion-panel-header>
+                                                <p><strong>Address:</strong> {{ venue.address }}, {{ venue.city }}, {{
+                                                    venue.country }}</p>
+                                                <p *ngIf="venue.contactPhone"><strong>Phone:</strong> {{
+                                                    venue.contactPhone }}</p>
+                                                <p *ngIf="venue.contactEmail"><strong>Email:</strong> {{
+                                                    venue.contactEmail }}</p>
+                                                <p *ngIf="venue.description">{{ venue.description }}</p>
+                                            </mat-expansion-panel>
+                                        </mat-accordion>
+                                    </div>
+
+                                    <!-- Organizers section -->
+                                    <div *ngIf="getOrganizationCount(OrganizationType.Organizer) > 0"
+                                        class="organization-type-review">
+                                        <h4>Organizers ({{ getOrganizationCount(OrganizationType.Organizer) }})</h4>
+                                        <mat-accordion>
+                                            <mat-expansion-panel *ngFor="let organizer of getOrganizers()">
+                                                <mat-expansion-panel-header>
+                                                    <mat-panel-title>
+                                                        {{ organizer.name }}
+                                                        <span class="organizer-meta"
+                                                            *ngIf="organizer.isPrimary">(Primary)</span>
+                                                    </mat-panel-title>
+                                                </mat-expansion-panel-header>
+                                                <p *ngIf="organizer.contactPerson"><strong>Contact Person:</strong> {{
+                                                    organizer.contactPerson }}</p>
+                                                <p *ngIf="organizer.contactEmail"><strong>Email:</strong> {{
+                                                    organizer.contactEmail }}</p>
+                                                <p *ngIf="organizer.contactPhone"><strong>Phone:</strong> {{
+                                                    organizer.contactPhone }}</p>
+                                                <p *ngIf="organizer.address"><strong>Address:</strong> {{
+                                                    organizer.address }}</p>
+                                                <p *ngIf="organizer.description">{{ organizer.description }}</p>
+                                            </mat-expansion-panel>
+                                        </mat-accordion>
+                                    </div>
+
+                                    <!-- Sponsors section -->
+                                    <div *ngIf="getOrganizationCount(OrganizationType.Sponsor) > 0"
+                                        class="organization-type-review">
+                                        <h4>Sponsors ({{ getOrganizationCount(OrganizationType.Sponsor) }})</h4>
+                                        <div class="sponsors-review">
+                                            <mat-chip-set>
+                                                <mat-chip *ngFor="let sponsor of getSponsors()">
+                                                    {{ sponsor.name }}
+                                                </mat-chip>
+                                            </mat-chip-set>
+                                        </div>
+                                    </div>
+
+                                    <!-- Partners section -->
+                                    <div *ngIf="getOrganizationCount(OrganizationType.Partner) > 0"
+                                        class="organization-type-review">
+                                        <h4>Partners ({{ getOrganizationCount(OrganizationType.Partner) }})</h4>
+                                        <div class="partners-review">
+                                            <mat-chip-set>
+                                                <mat-chip *ngFor="let partner of getPartners()">
+                                                    {{ partner.name }}
+                                                </mat-chip>
+                                            </mat-chip-set>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Settings & Policies Review -->
+                            <div class="review-item">
+                                <strong>Settings & Policies:</strong>
+                                <!-- (Keep your existing settings review here) -->
+                            </div>
+
+                            <!-- Media & Links Review -->
+                            <div class="review-item">
+                                <strong>Media & Links:</strong>
+                                <!-- (Keep your existing media review here) -->
+                            </div>
+
+                            <!-- Additional Details Review -->
+                            <div class="review-item" *ngIf="additionalDetails.length > 0">
+                                <strong>Additional Details ({{ additionalDetails.length }}):</strong>
+                                <!-- (Keep your existing additional details review here) -->
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+<!-- 
+            <div class="step-actions">
+                <button mat-button matStepperPrevious color="basic">
+                    <mat-icon>arrow_back</mat-icon>
+                    Back
+                </button>
+                <button mat-raised-button color="primary" (click)="submitEvent()" [disabled]="isSubmitting">
+                    <mat-icon *ngIf="!isSubmitting">{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+                    <mat-spinner *ngIf="isSubmitting" diameter="20"></mat-spinner>
+                    {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Event' : 'Create Event') }}
+                </button>
+            </div> -->
+        </mat-step>
+    </mat-stepper>
+</div>

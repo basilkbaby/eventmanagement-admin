@@ -1,0 +1,58 @@
+<mat-sidenav 
+  [opened]="isOpen"
+  mode="side"
+  class="sidebar"
+  [class.sidebar-collapsed]="!isOpen"
+  [class.mobile-sidebar]="isMobile">
+  
+  <div class="sidebar-content">
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <mat-nav-list class="nav-list">
+        <a *ngFor="let item of navigationItems"
+           mat-list-item
+           [routerLink]="item.path"
+           routerLinkActive="active"
+           [class]="getNavItemClass(item)"
+           [matTooltip]="!isOpen ? item.label : ''">
+          
+          <mat-icon matListItemIcon class="nav-icon">{{ item.icon }}</mat-icon>
+          
+          <span matListItemTitle class="nav-label">
+            {{ item.label }}
+            <span *ngIf="item.badge && isOpen" class="nav-badge">
+              {{ item.badge }}
+            </span>
+          </span>
+
+          <div *ngIf="!isOpen && item.badge" matListItemMeta class="nav-badge-mini">
+            {{ item.badge }}
+          </div>
+        </a>
+      </mat-nav-list>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer" *ngIf="isOpen">
+      <mat-divider></mat-divider>
+      <div class="footer-content">
+        <!-- <div class="upgrade-card">
+          <mat-icon class="upgrade-icon">workspace_premium</mat-icon>
+          <div class="upgrade-info">
+            <strong>Upgrade to Pro</strong>
+            <span>Get advanced features</span>
+          </div>
+          <button mat-stroked-button color="basic" class="upgrade-btn">
+            Upgrade
+          </button>
+        </div> -->
+        <div class="copyright">
+          <!-- <mat-divider></mat-divider> -->
+          <div class="copyright-content">
+            <span class="copyright-text">&copy; {{ currentYear }} Devhance. All rights reserved.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-sidenav>

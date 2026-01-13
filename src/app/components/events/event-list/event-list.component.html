@@ -1,0 +1,232 @@
+<div class="event-list-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading events...</p>
+  </div>
+
+  <div *ngIf="!isLoading">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="header-content">
+        <h1>Event Management</h1>
+        <p>Create and manage your events</p>
+      </div>
+      <button mat-raised-button color="primary" routerLink="/admin/events/create" class="create-btn">
+        <mat-icon>add</mat-icon>
+        Create New Event
+      </button>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="filter-section" *ngIf="events.length > 0">
+      <div class="search-container">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search events</mat-label>
+          <input matInput 
+                 [(ngModel)]="searchQuery" 
+                 (ngModelChange)="applyFilters()"
+                 placeholder="Search by title, venue, or description">
+          <mat-icon matSuffix>search</mat-icon>
+          <button mat-icon-button matSuffix *ngIf="searchQuery" (click)="clearSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-actions">
+        <div class="filter-chips-container">
+          <mat-chip-listbox class="filter-chips" multiple>
+            <mat-chip-option 
+              *ngFor="let filter of statusFilters" 
+              [selected]="filter.active"
+              (click)="toggleFilter(filter)">
+              <mat-icon [class]="filter.iconClass">{{filter.icon}}</mat-icon>
+              {{filter.label}}
+              <span class="count-badge" *ngIf="filter.count > 0">{{filter.count}}</span>
+            </mat-chip-option>
+          </mat-chip-listbox>
+        </div>
+
+        <button mat-stroked-button (click)="clearAllFilters()" class="clear-filters-btn">
+          <mat-icon>filter_alt_off</mat-icon>
+          Clear Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div *ngIf="displayedEvents.length > 0" class="events-grid">
+      <mat-card *ngFor="let event of displayedEvents" class="event-card" [class.featured]="event.featured">
+        <!-- Featured Ribbon -->
+        <div class="featured-ribbon" *ngIf="event.featured">
+          <mat-icon>star</mat-icon>
+          <span>Featured</span>
+        </div>
+
+        <!-- Event Image Section -->
+        <div class="card-image-section">
+          <div class="image-container" [class.no-image]="!event.thumbnailImage">
+            <img 
+              *ngIf="event.thumbnailImage"
+              [src]="event.thumbnailImage" 
+              [alt]="event.title"
+              class="event-thumbnail"
+              (error)="handleImageError($event)"
+            />
+            <div class="image-placeholder" *ngIf="!event.thumbnailImage">
+              <mat-icon>event</mat-icon>
+            </div>
+            
+            <!-- Quick Actions Overlay -->
+            <div class="image-overlay">
+              <button mat-mini-fab color="primary" class="overlay-btn"
+                      (click)="navigateToSeatSelection(event)"
+                      [disabled]="!canSelectSeats(event)"
+                      matTooltip="Select Seats">
+                <mat-icon>event_seat</mat-icon>
+              </button>
+              <button mat-mini-fab color="accent" class="overlay-btn"
+                      [routerLink]="['/admin/events', event.id]"
+                      matTooltip="View Details">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Content -->
+        <mat-card-content class="card-content">
+          <!-- Event Header -->
+          <div class="event-header">
+            <h3 class="event-title" [matTooltip]="event.title">{{ event.title }}</h3>
+            <div class="event-meta">
+              <mat-chip [class]="event.isActive ? 'active-chip' : 'inactive-chip'" 
+                       (click)="toggleEventStatus(event)">
+                {{ event.isActive ? 'Active' : 'Inactive' }}
+              </mat-chip>
+            </div>
+          </div>
+
+          <!-- Event Description -->
+          <p class="event-description">
+            {{ event.shortDescription || (event.description | slice:0:100) + '...' }}
+          </p>
+
+          <!-- Event Details -->
+          <div class="event-details">
+            <div class="detail-row">
+              <div class="detail-item">
+                <mat-icon>calendar_today</mat-icon>
+                <span class="detail-text">{{ getFormattedDate(event.startDate) }}</span>
+              </div>
+            </div>
+            <div class="detail-row" *ngIf="event.startTime">
+              <div class="detail-item">
+                <mat-icon>schedule</mat-icon>
+                <span class="detail-text">{{ formatTime(event.startTime) }}</span>
+              </div>
+              <div class="detail-item" *ngIf="event.totalSeats > 0">
+                <mat-icon>event_seat</mat-icon>
+                <span class="detail-text">{{ event.availableSeats }} / {{ event.totalSeats }} seats</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Event Stats -->
+          <div class="event-stats" *ngIf="event.totalSections > 0 || event.sponsorCount > 0 || isLowSeats(event)">
+            <div class="stat-item" *ngIf="event.totalSections > 0">
+              <mat-icon>grid_view</mat-icon>
+              <span>{{ event.totalSections }} sections</span>
+            </div>
+            <div class="stat-item" *ngIf="event.sponsorCount > 0">
+              <mat-icon>corporate_fare</mat-icon>
+              <span>{{ event.sponsorCount }} sponsors</span>
+            </div>
+            <div class="stat-item" *ngIf="isLowSeats(event)">
+              <mat-icon>warning</mat-icon>
+              <span>Low seats</span>
+            </div>
+          </div>
+        </mat-card-content>
+
+        <!-- Card Actions -->
+        <mat-card-actions class="card-actions">
+          <button mat-button color="primary" class="action-btn view-btn"
+                  [routerLink]="['/admin/events', event.id]">
+            <mat-icon>visibility</mat-icon>
+            View
+          </button>
+          
+          <button mat-button color="accent" class="action-btn edit-btn"
+                  [routerLink]="['/admin/events', event.id, 'edit']"
+                  [disabled]="!canEditEvent(event)">
+            <mat-icon>edit</mat-icon>
+            Edit
+          </button>
+          
+          <button mat-button color="primary" class="action-btn seats-btn"
+                  (click)="navigateToSeatSelection(event)"
+                  [disabled]="!canSelectSeats(event)">
+            <mat-icon>event_seat</mat-icon>
+            Seats
+          </button>
+          
+          <button mat-icon-button [matMenuTriggerFor]="eventMenu" class="menu-btn">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          
+          <mat-menu #eventMenu="matMenu" class="event-context-menu">
+            <button mat-menu-item (click)="navigateToSeatSelection(event)"
+                    [disabled]="!canSelectSeats(event)">
+              <mat-icon>event_seat</mat-icon>
+              <span>Select Seats</span>
+            </button>
+            <button mat-menu-item [routerLink]="['/admin/events', event.id, 'sections']">
+              <mat-icon>grid_view</mat-icon>
+              <span>Manage Sections</span>
+            </button>
+            <button mat-menu-item [routerLink]="['/admin/events', event.id, 'sponsors']">
+              <mat-icon>corporate_fare</mat-icon>
+              <span>Sponsors</span>
+            </button>
+            <mat-divider></mat-divider>
+            <button mat-menu-item (click)="toggleFeatured(event)">
+              <mat-icon>{{ event.featured ? 'star_border' : 'star' }}</mat-icon>
+              <span>{{ event.featured ? 'Remove Featured' : 'Mark Featured' }}</span>
+            </button>
+            <button mat-menu-item (click)="deleteEvent(event.id)" 
+                    [disabled]="!canDeleteEvent(event)" class="delete-item">
+              <mat-icon color="warn">delete</mat-icon>
+              <span>Delete Event</span>
+            </button>
+          </mat-menu>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="displayedEvents.length === 0 && !isLoading">
+      <div class="empty-content">
+        <mat-icon class="empty-icon">event_busy</mat-icon>
+        <h3>No Events Found</h3>
+        <p *ngIf="hasActiveFilters">
+          No events match your current filters. Try adjusting your search or filters.
+        </p>
+        <p *ngIf="!hasActiveFilters">
+          There are no events to display. Create your first event to get started.
+        </p>
+        <div class="empty-actions">
+          <button mat-raised-button color="primary" routerLink="/admin/events/create">
+            <mat-icon>add</mat-icon>
+            Create New Event
+          </button>
+          <button mat-button color="accent" (click)="clearAllFilters()" *ngIf="hasActiveFilters">
+            <mat-icon>clear_all</mat-icon>
+            Clear All Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

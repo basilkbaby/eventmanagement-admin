@@ -1,0 +1,531 @@
+<div class="coupons-page">
+  <!-- Header -->
+  <div class="coupons-header">
+    <div class="header-content">
+      <h1>Coupon Management</h1>
+      <p>Create and manage discount coupons for your events</p>
+    </div>
+    <button mat-raised-button color="primary" class="add-coupon-btn" (click)="openCouponDialog()">
+      <mat-icon>add</mat-icon>
+      Create Coupon
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search Coupons</mat-label>
+          <input matInput [(ngModel)]="filter.search" (input)="applyFilters()"
+            placeholder="Search by code or description">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group">
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select [(ngModel)]="filter.status" (selectionChange)="applyFilters()">
+            <mat-option *ngFor="let status of statuses" [value]="status.value">
+              {{ status.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group">
+        <mat-form-field appearance="outline">
+          <mat-label>Discount Type</mat-label>
+          <mat-select [(ngModel)]="filter.discountType" (selectionChange)="applyFilters()">
+            <mat-option *ngFor="let type of discountTypes" [value]="type.value">
+              {{ type.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-actions">
+        <button mat-button (click)="clearFilters()" class="clear-filters">
+          Clear Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading coupons...</p>
+  </div>
+
+  <!-- Coupons Table -->
+  <div class="coupons-table-container" *ngIf="!isLoading">
+    <div class="table-header">
+      <div class="table-info">
+        <span class="total-count">{{ totalItems }} coupons found</span>
+      </div>
+    </div>
+
+    <table mat-table [dataSource]="filteredCoupons" class="coupons-table">
+
+      <!-- Code Column -->
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef>Coupon Code</th>
+        <td mat-cell *matCellDef="let coupon">
+          <div class="coupon-code">
+            <div class="code-wrapper">
+              <strong class="code-text">{{ coupon.code }}</strong>
+              <button mat-icon-button class="copy-btn" [cdkCopyToClipboard]="coupon.code" matTooltip="Copy code">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </div>
+            <div class="coupon-applicable">
+              <mat-chip [class]="coupon.isGlobal ? 'global-chip' : 'specific-chip'" disableRipple>
+                {{ coupon.isGlobal ? 'Global' : 'Specific' }}
+              </mat-chip>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Description Column -->
+      <ng-container matColumnDef="description">
+        <th mat-header-cell *matHeaderCellDef>Description</th>
+        <td mat-cell *matCellDef="let coupon" class="description-cell">
+          <div class="description-content">
+            <div class="coupon-name">{{ coupon.name }}</div>
+            <div class="coupon-desc" *ngIf="coupon.description">{{ coupon.description }}</div>
+            <div class="applicable-events" *ngIf="coupon.assignedEventIds?.length">
+              <span class="event-count">
+                {{ coupon.assignedEventIds.length }} event(s)
+              </span>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Discount Column -->
+      <ng-container matColumnDef="discount">
+        <th mat-header-cell *matHeaderCellDef>Discount</th>
+        <td mat-cell *matCellDef="let coupon">
+          <div class="discount-info">
+            <div class="discount-value">{{ getDiscountDisplay(coupon) }}</div>
+            <div class="discount-details" *ngIf="coupon.minimumPurchaseAmount > 0">
+              Min. order: ${{ coupon.minimumPurchaseAmount }}
+            </div>
+            <div class="discount-details" *ngIf="coupon.maxDiscountAmount">
+              Max. discount: ${{ coupon.maxDiscountAmount }}
+            </div>
+            <div class="discount-details">
+              {{ coupon.usesPerCustomer }} use{{ coupon.usesPerCustomer > 1 ? 's' : '' }} per customer
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="ticketRules">
+      <th mat-header-cell *matHeaderCellDef>Ticket Rules</th>
+      <td mat-cell *matCellDef="let coupon">
+        <div class="ticket-rules-info">
+          <div class="ticket-rule-text">{{ getTicketRuleDescription(coupon) }}</div>
+          <div class="ticket-rule-details" *ngIf="coupon.minTickets > 0 || coupon.maxTickets">
+            <span *ngIf="coupon.minTickets > 0" class="rule-badge min-badge">
+              Min: {{ coupon.minTickets }}
+            </span>
+            <span *ngIf="coupon.maxTickets && coupon.maxTickets > 0" class="rule-badge max-badge">
+              Max: {{ coupon.maxTickets }}
+            </span>
+          </div>
+        </div>
+      </td>
+    </ng-container>
+
+      <!-- Dates Column -->
+      <ng-container matColumnDef="dates">
+        <th mat-header-cell *matHeaderCellDef>Validity</th>
+        <td mat-cell *matCellDef="let coupon">
+          <div class="date-info">
+            <div class="date-range">
+              {{ coupon.validFrom | date: 'MMM d, y' }} - {{ coupon.validUntil | date: 'MMM d, y' }}
+            </div>
+            <div class="date-status">
+              <span *ngIf="isExpired(coupon)" class="expired-badge">Expired</span>
+              <span *ngIf="isUpcoming(coupon)" class="upcoming-badge">Upcoming</span>
+              <span *ngIf="isActiveNow(coupon)" class="active-badge">Active Now</span>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Usage Column -->
+      <ng-container matColumnDef="usage">
+        <th mat-header-cell *matHeaderCellDef>Usage</th>
+        <td mat-cell *matCellDef="let coupon">
+          <div class="usage-info">
+            <div class="usage-count">{{ coupon.currentUses }} / {{ coupon.maxUses || '∞' }}</div>
+            <div class="usage-bar" *ngIf="coupon.maxUses > 0">
+              <div class="usage-progress" [style.width.%]="getUsagePercentage(coupon)"></div>
+            </div>
+            <div class="usage-percentage" *ngIf="coupon.maxUses > 0">
+              {{ getUsagePercentage(coupon) | number:'1.0-0' }}% used
+            </div>
+            <button mat-button color="warn" *ngIf="coupon.currentUses > 0" class="reset-btn"
+              (click)="resetCouponUsage(coupon)">
+              Reset
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let coupon">
+          <div class="status-cell">
+            <span class="status-badge" [class]="getStatusClass(coupon.status)">
+              {{ getStatusLabel(coupon.status) }}
+            </span>
+            <mat-slide-toggle [checked]="coupon.isActive" (change)="toggleCouponStatus(coupon)" class="status-toggle">
+            </mat-slide-toggle>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let coupon">
+          <button mat-icon-button [matMenuTriggerFor]="menu" class="action-btn">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="openCouponDialog(coupon)">
+              <mat-icon>edit</mat-icon>
+              <span>Edit</span>
+            </button>
+            <button mat-menu-item (click)="duplicateCoupon(coupon)">
+              <mat-icon>content_copy</mat-icon>
+              <span>Duplicate</span>
+            </button>
+            <button mat-menu-item (click)="toggleCouponStatus(coupon)">
+              <mat-icon>{{ coupon.isActive ? 'pause_circle' : 'play_circle' }}</mat-icon>
+              <span>{{ coupon.isActive ? 'Deactivate' : 'Activate' }}</span>
+            </button>
+            <mat-divider></mat-divider>
+            <button mat-menu-item (click)="openDeleteDialog(coupon)" class="delete-action">
+              <mat-icon color="warn">delete</mat-icon>
+              <span>Delete</span>
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <!-- Pagination -->
+    <mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageIndex]="pageIndex"
+      [pageSizeOptions]="[5, 10, 25, 50]" (page)="onPageChange($event)" showFirstLastButtons
+      aria-label="Select page of coupons">
+    </mat-paginator>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredCoupons.length === 0 && !isLoading" class="empty-state">
+      <mat-icon class="empty-icon">local_offer</mat-icon>
+      <h3>No coupons found</h3>
+      <p>Try adjusting your search criteria or create a new coupon.</p>
+      <button mat-raised-button color="primary" (click)="openCouponDialog()">
+        <mat-icon>add</mat-icon>
+        Create Your First Coupon
+      </button>
+    </div>
+  </div>
+
+  <!-- Create/Edit Coupon Dialog -->
+  <ng-template #couponDialog>
+    <div class="dialog-header">
+      <h2 mat-dialog-title>{{ isEditMode ? 'Edit Coupon' : 'Create New Coupon' }}</h2>
+      <button mat-icon-button mat-dialog-close class="close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <mat-dialog-content>
+      <form [formGroup]="couponForm" (ngSubmit)="onSubmit()" class="coupon-form">
+        <mat-tab-group animationDuration="0ms">
+          <!-- Basic Info Tab -->
+          <mat-tab label="Basic Info">
+            <div class="form-section">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Coupon Code</mat-label>
+                  <input matInput formControlName="code" required>
+                  <button mat-icon-button matSuffix type="button" (click)="generateNewCode()"
+                    matTooltip="Generate new code">
+                    <mat-icon>refresh</mat-icon>
+                  </button>
+                  <mat-error *ngIf="couponForm.get('code')?.hasError('required')">
+                    Code is required
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Coupon Name</mat-label>
+                  <input matInput formControlName="name" required>
+                  <mat-error *ngIf="couponForm.get('name')?.hasError('required')">
+                    Name is required
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="form-field full-width">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" rows="3"></textarea>
+              </mat-form-field>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Discount Type</mat-label>
+                  <mat-select formControlName="discountType" required>
+                    <mat-option value="percentage">Percentage</mat-option>
+                    <mat-option value="fixed">Fixed Amount</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field"
+                  *ngIf="couponForm.get('discountType')?.value === 'percentage'">
+                  <mat-label>Discount Percentage</mat-label>
+                  <input matInput type="number" formControlName="discountPercentage" min="0" max="100">
+                  <span matSuffix>%</span>
+                  <mat-error *ngIf="couponForm.get('discountPercentage')?.hasError('required')">
+                    Percentage is required
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field"
+                  *ngIf="couponForm.get('discountType')?.value === 'fixed'">
+                  <mat-label>Discount Amount</mat-label>
+                  <input matInput type="number" formControlName="discountAmount" min="0">
+                  <span matSuffix>$</span>
+                  <mat-error *ngIf="couponForm.get('discountAmount')?.hasError('required')">
+                    Amount is required
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Settings Tab -->
+          <mat-tab label="Settings">
+            <div class="form-section">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Minimum Purchase Amount</mat-label>
+                  <input matInput type="number" formControlName="minimumPurchaseAmount" min="0">
+                  <span matSuffix>$</span>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Max Discount Amount</mat-label>
+                  <input matInput type="number" formControlName="maxDiscountAmount" min="0">
+                  <span matSuffix>$</span>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Max Uses</mat-label>
+                  <input matInput type="number" formControlName="maxUses" min="0">
+                  <mat-hint>0 = unlimited</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Uses Per Customer</mat-label>
+                  <input matInput type="number" formControlName="usesPerCustomer" min="1" required>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Valid From</mat-label>
+                  <input matInput [matDatepicker]="picker1" formControlName="validFrom" required>
+                  <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                  <mat-datepicker #picker1></mat-datepicker>
+                  <mat-error *ngIf="couponForm.get('validFrom')?.hasError('required')">
+                    Start date is required
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Valid Until</mat-label>
+                  <input matInput [matDatepicker]="picker2" formControlName="validUntil" required>
+                  <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                  <mat-datepicker #picker2></mat-datepicker>
+                  <mat-error *ngIf="couponForm.get('validUntil')?.hasError('required')">
+                    End date is required
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Events Tab -->
+          <mat-tab label="Events">
+            <div class="form-section">
+              <div class="form-control-group">
+                <mat-slide-toggle formControlName="isGlobal" class="global-toggle">
+                  Apply to all events
+                </mat-slide-toggle>
+                <p class="form-hint">When enabled, this coupon will be valid for all events</p>
+              </div>
+
+              <div *ngIf="!couponForm.get('isGlobal')?.value" class="events-section">
+                <h3>Select Events</h3>
+                <div class="events-list">
+                  <mat-selection-list formControlName="eventIds" class="event-selection">
+                    <mat-list-option *ngFor="let event of events" [value]="event.id" checkboxPosition="before">
+                      <div class="event-option">
+                        <span class="event-name">{{ event.title }}</span>
+                        <span class="event-date">{{ event.startDate | date: 'MMM d, y' }}</span>
+                      </div>
+                    </mat-list-option>
+                  </mat-selection-list>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- In the coupon dialog, add a Ticket Rules tab or section -->
+          <mat-tab label="Ticket Rules">
+            <div class="form-section">
+              <h3>Ticket Quantity Rules</h3>
+              <p>Restrict coupon based on number of tickets purchased</p>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Minimum Tickets</mat-label>
+                  <input matInput type="number" formControlName="minTickets" min="0">
+                  <mat-hint>0 = no minimum</mat-hint>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Maximum Tickets</mat-label>
+                  <input matInput type="number" formControlName="maxTickets" min="0">
+                  <mat-hint>Leave empty for no maximum</mat-hint>
+                </mat-form-field>
+              </div>
+
+              <div class="form-control-group">
+                <mat-slide-toggle formControlName="applyToAllTickets" class="ticket-rule-toggle">
+                  Apply discount to all tickets
+                </mat-slide-toggle>
+                <p class="form-hint">
+                  When enabled: discount applies to all tickets<br>
+                  When disabled: discount applies only to specific number of tickets
+                </p>
+              </div>
+
+              <div class="form-row" *ngIf="!couponForm.get('applyToAllTickets')?.value">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Tickets Required for Discount</mat-label>
+                  <input matInput type="number" formControlName="ticketsRequired" min="1">
+                  <mat-hint>e.g., 2 = discount applies to 2 tickets, 3 = 3rd ticket free</mat-hint>
+                </mat-form-field>
+              </div>
+
+              <div class="rule-examples">
+                <h4>Examples:</h4>
+                <ul>
+                  <li><strong>Min 2 tickets</strong> → Coupon only works when buying 2+ tickets</li>
+                  <li><strong>Max 4 tickets</strong> → Coupon only works for up to 4 tickets</li>
+                  <li><strong>Min 3, Max 6</strong> → Only works for 3-6 tickets</li>
+                  <li><strong>Tickets Required: 2</strong> → Discount applies to 2 tickets only</li>
+                  <li><strong>Tickets Required: 3, Apply to all: false</strong> → 3rd ticket gets discount</li>
+                </ul>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- Advanced Tab -->
+          <mat-tab label="Advanced">
+            <div class="form-section">
+              <div class="form-control-group">
+                <mat-slide-toggle formControlName="isActive" class="active-toggle">
+                  Active
+                </mat-slide-toggle>
+                <p class="form-hint">Inactive coupons cannot be used</p>
+              </div>
+
+              <mat-form-field appearance="outline" class="form-field full-width">
+                <mat-label>Applicable Event Types</mat-label>
+                <input matInput formControlName="applicableEventTypes" placeholder="e.g., concert,workshop,conference">
+                <mat-hint>Comma-separated event types (optional)</mat-hint>
+              </mat-form-field>
+
+              <div class="current-stats" *ngIf="isEditMode && selectedCoupon">
+                <h4>Current Statistics</h4>
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <span class="stat-label">Times Used:</span>
+                    <span class="stat-value">{{ selectedCoupon.currentUses }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Created:</span>
+                    <span class="stat-value">{{ selectedCoupon.createdAt | date: 'medium' }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Created By:</span>
+                    <span class="stat-value">{{ selectedCoupon.createdBy }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Last Updated:</span>
+                    <span class="stat-value">{{ selectedCoupon.updatedAt | date: 'medium' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </form>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="couponForm.invalid || isLoading">
+        {{ isEditMode ? 'Update' : 'Create' }} Coupon
+        <mat-icon *ngIf="isLoading" class="spinner-icon">
+          <mat-spinner diameter="20"></mat-spinner>
+        </mat-icon>
+      </button>
+    </mat-dialog-actions>
+  </ng-template>
+
+  <!-- Delete Confirmation Dialog -->
+  <ng-template #deleteDialog>
+    <h2 mat-dialog-title>Delete Coupon</h2>
+    <mat-dialog-content>
+      <div class="delete-dialog-content" *ngIf="selectedCoupon">
+        <mat-icon color="warn" class="warning-icon">warning</mat-icon>
+        <p>Are you sure you want to delete coupon <strong>"{{ selectedCoupon.code }}"</strong>?</p>
+        <p class="warning-text">This action cannot be undone. Any associated event assignments will also be removed.</p>
+
+        <div class="coupon-details" *ngIf="selectedCoupon.currentUses > 0">
+          <mat-icon color="warn">info</mat-icon>
+          <p>This coupon has been used {{ selectedCoupon.currentUses }} time(s). Deleting it may affect historical data.
+          </p>
+        </div>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-raised-button color="warn" [mat-dialog-close]="true" [disabled]="isLoading">
+        Delete
+        <mat-icon *ngIf="isLoading" class="spinner-icon">
+          <mat-spinner diameter="20"></mat-spinner>
+        </mat-icon>
+      </button>
+    </mat-dialog-actions>
+  </ng-template>
+</div>

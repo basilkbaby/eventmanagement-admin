@@ -1,0 +1,505 @@
+.ticket-scan-container {
+  padding: 24px;
+  background: var(--bg-color);
+  min-height: 100vh;
+}
+
+.header-section {
+  margin-bottom: 32px;
+  
+  .back-nav {
+    margin-bottom: 16px;
+    
+    .back-button {
+      color: var(--text-secondary);
+      
+      .mat-icon {
+        margin-right: 4px;
+      }
+    }
+  }
+}
+
+.title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 8px 0;
+  }
+  
+  p {
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  
+  .header-actions {
+    button .mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  align-items: start;
+}
+
+.scanner-card, .last-scan-card, .instructions-card, .recent-scans-card, .stats-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+  border: 1px solid var(--border-color);
+  margin-bottom: 24px;
+}
+
+.scanner-card {
+  mat-card-header {
+    padding: 24px 24px 16px 24px;
+    
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-color);
+      
+      .mat-icon {
+        color: var(--primary-color);
+      }
+    }
+  }
+  
+  mat-card-content {
+    padding: 0;
+  }
+  
+  mat-card-actions {
+    padding: 16px 24px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+}
+
+.scanner-area {
+  position: relative;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &.scanning {
+    .scanner-frame {
+      border-color: var(--primary-color);
+    }
+  }
+}
+
+.video-element {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+}
+
+.scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-frame {
+  width: 250px;
+  height: 250px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  position: relative;
+  
+  .corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--primary-color);
+    border-style: solid;
+    border-width: 0;
+    
+    &.top-left {
+      top: -2px;
+      left: -2px;
+      border-top-width: 4px;
+      border-left-width: 4px;
+      border-top-left-radius: 8px;
+    }
+    
+    &.top-right {
+      top: -2px;
+      right: -2px;
+      border-top-width: 4px;
+      border-right-width: 4px;
+      border-top-right-radius: 8px;
+    }
+    
+    &.bottom-left {
+      bottom: -2px;
+      left: -2px;
+      border-bottom-width: 4px;
+      border-left-width: 4px;
+      border-bottom-left-radius: 8px;
+    }
+    
+    &.bottom-right {
+      bottom: -2px;
+      right: -2px;
+      border-bottom-width: 4px;
+      border-right-width: 4px;
+      border-bottom-right-radius: 8px;
+    }
+  }
+}
+
+.scan-line {
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--primary-color);
+  transform: translateY(-50%);
+  
+  &.animating {
+    animation: scan 2s ease-in-out infinite;
+  }
+}
+
+@keyframes scan {
+  0%, 100% {
+    top: 20%;
+    opacity: 1;
+  }
+  50% {
+    top: 80%;
+    opacity: 0.7;
+  }
+}
+
+.scan-result {
+  text-align: center;
+  padding: 40px 20px;
+  color: white;
+  
+  &.success {
+    background: rgba(0, 214, 143, 0.9);
+  }
+  
+  &.error {
+    background: rgba(255, 61, 113, 0.9);
+  }
+  
+  .result-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+    margin: 0 0 8px 0;
+    font-weight: 600;
+  }
+  
+  p {
+    margin: 0 0 24px 0;
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+  
+  .result-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+.camera-unavailable {
+  text-align: center;
+  padding: 40px 20px;
+  color: white;
+  
+  .camera-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+  
+  h3 {
+    font-size: 1.5rem;
+    margin: 0 0 8px 0;
+    font-weight: 600;
+  }
+  
+  p {
+    margin: 0 0 24px 0;
+    font-size: 1rem;
+    opacity: 0.8;
+  }
+}
+
+.scanning-indicator {
+  text-align: center;
+  color: white;
+  
+  p {
+    margin: 16px 0 0 0;
+    font-size: 1rem;
+    opacity: 0.8;
+  }
+}
+
+.last-scan-card {
+  mat-card-header {
+    padding: 20px 20px 16px 20px;
+  }
+  
+  mat-card-content {
+    padding: 0 20px 20px 20px;
+  }
+}
+
+.ticket-preview {
+  .ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    h4 {
+      margin: 0;
+      color: var(--text-color);
+      font-size: 1.1rem;
+    }
+  }
+  
+  .ticket-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    
+    .detail {
+      color: var(--text-color);
+      font-size: 0.9rem;
+      
+      strong {
+        color: var(--text-secondary);
+      }
+    }
+  }
+}
+
+.status-chip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  
+  &.status-active {
+    background: #00d68f;
+    color: white;
+  }
+  
+  &.status-used {
+    background: #3366ff;
+    color: white;
+  }
+  
+  &.status-cancelled {
+    background: #ff3d71;
+    color: white;
+  }
+  
+  &.status-refunded {
+    background: #8f9bb3;
+    color: white;
+  }
+  
+  &.small {
+    font-size: 0.7rem;
+    height: 20px;
+  }
+}
+
+.instructions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.instruction-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  
+  .mat-icon {
+    color: var(--primary-color);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  
+  .instruction-content {
+    strong {
+      display: block;
+      color: var(--text-color);
+      margin-bottom: 2px;
+      font-size: 0.9rem;
+    }
+    
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+  }
+}
+
+.recent-scans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.scan-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-color);
+  border-radius: 8px;
+  
+  .scan-info {
+    flex: 1;
+    
+    .ticket-number {
+      font-weight: 600;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      margin-bottom: 2px;
+    }
+    
+    .attendee-name {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      margin-bottom: 2px;
+    }
+    
+    .scan-time {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+    }
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  text-align: center;
+}
+
+.stat-item {
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 4px;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+}
+
+// Snackbar styles
+::ng-deep .success-snackbar {
+  background: #00d68f;
+  color: white;
+}
+
+::ng-deep .error-snackbar {
+  background: #ff3d71;
+  color: white;
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .ticket-scan-container {
+    padding: 16px;
+  }
+  
+  .title-section {
+    flex-direction: column;
+    gap: 16px;
+    
+    .header-actions {
+      width: 100%;
+      
+      button {
+        width: 100%;
+      }
+    }
+  }
+  
+  .scanner-frame {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .result-actions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .scanner-frame {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

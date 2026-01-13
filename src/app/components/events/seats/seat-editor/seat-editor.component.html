@@ -1,0 +1,391 @@
+<div class="seat-editor" (mouseup)="endPan()" (mousemove)="onPan($event)">
+  <!-- Tooltip -->
+  <div class="seat-tooltip" 
+       [class.show]="tooltip.show"
+       [style.left.px]="tooltip.x"
+       [style.top.px]="tooltip.y">
+<div class="tooltip-content" [innerHTML]="formatTooltipContent(tooltip.content)"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="editor-header">
+    <div class="header-left">
+      <a [routerLink]="['/venue']" class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Back
+      </a>
+      <div class="section-header">
+        <h1>{{ section?.name }}</h1>
+        <div class="section-meta">
+          <span class="meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            {{ stats.total }} seats
+          </span>
+          <span class="meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            {{ stats.available }} available
+          </span>
+          <span class="meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            £{{ section?.basePrice }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="selection-info">
+        <span class="selected-count">{{ selectedSeats.length }} selected</span>
+        <span class="selected-total">£{{ getSelectedTotal() }}</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" (click)="resetView()" title="Reset View">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="btn-icon" (click)="selectAllAvailable()" title="Select All Available (Ctrl+A)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+        <button class="btn-clear" (click)="clearSelection()" [disabled]="selectedSeats.length === 0">
+          Clear
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="editor-main">
+    <!-- Left: Seat Map -->
+    <div class="seat-map-section">
+      <div class="map-header">
+        <h2>Seat Map</h2>
+        <div class="map-controls">
+          <div class="zoom-controls">
+            <button class="btn-icon" (click)="zoomLevel = Math.max(0.5, zoomLevel - 0.2)" title="Zoom Out">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+            <span class="zoom-level">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+            <button class="btn-icon" (click)="zoomLevel = Math.min(3, zoomLevel + 0.2)" title="Zoom In">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="map-instructions">
+            <span class="instruction">Click: Select</span>
+            <span class="instruction">Ctrl+Click: Details</span>
+            <span class="instruction">Shift+Click: Select Row</span>
+            <span class="instruction">Alt+Drag: Pan</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="map-container" #seatMapContainer>
+        <!-- Stage -->
+        <div class="stage">
+          <div class="stage-label">STAGE</div>
+        </div>
+
+        <!-- Seat Map -->
+        <div class="seat-map"
+             [style.transform]="'scale(' + zoomLevel + ') translate(' + panOffset.x + 'px, ' + panOffset.y + 'px)'"
+             (mousedown)="startPan($event)">
+          
+          <!-- Row Numbers -->
+          <div class="row-numbers">
+            <div *ngFor="let row of rows" class="row-number">
+              {{ row + (section?.rowOffset || 0) }}
+            </div>
+          </div>
+
+          <!-- Seats Grid -->
+          <div class="seats-grid">
+            <div *ngFor="let row of rows" class="seat-row">
+              <div *ngFor="let seat of seats" 
+                   class="seat"
+                   [class]="getSeatClass(row, seat)"
+                   (click)="toggleSeat(row, seat, $event)"
+                   (mouseenter)="showTooltip($event, row, seat)"
+                   (mouseleave)="hideTooltip()">
+                <span class="seat-num">{{ seat }}</span>
+                <div class="seat-badges">
+                  <span *ngIf="seatMap.get(row + '-' + seat)?.status === 'sold'" class="badge sold">💰</span>
+                  <span *ngIf="seatMap.get(row + '-' + seat)?.status === 'blocked'" class="badge blocked">🚫</span>
+                  <span *ngIf="seatMap.get(row + '-' + seat)?.isAccessible" class="badge accessible">♿</span>
+                  <span *ngIf="seatMap.get(row + '-' + seat)?.isPartialView" class="badge partial-view">👁️</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aisle -->
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-item" *ngFor="let item of [
+          {class: 'available', label: 'Available', icon: '○'},
+          {class: 'selected', label: 'Selected', icon: '⭐'},
+          {class: 'sold', label: 'Sold', icon: '💰'},
+          {class: 'blocked', label: 'Blocked', icon: '🚫'},
+          {class: 'accessible', label: 'Accessible', icon: '♿'},
+          {class: 'partial-view', label: 'Partial View', icon: '👁️'},
+          {class: 'aisle', label: 'Aisle', icon: '│'}
+        ]">
+          <div class="legend-icon" [class]="item.class">{{ item.icon }}</div>
+          <span class="legend-label">{{ item.label }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Control Panel -->
+    <div class="control-panel">
+      <!-- Quick Actions -->
+      <section class="panel-section">
+        <h3 class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Quick Actions
+        </h3>
+        <div class="quick-actions">
+          <button *ngFor="let action of quickActions" 
+                  class="action-btn"
+                  [class]="'action-' + action.color"
+                  (click)="action.action()"
+                  [disabled]="action.disabled || (selectedSeats.length === 0 && action.label !== 'Clear All')"
+                  [title]="action.tooltip">
+            <span class="action-icon">{{ action.icon }}</span>
+            <span class="action-text">{{ action.label }}</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Selected Seats -->
+      <section class="panel-section selected-section">
+        <h3 class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          Selected Seats ({{ selectedSeats.length }})
+        </h3>
+        <div class="selected-list" #selectedList>
+          <div *ngIf="selectedSeats.length === 0" class="empty-state">
+            <div class="empty-icon">💺</div>
+            <p>No seats selected</p>
+            <small>Click seats on the map to select them</small>
+          </div>
+          <div *ngFor="let seat of selectedSeats" class="selected-item">
+            <div class="seat-info">
+              <span class="seat-location">Row {{ seat.row }}, Seat {{ seat.number }}</span>
+              <span class="seat-price">£{{ seat.price.toFixed(2) }}</span>
+            </div>
+            <div class="seat-tags">
+              <span *ngIf="seat.isAccessible" class="tag accessible" title="Accessible">♿</span>
+              <span *ngIf="seat.isPartialView" class="tag partial-view" title="Partial View">👁️</span>
+            </div>
+            <button class="btn-remove" (click)="removeSeat(seat)" title="Remove">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="selection-total" *ngIf="selectedSeats.length > 0">
+          <span>Total:</span>
+          <span class="total-amount">£{{ getSelectedTotal().toFixed(2) }}</span>
+        </div>
+      </section>
+
+
+
+
+    </div>
+  </main>
+</div>
+
+<!-- Modals -->
+<div class="modal-backdrop" [class.active]="activeModal !== null" (click)="closeModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    
+    <!-- Sale Modal -->
+    <div class="modal" *ngIf="activeModal === 'sold'">
+      <div class="modal-header">
+        <h2>Mark as Sold</h2>
+        <button class="modal-close" (click)="closeModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info">
+          <span class="info-label">Seats to mark as sold:</span>
+          <span class="info-value">{{ selectedSeats.length }} seats</span>
+          <span class="info-label">Total amount:</span>
+          <span class="info-value">£{{ saleForm.purchaseAmount }}</span>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="customerName">Customer Name *</label>
+            <input type="text" id="customerName" [(ngModel)]="saleForm.customerName" 
+                   placeholder="John Doe" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="customerEmail">Email Address</label>
+            <input type="email" id="customerEmail" [(ngModel)]="saleForm.customerEmail" 
+                   placeholder="john@example.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="customerPhone">Phone Number</label>
+            <input type="tel" id="customerPhone" [(ngModel)]="saleForm.customerPhone" 
+                   placeholder="+1 (555) 123-4567">
+          </div>
+          
+          <div class="form-group">
+            <label for="transactionId">Transaction ID</label>
+            <input type="text" id="transactionId" [(ngModel)]="saleForm.transactionId" 
+                   placeholder="TXN123456">
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="purchaseAmount">Purchase Amount (£)</label>
+            <input type="number" id="purchaseAmount" [(ngModel)]="saleForm.purchaseAmount" 
+                   min="0" step="0.01">
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="saleNotes">Notes</label>
+            <textarea id="saleNotes" [(ngModel)]="saleForm.notes" 
+                      rows="3" placeholder="Additional notes about this sale..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn-primary" (click)="markAsSold()" 
+                [disabled]="!saleForm.customerName || saleForm.purchaseAmount <= 0">
+          Mark as Sold
+        </button>
+      </div>
+    </div>
+
+    <!-- Block Modal -->
+    <div class="modal" *ngIf="activeModal === 'block'">
+      <div class="modal-header">
+        <h2>{{ blockForm.reason ? 'Update Block' : 'Block Seats' }}</h2>
+        <button class="modal-close" (click)="closeModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info">
+          <span class="info-label">Seats to block/unblock:</span>
+          <span class="info-value">{{ selectedSeats.length }} seats</span>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="blockReason">Reason *</label>
+            <select id="blockReason" [(ngModel)]="blockForm.reason">
+              <option value="">Select reason...</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="VIP Reservation">VIP Reservation</option>
+              <option value="Seat Damage">Seat Damage</option>
+              <option value="Technical Issue">Technical Issue</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="blockDuration">Duration (hours)</label>
+            <input type="number" id="blockDuration" [(ngModel)]="blockForm.duration" 
+                   min="1" max="720" placeholder="24">
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="blockNotes">Notes</label>
+            <textarea id="blockNotes" [(ngModel)]="blockForm.notes" 
+                      rows="3" placeholder="Explain why these seats are being blocked..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn-warning" (click)="toggleBlock()" 
+                [disabled]="!blockForm.reason">
+          {{ blockForm.reason ? 'Block Seats' : 'Unblock Seats' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Seat Details Modal -->
+    <div class="modal" *ngIf="activeModal === 'details'">
+      <div class="modal-header">
+        <h2>Edit Seat Details</h2>
+        <button class="modal-close" (click)="closeModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info">
+          <span class="info-label">Editing:</span>
+          <span class="info-value">{{ selectedSeats.length }} seats</span>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="seatForm.isAccessible">
+              <span class="checkmark"></span>
+              Mark as Accessible Seat ♿
+              <span class="checkbox-help">Extra space for wheelchair access</span>
+            </label>
+          </div>
+          
+          <div class="form-group full-width">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="seatForm.isPartialView">
+              <span class="checkmark"></span>
+              Mark as Partial View 👁️
+              <span class="checkbox-help">Limited stage view (20% discount applied)</span>
+            </label>
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="seatNotes">Notes</label>
+            <textarea id="seatNotes" [(ngModel)]="seatForm.notes" 
+                      rows="4" placeholder="Add notes about these seats (maintenance, special features, etc.)..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn-primary" (click)="saveSeatDetails()">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

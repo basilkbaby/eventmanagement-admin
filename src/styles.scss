@@ -1,0 +1,17 @@
+
+@use '@angular/material' as mat;
+@use './app/styles/variables' as *;
+
+// Import other style modules
+@use './app/styles/reset';
+@use './app/styles/typography';
+@use './app/styles/utilities';
+@use './app/styles/material-overrides';
+@use './app/styles/components';
+
+// Include the core styles
+@include mat.core();
+
+
+
+

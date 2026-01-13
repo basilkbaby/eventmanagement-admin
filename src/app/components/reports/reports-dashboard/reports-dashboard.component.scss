@@ -1,0 +1,203 @@
+.reports-page {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.reports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+
+  .header-content {
+    h1 {
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+
+  .export-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+}
+
+.filters-section {
+  margin-bottom: 24px;
+
+  .filter-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+  }
+}
+
+.metrics-section {
+  margin-bottom: 24px;
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .metric-card {
+    .metric-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+
+      &.revenue {
+        background: linear-gradient(135deg, #4CAF50, #8BC34A);
+        color: white;
+      }
+
+      &.tickets {
+        background: linear-gradient(135deg, #2196F3, #03A9F4);
+        color: white;
+      }
+
+      &.utilization {
+        background: linear-gradient(135deg, #9C27B0, #E91E63);
+        color: white;
+      }
+
+      &.profit {
+        background: linear-gradient(135deg, #FF9800, #FFC107);
+        color: white;
+      }
+
+      mat-icon {
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    .metric-info {
+      .metric-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 4px;
+      }
+
+      .metric-label {
+        font-size: 14px;
+        color: #666;
+      }
+    }
+  }
+}
+
+.charts-section {
+  .tab-content {
+    padding: 16px 0;
+  }
+
+  .chart-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .chart-card, .table-card {
+    height: 400px;
+  }
+
+  .chart-container {
+    height: 300px;
+    position: relative;
+  }
+
+  .report-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .positive {
+      color: #4CAF50;
+      font-weight: 500;
+    }
+
+    .negative {
+      color: #F44336;
+      font-weight: 500;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .reports-page {
+    padding: 16px;
+  }
+
+  .reports-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    
+    .filter-group {
+      min-width: 100% !important;
+    }
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chart-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chart-card, .table-card {
+    height: auto !important;
+    min-height: 300px;
+  }
+}

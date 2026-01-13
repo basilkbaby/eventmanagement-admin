@@ -1,0 +1,10 @@
+<div class="seat"
+     [class]="'seat-' + seat.type + ' ' + seat.status"
+     [style.background]="getSeatColor()"
+     (click)="onSeatClick()"
+     [class.selected]="isSelected"
+     [attr.title]="getSeatTitle()">
+  <span class="seat-number">{{ seat.number }}</span>
+  <div *ngIf="seat.type === 'accessible'" class="accessible-indicator">♿</div>
+  <div *ngIf="seat.status === 'blocked'" class="blocked-indicator">🚫</div>
+</div>

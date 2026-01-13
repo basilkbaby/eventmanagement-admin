@@ -1,0 +1,284 @@
+<div class="ticket-scan-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <div class="back-nav">
+        <button mat-button routerLink="/admin/orders" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+          Back to Tickets
+        </button>
+      </div>
+      
+      <div class="title-section">
+        <div>
+          <h1>Scan Tickets</h1>
+          <p>Scan QR codes to validate and check-in attendees</p>
+        </div>
+        
+        <div class="header-actions">
+          <button mat-stroked-button color="basic" (click)="manualTicketEntry()">
+            <mat-icon>keyboard</mat-icon>
+            Manual Entry
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Left Column - Scanner -->
+    <div class="left-column">
+      <!-- Scanner Card -->
+      <mat-card class="scanner-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>qr_code_scanner</mat-icon>
+            QR Code Scanner
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <!-- Camera Feed -->
+          <div class="scanner-area" [class.scanning]="isScanning">
+            <div class="camera-feed" *ngIf="isCameraActive && !scanResult">
+              <video #videoElement 
+                     autoplay 
+                     playsinline 
+                     class="video-element"
+                     (loadedmetadata)="startScanning()">
+              </video>
+              
+              <!-- Scanner Overlay -->
+              <div class="scanner-overlay">
+                <div class="scanner-frame">
+                  <div class="corner top-left"></div>
+                  <div class="corner top-right"></div>
+                  <div class="corner bottom-left"></div>
+                  <div class="corner bottom-right"></div>
+                </div>
+                <div class="scan-line" [class.animating]="isScanning"></div>
+              </div>
+            </div>
+
+            <!-- Scan Result -->
+            <div *ngIf="scanResult" class="scan-result" [class.success]="scanResult.success" [class.error]="!scanResult.success">
+              <mat-icon class="result-icon">
+                {{ scanResult.success ? 'check_circle' : 'error' }}
+              </mat-icon>
+              <h3>{{ scanResult.success ? 'Success!' : 'Error' }}</h3>
+              <p>{{ scanResult.message }}</p>
+              
+              <div class="result-actions" *ngIf="scanResult.success">
+                <button mat-raised-button color="primary" (click)="scanAgain()">
+                  <mat-icon>qr_code_scanner</mat-icon>
+                  Scan Next
+                </button>
+                <button mat-stroked-button color="basic" (click)="viewTicketDetails(scanResult.ticket!)" *ngIf="scanResult.ticket">
+                  <mat-icon>visibility</mat-icon>
+                  View Details
+                </button>
+              </div>
+              
+              <div class="result-actions" *ngIf="!scanResult.success">
+                <button mat-raised-button color="primary" (click)="scanAgain()">
+                  <mat-icon>refresh</mat-icon>
+                  Try Again
+                </button>
+              </div>
+            </div>
+
+            <!-- Camera Not Available -->
+            <div *ngIf="!isCameraActive && !scanResult" class="camera-unavailable">
+              <mat-icon class="camera-icon">videocam_off</mat-icon>
+              <h3>Camera Unavailable</h3>
+              <p>Unable to access camera. Please check permissions or use manual entry.</p>
+              <button mat-raised-button color="primary" (click)="manualTicketEntry()">
+                <mat-icon>keyboard</mat-icon>
+                Manual Entry
+              </button>
+            </div>
+
+            <!-- Scanning Indicator -->
+            <div *ngIf="isScanning && !scanResult" class="scanning-indicator">
+              <mat-progress-spinner diameter="40" mode="indeterminate"></mat-progress-spinner>
+              <p>Scanning QR code...</p>
+            </div>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions>
+          <button mat-stroked-button 
+                  color="basic" 
+                  (click)="stopScanning()"
+                  [disabled]="!isScanning">
+            <mat-icon>stop</mat-icon>
+            Stop Scanning
+          </button>
+          
+          <button mat-raised-button 
+                  color="primary" 
+                  (click)="startScanning()"
+                  [disabled]="isScanning || !isCameraActive">
+            <mat-icon>qr_code_scanner</mat-icon>
+            Start Scanning
+          </button>
+        </mat-card-actions>
+      </mat-card>
+
+      <!-- Last Scanned Ticket -->
+      <mat-card class="last-scan-card" *ngIf="lastScannedTicket">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>confirmation_number</mat-icon>
+            Last Scanned Ticket
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="ticket-preview">
+            <div class="ticket-header">
+              <h4>{{ lastScannedTicket.ticketNumber }}</h4>
+              <mat-chip [class]="getStatusClass(lastScannedTicket.status)" class="status-chip">
+                {{ getStatusText(lastScannedTicket.status) }}
+              </mat-chip>
+            </div>
+            
+            <div class="ticket-details">
+              <div class="detail">
+                <strong>Attendee:</strong> {{ lastScannedTicket.attendee.name }}
+              </div>
+              <div class="detail">
+                <strong>Event:</strong> {{ lastScannedTicket.eventName }}
+              </div>
+              <div class="detail">
+                <strong>Type:</strong> {{ lastScannedTicket.ticketType.name }}
+              </div>
+              <div class="detail" *ngIf="lastScannedTicket.scannedAt">
+                <strong>Scanned:</strong> {{ formatDate(lastScannedTicket.scannedAt) }}
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+        
+        <mat-card-actions>
+          <button mat-stroked-button color="primary" (click)="viewTicketDetails(lastScannedTicket!)">
+            <mat-icon>visibility</mat-icon>
+            View Full Details
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- Right Column - Instructions & History -->
+    <div class="right-column">
+      <!-- Instructions Card -->
+      <mat-card class="instructions-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>help</mat-icon>
+            Scanning Instructions
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="instructions-list">
+            <div class="instruction-item">
+              <mat-icon>qr_code</mat-icon>
+              <div class="instruction-content">
+                <strong>Position QR Code</strong>
+                <p>Place the QR code within the scanner frame</p>
+              </div>
+            </div>
+            
+            <div class="instruction-item">
+              <mat-icon>light_mode</mat-icon>
+              <div class="instruction-content">
+                <strong>Good Lighting</strong>
+                <p>Ensure adequate lighting for better scanning</p>
+              </div>
+            </div>
+            
+            <div class="instruction-item">
+              <mat-icon>straighten</mat-icon>
+              <div class="instruction-content">
+                <strong>Steady Position</strong>
+                <p>Hold the device steady while scanning</p>
+              </div>
+            </div>
+            
+            <div class="instruction-item">
+              <mat-icon>volume_up</mat-icon>
+              <div class="instruction-content">
+                <strong>Audio Feedback</strong>
+                <p>You'll hear a sound when scan is successful</p>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Recent Scans Card -->
+      <mat-card class="recent-scans-card" *ngIf="recentScans.length > 0">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>history</mat-icon>
+            Recent Scans
+          </mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="recent-scans-list">
+            <div *ngFor="let ticket of recentScans" class="scan-item">
+              <div class="scan-info">
+                <div class="ticket-number">{{ ticket.ticketNumber }}</div>
+                <div class="attendee-name">{{ ticket.attendee.name }}</div>
+                <div class="scan-time" *ngIf="ticket.scannedAt">
+                  {{ formatDate(ticket.scannedAt) }}
+                </div>
+              </div>
+              <mat-chip [class]="getStatusClass(ticket.status)" class="status-chip small">
+                {{ getStatusText(ticket.status) }}
+              </mat-chip>
+            </div>
+          </div>
+        </mat-card-content>
+        
+        <mat-card-actions>
+          <button mat-button color="primary" routerLink="/admin/tickets">
+            View All Tickets
+          </button>
+        </mat-card-actions>
+      </mat-card>
+
+      <!-- Quick Stats Card -->
+      <mat-card class="stats-card">
+        <mat-card-header>
+          <mat-card-title>Scanning Stats</mat-card-title>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">{{ totalScansCount }}</div>
+                <div class="stat-label">Today's Scans</div>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-value">{{ successfulScansCount }}</div>
+                <div class="stat-label">Successful</div>
+            </div>
+            
+            <div class="stat-item">
+                <div class="stat-value">{{ failedScansCount }}</div>
+                <div class="stat-label">Failures</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Hidden Canvas for QR Processing -->
+  <canvas #canvasElement style="display: none;"></canvas>
+</div>

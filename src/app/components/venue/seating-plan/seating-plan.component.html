@@ -1,0 +1,186 @@
+<div class="seating-plan-page">
+  <div class="header-section">
+    <div class="header-content">
+      <button mat-button (click)="cancel()" class="back-btn">
+        ← Back to Venues
+      </button>
+      <div class="header-title">
+        <h1>Seating Plan Designer</h1>
+        <span class="venue-name">{{ venueName }}</span>
+      </div>
+      <div class="header-actions">
+        <select [(ngModel)]="seatingPlan.layout" (change)="changeLayout(seatingPlan.layout)" class="layout-select">
+          <option value="single">Single Section</option>
+          <option value="split">Split Layout</option>
+          <option value="stadium">Stadium Style</option>
+          <option value="theater">Theater Style</option>
+        </select>
+        <button mat-button (click)="autoGenerateLayout()" class="generate-btn">
+          🎲 Auto Generate
+        </button>
+        <button mat-button (click)="cancel()" class="cancel-btn">Cancel</button>
+        <button mat-raised-button (click)="saveSeatingPlan()" class="save-btn">
+          Save Seating Plan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="seating-plan-container">
+    <!-- Design Tools Sidebar -->
+    <app-design-tools
+      [seatingPlan]="seatingPlan"
+      [selectedTool]="selectedTool"
+      (toolSelected)="onToolSelected($event)"
+      (sectionCreated)="onSectionCreated($event)"
+      (templateSectionAdded)="onTemplateSectionAdded($event)">
+    </app-design-tools>
+
+    <!-- Seating Canvas - Full width now -->
+    <div class="seating-canvas" [class]="'layout-' + seatingPlan.layout">
+      <div class="stage stage-north">
+        <div class="stage-label">STAGE</div>
+      </div>
+
+      <div class="sections-container">
+        <!-- Split Layout -->
+        <div *ngIf="seatingPlan.layout === 'split'" class="split-layout-row">
+          <div class="split-column left-column">
+            <app-seating-section
+              *ngFor="let section of getSectionsByPosition('left')"
+              [section]="section"
+              [seats]="getSeatsForSection(section.id)"
+              [selectedSeat]="selectedSeat"
+              [priceTiers]="priceTiers"
+              (priceTierChange)="onPriceTierChange($event)"
+              (action)="onSectionAction($event)"
+              (seatClick)="onSeatClick($event)">
+            </app-seating-section>
+          </div>
+
+          <div class="split-column center-column">
+            <app-seating-section
+              *ngFor="let section of getSectionsByPosition('center')"
+              [section]="section"
+              [seats]="getSeatsForSection(section.id)"
+              [selectedSeat]="selectedSeat"
+              [priceTiers]="priceTiers"
+              (priceTierChange)="onPriceTierChange($event)"
+              (action)="onSectionAction($event)"
+              (seatClick)="onSeatClick($event)">
+            </app-seating-section>
+          </div>
+
+          <div class="split-column right-column">
+            <app-seating-section
+              *ngFor="let section of getSectionsByPosition('right')"
+              [section]="section"
+              [seats]="getSeatsForSection(section.id)"
+              [selectedSeat]="selectedSeat"
+              [priceTiers]="priceTiers"
+              (priceTierChange)="onPriceTierChange($event)"
+              (action)="onSectionAction($event)"
+              (seatClick)="onSeatClick($event)">
+            </app-seating-section>
+          </div>
+        </div>
+
+        <!-- Other Layouts -->
+        <div *ngIf="seatingPlan.layout !== 'split'" class="other-layout">
+          <div *ngIf="getSectionsByPosition('upper').length > 0" class="level upper-level">
+            <h4 class="level-label">Upper Level</h4>
+            <div class="level-sections">
+              <app-seating-section
+                *ngFor="let section of getSectionsByPosition('upper')"
+                [section]="section"
+                [seats]="getSeatsForSection(section.id)"
+                [selectedSeat]="selectedSeat"
+                [priceTiers]="priceTiers"
+                (priceTierChange)="onPriceTierChange($event)"
+                (action)="onSectionAction($event)"
+                (seatClick)="onSeatClick($event)">
+              </app-seating-section>
+            </div>
+          </div>
+
+          <div class="level main-level">
+            <app-seating-section
+              *ngFor="let section of getSectionsByPosition('center')"
+              [section]="section"
+              [seats]="getSeatsForSection(section.id)"
+              [selectedSeat]="selectedSeat"
+              [priceTiers]="priceTiers"
+              (priceTierChange)="onPriceTierChange($event)"
+              (action)="onSectionAction($event)"
+              (seatClick)="onSeatClick($event)">
+            </app-seating-section>
+
+            <div class="side-sections-container">
+              <div class="side-sections left-sections">
+                <app-seating-section
+                  *ngFor="let section of getSectionsByPosition('left')"
+                  [section]="section"
+                  [seats]="getSeatsForSection(section.id)"
+                  [selectedSeat]="selectedSeat"
+                  [priceTiers]="priceTiers"
+                  (priceTierChange)="onPriceTierChange($event)"
+                  (action)="onSectionAction($event)"
+                  (seatClick)="onSeatClick($event)">
+                </app-seating-section>
+              </div>
+
+              <div class="side-sections right-sections">
+                <app-seating-section
+                  *ngFor="let section of getSectionsByPosition('right')"
+                  [section]="section"
+                  [seats]="getSeatsForSection(section.id)"
+                  [selectedSeat]="selectedSeat"
+                  [priceTiers]="priceTiers"
+                  (priceTierChange)="onPriceTierChange($event)"
+                  (action)="onSectionAction($event)"
+                  (seatClick)="onSeatClick($event)">
+                </app-seating-section>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="getSectionsByPosition('lower').length > 0" class="level lower-level">
+            <h4 class="level-label">Lower Level</h4>
+            <div class="level-sections">
+              <app-seating-section
+                *ngFor="let section of getSectionsByPosition('lower')"
+                [section]="section"
+                [seats]="getSeatsForSection(section.id)"
+                [selectedSeat]="selectedSeat"
+                [priceTiers]="priceTiers"
+                (priceTierChange)="onPriceTierChange($event)"
+                (action)="onSectionAction($event)"
+                (seatClick)="onSeatClick($event)">
+              </app-seating-section>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!hasSections()" class="empty-canvas">
+          <div class="empty-message">
+            <h3>No seating sections yet</h3>
+            <p>Choose a layout and add sections to get started!</p>
+            <button mat-raised-button (click)="autoGenerateLayout()" class="generate-btn">
+              🎲 Auto Generate Sample Layout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Properties Panel as Overlay -->
+    <div class="properties-panel-overlay" [class.visible]="selectedSeat">
+      <app-properties-panel
+        [selectedSeat]="selectedSeat"
+        [sections]="seatingPlan.sections"
+        (accessibilityToggle)="toggleSeatAccessibility($event)"
+        (blockToggle)="toggleSeatBlock($event)">
+      </app-properties-panel>
+    </div>
+  </div>
+</div>

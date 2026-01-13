@@ -1,0 +1,338 @@
+<div class="event-details-container" *ngIf="event && !isLoading; else loading">
+  <!-- Header Section -->
+  <div class="header-section">
+    <button mat-button routerLink="/admin/events" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+      Back to Events
+    </button>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="toggleFeatured()" class="featured-btn">
+        <mat-icon>{{ event.featured ? 'star' : 'star_border' }}</mat-icon>
+        {{ event.featured ? 'Remove Featured' : 'Mark Featured' }}
+      </button>
+      <button mat-raised-button color="primary" [routerLink]="['/admin/events', event.id, 'edit']">
+        <mat-icon>edit</mat-icon>
+        Edit Event
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Left Column -->
+    <div class="left-column">
+      <!-- Event Banner -->
+      <div class="banner-section" *ngIf="event.bannerImage">
+        <img [src]="event.bannerImage" [alt]="event.title" class="event-banner" (error)="handleImageError($event)">
+        <div class="banner-overlay">
+          <div class="event-status">
+            <mat-chip [class]="getStatusClass(event.status)" class="status-chip large">
+              {{ getStatusText(event.status) }}
+            </mat-chip>
+            <mat-chip class="active-chip large" [class.active]="event.isActive">
+              {{ event.isActive ? 'Active' : 'Inactive' }}
+            </mat-chip>
+            <div class="featured-badge" *ngIf="event.featured">
+              <mat-icon>star</mat-icon>
+              <span>Featured Event</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Info Card -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title class="event-title">{{ event.title }}</mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <!-- Event Description -->
+          <div class="description-section">
+            <h3>Description</h3>
+            <p class="event-description">{{ event.description }}</p>
+            <p class="event-short-description" *ngIf="event.shortDescription">{{ event.shortDescription }}</p>
+          </div>
+
+          <!-- Event Details -->
+          <div class="details-section">
+            <h3>Event Details</h3>
+            <div class="details-grid">
+              <div class="detail-item" *ngFor="let venue of event.sponsors | organizationFilter:OrganizationType.Venue">
+                <mat-icon>location_on</mat-icon>
+                <div class="detail-content">
+                  <span class="detail-label">Venue</span>
+                  <span class="detail-value">{{ venue.name }}</span>
+                  <span class="detail-address">
+                    {{ venue.city }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="detail-item">
+                <mat-icon>event</mat-icon>
+                <div class="detail-content">
+                  <span class="detail-label">Date</span>
+                  <span class="detail-value">{{ event.startDate | formatDate }}</span>
+                </div>
+              </div>
+
+              <div class="detail-item" *ngIf="event.startTime && event.endTime">
+                <mat-icon>schedule</mat-icon>
+                <div class="detail-content">
+                  <span class="detail-label">Time</span>
+                  <span class="detail-value">{{ (event.startTime) | formatTime }} - {{ (event.endTime) | formatTime
+                    }}</span>
+                </div>
+              </div>
+
+              <div class="detail-item" *ngIf="event.startTime && event.endTime">
+                <mat-icon>schedule</mat-icon>
+                <div class="detail-content">
+                  <span class="detail-label">Gate Open Time</span>
+                  <span class="detail-value">{{ event.gateOpenTime | formatTime }}</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+
+          <!-- Gallery -->
+          <div class="gallery-section" *ngIf="event.thumbnailImage">
+            <h3>Event Images</h3>
+            <div class="gallery-grid">
+              <div class="gallery-item">
+                <img [src]="event.thumbnailImage" [alt]="event.title + ' thumbnail'" (error)="handleImageError($event)">
+                <span class="image-label">Thumbnail</span>
+              </div>
+              <div class="gallery-item" *ngIf="event.bannerImage">
+                <img [src]="event.bannerImage" [alt]="event.title + ' banner'" (error)="handleImageError($event)">
+                <span class="image-label">Banner</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Organizer Card -->
+          <mat-card class="sponsors-card" >
+            <mat-card-header>
+              <mat-card-title>Organizer</mat-card-title>
+              <mat-card-subtitle>{{ (event.sponsors | organizationFilter:OrganizationType.Organizer).length }} organizer(s)</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="sponsors-list">
+                <div *ngFor="let sponsor of event.sponsors | organizationFilter:OrganizationType.Organizer" class="sponsor-item">
+                  <div class="sponsor-info">
+                    <div class="sponsor-header">
+                      <span class="sponsor-name">{{ sponsor.name }}</span>
+                    </div>
+                    <span class="sponsor-description" *ngIf="sponsor.description">{{ sponsor.description }}</span>
+                  </div>
+                  <a mat-icon-button *ngIf="sponsor.website" [href]="sponsor.website" target="_blank"
+                    matTooltip="Visit website">
+                    <mat-icon>open_in_new</mat-icon>
+                  </a>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Sponsors Card -->
+          <mat-card class="sponsors-card" >
+            <mat-card-header>
+              <mat-card-title>Sponsors</mat-card-title>
+              <mat-card-subtitle>{{ (event.sponsors | organizationFilter:OrganizationType.Sponsor).length }} sponsor(s)</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="sponsors-list">
+                <div *ngFor="let sponsor of event.sponsors | organizationFilter:OrganizationType.Sponsor" class="sponsor-item">
+                  <div class="sponsor-info">
+                    <div class="sponsor-header">
+                      <span class="sponsor-name">{{ sponsor.name }}</span>
+                    </div>
+                    <span class="sponsor-description" *ngIf="sponsor.description">{{ sponsor.description }}</span>
+                  </div>
+                  <a mat-icon-button *ngIf="sponsor.website" [href]="sponsor.website" target="_blank"
+                    matTooltip="Visit website">
+                    <mat-icon>open_in_new</mat-icon>
+                  </a>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Additional Details Card -->
+          <mat-card class="details-card" *ngFor="let detail of event.additionalDetails">
+            <mat-card-header>
+              <mat-card-title>{{detail.title}}</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="details-list">
+                <div class="detail-category">
+                  <!-- <h4>{{ getDetailTypeText(detail.type) }}</h4> -->
+                  <p class="detail-content">{{ detail.content }}</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+      <!-- Quick Actions Card -->
+      <mat-card class="actions-card">
+        <mat-card-header>
+          <mat-card-title>Quick Actions</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="actions-list">
+            <button mat-raised-button color="primary" [routerLink]="['/admin/venues/sectionview']"
+              class="action-btn full-width">
+              <mat-icon>confirmation_number</mat-icon>
+              Manage Sections
+            </button>
+            <button mat-raised-button color="primary" [routerLink]="['/admin/events', event.id, 'sponsors']"
+              class="action-btn full-width">
+              <mat-icon>corporate_fare</mat-icon>
+              Manage Sponsors
+            </button>
+            <button mat-raised-button color="primary" [routerLink]="['/admin/events', event.id, 'additional-details']"
+              class="action-btn full-width">
+              <mat-icon>question_answer</mat-icon>
+              Additional Details
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+
+
+      <!-- Event Settings Card -->
+      <mat-card class="settings-card" *ngIf="event.settings">
+        <mat-card-header>
+          <mat-card-title>Event Settings</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="settings-list">
+            <div class="setting-item">
+              <mat-icon>confirmation_number</mat-icon>
+              <span>Max {{ event.maxTicketsPerOrder }} tickets per order</span>
+            </div>
+            <div class="setting-item" *ngIf="event.allowCancellations">
+              <mat-icon>cancel</mat-icon>
+              <span>Cancellations allowed</span>
+            </div>
+            <div class="setting-item" *ngIf="event.settings.requireApproval">
+              <mat-icon>verified</mat-icon>
+              <span>Requires approval</span>
+            </div>
+            <div class="setting-item" *ngIf="event.settings.enableWaitlist">
+              <mat-icon>hourglass_empty</mat-icon>
+              <span>Waitlist enabled ({{ event.settings.waitlistCapacity }} capacity)</span>
+            </div>
+            <div class="setting-item" *ngIf="event.settings.sendReminders">
+              <mat-icon>notifications</mat-icon>
+              <span>Reminders {{ event.settings.reminderDaysBefore }} day(s) before</span>
+            </div>
+            <div class="setting-item" *ngIf="event.settings.collectAttendeeInfo">
+              <mat-icon>person_add</mat-icon>
+              <span>Collect attendee info</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+
+      <!-- Event Stats Card -->
+      <mat-card class="stats-card">
+        <mat-card-header>
+          <mat-card-title>Event Statistics</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <mat-icon>event_seat</mat-icon>
+              <div class="stat-content">
+                <span class="stat-value">{{ event.totalSeats }}</span>
+                <span class="stat-label">Total Seats</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <mat-icon>check_circle</mat-icon>
+              <div class="stat-content">
+                <span class="stat-value">{{ event.availableSeats }}</span>
+                <span class="stat-label">Available</span>
+              </div>
+            </div>
+            <!-- <div class="stat-item">
+              <mat-icon>confirmation_number</mat-icon>
+              <div class="stat-content">
+                <span class="stat-value">{{ event.bookedSeats }}</span>
+                <span class="stat-label">Booked</span>
+              </div>
+            </div> -->
+            <div class="stat-item">
+              <mat-icon>grid_view</mat-icon>
+              <div class="stat-content">
+                <span class="stat-value">{{ event.totalSections }}</span>
+                <span class="stat-label">Sections</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <mat-icon>corporate_fare</mat-icon>
+              <div class="stat-content">
+                <span class="stat-value">{{ event.sponsorCount }}</span>
+                <span class="stat-label">Sponsors</span>
+              </div>
+            </div>
+            <div class="stat-item">
+              <mat-icon>local_offer</mat-icon>
+              <div class="stat-content">
+                <span class="stat-value">{{ event.couponCount }}</span>
+                <span class="stat-label">Coupons</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Audit Info Card -->
+      <mat-card class="audit-card">
+        <mat-card-header>
+          <mat-card-title>Event Information</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="audit-list">
+            <div class="audit-item">
+              <mat-icon>calendar_today</mat-icon>
+              <div class="audit-content">
+                <span class="audit-label">Created</span>
+                <span class="audit-value">{{ event.createdAt | date:'medium' }}</span>
+                <span class="audit-by" *ngIf="event.createdBy">by {{ event.createdBy }}</span>
+              </div>
+            </div>
+            <div class="audit-item">
+              <mat-icon>update</mat-icon>
+              <div class="audit-content">
+                <span class="audit-label">Last Updated</span>
+                <span class="audit-value">{{ event.updatedAt | date:'medium' }}</span>
+                <span class="audit-by" *ngIf="event.updatedBy">by {{ event.updatedBy }}</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Loading event details...</p>
+  </div>
+</ng-template>
