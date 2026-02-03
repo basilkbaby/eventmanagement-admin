@@ -1,63 +1,70 @@
 import { OrderStatus, PaymentStatus, SeatType } from "../Enums/order.enum";
 
 export interface OrderDto {
-  id: string;
+  // Core order properties (matching API)
+  orderId: string;  // Changed from 'id' to match API
   orderNumber: string;
-  customerId: string;
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  customerPostCode?: string;
   eventId: string;
   eventName: string;
   eventDate: Date;
+  venue: string;
+  subtotal: number;
+  serviceFee: number;
+  totalAmount: number;
   status: OrderStatus;
-  paymentStatus: PaymentStatus;
-  
-  // Amount breakdown
-  totalAmount: number;           // Base amount before fees/discounts
-  serviceFeeAmount: number;      // Service fee amount
-  bulkDiscountAmount: number;    // Bulk discount amount
-  bulkDiscountApplied: boolean;
-  bulkDiscountName?: string;
-  couponDiscount: number;        // Coupon discount amount
-  discountAmount: number;        // Total discount (bulk + coupon)
-  finalAmount: number;           // Final amount after all adjustments
-  
-  // Seat information
-  seatCount: number;
-  seatSummary: string;
-  seatNumbers: string[];
-  
-  // Dates
   createdAt: Date;
-  updatedAt?: Date;
   
   // Collections
-  orderSeats: OrderSeatDto[];
-    expanded: boolean;
-    cancelledSeatsCount: number;
-    totalSeatsCount: number;
+  seats: OrderSeatDto[];
+  
+  // Additional API properties
+  qrCodeData?: string | null;
+  serviceFeeType?: string;
+  serviceFeeValue?: number;
+  couponCode?: string | null;
+  couponDiscount: number;
+  discount: number;
+  totalDiscount: number;
+  total: number;
+  
+  // UI properties (not from API)
+  expanded?: boolean;
+  cancelledSeatsCount?: number;
+  seatCount?: number;
+  seatSummary?: string;
+  
+  // Payment and discount properties (may come from API or calculated)
+  paymentStatus?: PaymentStatus;
+  serviceFeeAmount: number;
+  bulkDiscountAmount: number;
+  bulkDiscountApplied: boolean;
+  bulkDiscountName?: string;
+  finalAmount?: number;
 }
 
 export interface OrderSeatDto {
-  id: string;
+  // Core seat properties (matching API)
+  seatId: string;  // Changed from 'id' to match API
   seatNumber: string;
-  rowLabel: string;
-  rowNumber: number;
-  columnNumber: number;
-  seatType: SeatType;
-  priceAtBooking: number;
-  serviceFee: number;
-  bulkDiscount: number;
-  couponDiscount: number;
-  finalPrice: number;
-  bookedAt: Date;
-  isCancelled: boolean;
-  cancelledAt?: Date;
-  cancellationReason?: string;
-  sectionName?: string;
-  sectionId?: string;
-
+  sectionName: string;
+  price: number;
+  ticketNumber: string;
+  
+  // Additional seat properties
+  isCancelled?: boolean;
+  cancelledAt?: string;
+  seatType?: SeatType;
+  rowLabel?: string;
+  columnNumber?: number;
+  serviceFee?: number;
+  bulkDiscount?: number;
+  couponDiscount?: number;
+  priceAtBooking?: number;
+  finalPrice?: number;
 }
 
 export interface OrderBreakdownDto {

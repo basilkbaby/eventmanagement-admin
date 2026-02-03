@@ -48,7 +48,7 @@ export class SidebarComponent {
   navigationItems: NavigationItem[] = [
     { path: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard', isActive: true },
     { path: '/admin/events', icon: 'event', label: 'Events' }, //, badge: 3
-    //{ path: '/admin/orders', icon: 'confirmation_number', label: 'Ticket Sales' }, //, badge: 12
+    { path: '/admin/orders', icon: 'confirmation_number', label: 'Ticket Sales' }, //, badge: 12
     // { path: '/admin/venues', icon: 'location_on', label: 'Venues' }, //, badge: 3
     //{ path: '/admin/users', icon: 'people', label: 'Users' }, //badge: 5
     //{ path: '/admin/coupons', icon: 'local_offer', label: 'Coupons' },

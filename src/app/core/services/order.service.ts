@@ -60,12 +60,12 @@ export class OrderService {
   // ==================== ORDER MANAGEMENT ====================
 
   getOrders(
-    search?: string,
     eventId?: string,
+    search?: string,
     status?: OrderStatus,
     paymentStatus?: PaymentStatus,
     page: number = 1,
-    pageSize: number = 25
+    pageSize: number = 1000
   ): Observable<OrdersResponse> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -79,7 +79,7 @@ export class OrderService {
     return this.http.get<OrdersResponse>(this.apiUrl, { params }).pipe(
       map(response => ({
         ...response,
-        orders: this.mapOrders(response.orders)
+        orders: response.orders
       })),
       catchError(this.handleError)
     );
@@ -87,7 +87,7 @@ export class OrderService {
 
   getOrder(id: string): Observable<OrderDto> {
     return this.http.get<OrderDto>(`${this.apiUrl}/${id}`).pipe(
-      map(order => this.mapOrder(order)),
+      map(order => order),
       catchError(this.handleError)
     );
   }
@@ -137,6 +137,16 @@ export class OrderService {
       catchError(this.handleError)
     );
   }
+
+  updateCustomerDetails(orderId: string, customerData: any): Observable<any> {
+  return this.http.patch(`${this.apiUrl}/${orderId}/customer`, customerData, {
+  });
+}
+
+resendConfirmationEmail(orderId: string, emailData: any): Observable<any> {
+  return this.http.post(`${this.apiUrl}/${orderId}/resend-email`, emailData, {
+  });
+}
 
   // ==================== CART MANAGEMENT ====================
 
@@ -209,22 +219,6 @@ export class OrderService {
 
   // ==================== CHECKOUT & PAYMENT ====================
 
-  checkout(checkoutData: any): Observable<{ order: OrderDto; paymentUrl?: string }> {
-    return this.http.post<{ order: OrderDto; paymentUrl?: string }>(`${this.checkoutApiUrl}/create`, checkoutData).pipe(
-      map(response => ({
-        ...response,
-        order: this.mapOrder(response.order)
-      })),
-      catchError(this.handleError)
-    );
-  }
-
-  confirmPayment(orderId: string, paymentData: any): Observable<OrderDto> {
-    return this.http.post<OrderDto>(`${this.checkoutApiUrl}/${orderId}/confirm-payment`, paymentData).pipe(
-      map(order => this.mapOrder(order)),
-      catchError(this.handleError)
-    );
-  }
 
   getPaymentStatus(orderId: string): Observable<{ status: PaymentStatus; details?: any }> {
     return this.http.get<{ status: PaymentStatus; details?: any }>(
@@ -243,78 +237,6 @@ export class OrderService {
     );
   }
 
-  // ==================== UTILITY METHODS ====================
-
-  private mapOrders(orders: any[]): OrderDto[] {
-    return orders.map(order => this.mapOrder(order));
-  }
-
-  private mapOrder(order: any): OrderDto {
-    // Map order properties
-    const mappedOrder: OrderDto = {
-      id: order.id,
-      orderNumber: order.orderNumber,
-      customerId: order.customerId,
-      customerName: order.customerName || 'N/A',
-      customerEmail: order.customerEmail || 'N/A',
-      customerPhone: order.customerPhone,
-      eventId: order.eventId,
-      eventName: order.eventName,
-      eventDate: new Date(order.eventDate),
-      status: order.status,
-      paymentStatus: order.paymentStatus,
-      
-      // Amount breakdown
-      totalAmount: order.totalAmount || 0,
-      serviceFeeAmount: order.serviceFeeAmount || 0,
-      bulkDiscountAmount: order.bulkDiscountAmount || 0,
-      bulkDiscountApplied: order.bulkDiscountApplied || false,
-      bulkDiscountName: order.bulkDiscountName,
-      couponDiscount: order.couponDiscount || 0,
-      discountAmount: (order.bulkDiscountAmount || 0) + (order.couponDiscount || 0),
-      finalAmount: order.finalAmount || 0,
-      
-      // Seat information
-      seatCount: order.seatCount || 0,
-      seatSummary: order.seatSummary || '',
-      seatNumbers: order.seatNumbers || [],
-      
-      // Dates
-      createdAt: new Date(order.createdAt),
-      updatedAt: order.updatedAt ? new Date(order.updatedAt) : undefined,
-      
-      // Collections
-      orderSeats: this.mapOrderSeats(order.orderSeats || []),
-      cancelledSeatsCount : order.cancelledSeatsCount,
-      expanded : order.expanded,
-      totalSeatsCount : order.totalSeatsCount
-    };
-
-    return mappedOrder;
-  }
-
-  private mapOrderSeats(orderSeats: any[]): OrderSeatDto[] {
-    return orderSeats.map(seat => ({
-      id: seat.id,
-      seatNumber: seat.seatNumber,
-      rowLabel: seat.rowLabel,
-      rowNumber: seat.rowNumber,
-      columnNumber: seat.columnNumber,
-      seatType: seat.seatType as SeatType,
-      priceAtBooking: seat.priceAtBooking || 0,
-      serviceFee: seat.serviceFee || 0,
-      bulkDiscount: seat.bulkDiscount || 0,
-      couponDiscount: seat.couponDiscount || 0,
-      finalPrice: seat.finalPrice || seat.priceAtBooking || 0,
-      bookedAt: new Date(seat.bookedAt),
-      isCancelled: seat.isCancelled || false,
-      cancelledAt: seat.cancelledAt ? new Date(seat.cancelledAt) : undefined,
-      cancellationReason: seat.cancellationReason,
-      sectionName: seat.sectionName,
-      sectionId: seat.sectionId
-    }));
-  }
-
   // ==================== HELPER METHODS ====================
 
   calculateOrderBreakdown(order: OrderDto): OrderBreakdownDto {
@@ -323,7 +245,7 @@ export class OrderService {
       serviceFee: order.serviceFeeAmount,
       bulkDiscount: order.bulkDiscountAmount,
       couponDiscount: order.couponDiscount,
-      total: order.finalAmount
+      total: order.totalAmount
     };
   }
 
@@ -343,10 +265,10 @@ export class OrderService {
   }
 
   getServiceFeeDescription(order: OrderDto): string {
-    if (order.serviceFeeAmount <= 0) return 'No service fee';
+    if (order.serviceFeeAmount ?? 0 <= 0) return 'No service fee';
     
     const percentage = (order.serviceFeeAmount / order.totalAmount) * 100;
-    return `Service fee: $${order.serviceFeeAmount.toFixed(2)} (${percentage.toFixed(1)}%)`;
+    return `Service fee: $${order.serviceFeeAmount} (${percentage.toFixed(1)}%)`;
   }
 
   // ==================== ERROR HANDLING ====================
