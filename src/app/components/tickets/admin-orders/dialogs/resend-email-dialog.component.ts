@@ -43,26 +43,7 @@ export interface ResendEmailDialogData {
           </div>
         </div>
         
-        <div class="email-options">
-          <h3>Email Options</h3>
-               
-          <div class="option-item">
-            <mat-checkbox [(ngModel)]="sendToAlternateEmail" color="primary">
-              Send to alternate email
-            </mat-checkbox>
-            <div class="alternate-email-input" *ngIf="sendToAlternateEmail">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Alternate Email</mat-label>
-                <input matInput 
-                       type="email"
-                       [(ngModel)]="alternateEmail"
-                       placeholder="Enter alternate email address">
-                <mat-icon matPrefix>alternate_email</mat-icon>
-              </mat-form-field>
-            </div>
-          </div>
-          
-        </div>
+
       </div>
     </mat-dialog-content>
     

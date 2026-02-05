@@ -139,12 +139,12 @@ export class OrderService {
   }
 
   updateCustomerDetails(orderId: string, customerData: any): Observable<any> {
-  return this.http.patch(`${this.apiUrl}/${orderId}/customer`, customerData, {
+  return this.http.post(`${this.apiUrl}/${orderId}/updateordercustomer`, customerData, {
   });
 }
 
 resendConfirmationEmail(orderId: string, emailData: any): Observable<any> {
-  return this.http.post(`${this.apiUrl}/${orderId}/resend-email`, emailData, {
+  return this.http.post(`${this.apiUrl}/${orderId}/resend-confirmation`, emailData, {
   });
 }
 

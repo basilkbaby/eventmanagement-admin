@@ -160,7 +160,7 @@
             <div class="cell order-info">
               <div class="order-header">
                 <div class="order-number">#{{ order.orderNumber }}</div>
-                <div class="order-date">{{ formatDate(order.createdAt) }}</div>
+                <div class="order-date">{{ formatDateTime(order.createdAt) }}</div>
               </div>
               
               <div class="customer-info">
@@ -233,7 +233,7 @@
                   <mat-icon>visibility</mat-icon>
                 </button> -->
                 
-                <!-- <button mat-icon-button 
+                <button mat-icon-button 
                         color="primary"
                         matTooltip="Resend confirmation email"
                         (click)="resendOrderConfirmation(order)"
@@ -246,7 +246,7 @@
                         matTooltip="Edit customer details"
                         (click)="editCustomerDetails(order)">
                   <mat-icon>edit</mat-icon>
-                </button> -->
+                </button>
                 
                 <!-- <button mat-icon-button 
                         [matMenuTriggerFor]="orderMenu"
