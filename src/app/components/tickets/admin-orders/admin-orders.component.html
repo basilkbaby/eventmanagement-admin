@@ -19,14 +19,14 @@
         </mat-form-field>
         
         <div class="header-actions">
-          <!-- <button mat-raised-button 
+          <button mat-raised-button 
                   color="primary" 
                   (click)="exportOrders()" 
                   [disabled]="loading()"
                   class="export-btn">
             <mat-icon>download</mat-icon>
             Export
-          </button> -->
+          </button>
           
           <button mat-icon-button 
                   (click)="loadData()" 
@@ -107,6 +107,47 @@
     <div class="access-info" *ngIf="!hasEventAccess">
       <mat-icon>info</mat-icon>
       <span>Showing orders for your assigned events only</span>
+    </div>
+  </div>
+
+  <!-- NEW: Search Section -->
+  <div class="search-section">
+    <div class="search-container">
+      <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+        <mat-label>Search orders</mat-label>
+        <input matInput 
+               [ngModel]="searchTerm()" 
+               (ngModelChange)="searchTerm.set($event); onSearchChange()"
+               placeholder="Search by order number, customer name, email..."
+               autocomplete="off">
+        <mat-icon matPrefix>search</mat-icon>
+        <button matSuffix 
+                mat-icon-button 
+                *ngIf="searchTerm()" 
+                (click)="searchTerm.set(''); onSearchChange()"
+                aria-label="Clear search">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="search-field-select" subscriptSizing="dynamic">
+        <mat-label>Search in</mat-label>
+        <mat-select [ngModel]="searchField()" (ngModelChange)="searchField.set($event)">
+          <mat-option *ngFor="let field of searchFields" [value]="field.value">
+            {{ field.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="search-actions" *ngIf="searchTerm() || selectedEvent()">
+        <button mat-button color="primary" (click)="clearFilters()">
+          <mat-icon>clear_all</mat-icon>
+          Clear All Filters
+        </button>
+        <div class="results-hint" *ngIf="filteredOrders().length !== allOrders().length">
+          Found {{ filteredOrders().length }} of {{ allOrders().length }} orders
+        </div>
+      </div>
     </div>
   </div>
 

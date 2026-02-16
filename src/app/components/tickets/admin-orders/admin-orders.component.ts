@@ -65,29 +65,52 @@ export class AdminOrdersComponent implements OnInit {
 
   readonly allOrders = signal<OrderDto[]>([]);
   readonly filteredOrders = computed(() => {
-    const orders = this.allOrders();
-    const search = this.searchTerm().toLowerCase();
-    const eventFilter = this.selectedEvent();
+  const orders = this.allOrders();
+  const search = this.searchTerm().toLowerCase().trim();
+  const eventFilter = this.selectedEvent();
+  const searchField = this.searchField();
 
-    let filtered = orders;
+  let filtered = orders;
 
-    // Apply event filter
-    if (eventFilter) {
-      filtered = filtered.filter(order => order.eventId === eventFilter);
-    }
+  // Apply event filter
+  if (eventFilter) {
+    filtered = filtered.filter(order => order.eventId === eventFilter);
+  }
 
-    // Apply search filter
-    if (search) {
-      filtered = filtered.filter(order => 
-        order.orderNumber.toLowerCase().includes(search) ||
-        order.customerName.toLowerCase().includes(search) ||
-        order.customerEmail.toLowerCase().includes(search) ||
-        order.eventName.toLowerCase().includes(search)
-      );
-    }
+  // Apply search filter
+  if (search) {
+    filtered = filtered.filter(order => {
+      switch (searchField) {
+        case 'orderNumber':
+          return order.orderNumber.toLowerCase().includes(search);
+        case 'customerName':
+          return order.customerName.toLowerCase().includes(search);
+        case 'customerEmail':
+          return order.customerEmail.toLowerCase().includes(search);
+        case 'eventName':
+          return order.eventName.toLowerCase().includes(search);
+        case 'all':
+        default:
+          return (
+            order.orderNumber.toLowerCase().includes(search) ||
+            order.customerName.toLowerCase().includes(search) ||
+            order.customerEmail.toLowerCase().includes(search) ||
+            order.eventName.toLowerCase().includes(search)
+          );
+      }
+    });
+  }
 
-    return filtered;
-  });
+  return filtered;
+});
+
+readonly searchFields = [
+  { value: 'all', label: 'All Fields' },
+  { value: 'orderNumber', label: 'Order Number' },
+  { value: 'customerName', label: 'Customer Name' },
+  { value: 'customerEmail', label: 'Customer Email' },
+  { value: 'eventName', label: 'Event Name' }
+];
 
   // Pagination signals
   readonly pageSize = signal(1000);
@@ -106,6 +129,7 @@ export class AdminOrdersComponent implements OnInit {
   // Search and filter signals
   readonly searchTerm = signal('');
   readonly selectedEvent = signal('');
+  readonly searchField = signal<'all' | 'orderNumber' | 'customerName' | 'customerEmail' | 'eventName'>('all');
 
   readonly stats = computed(() => {
     const orders = this.allOrders();
@@ -226,9 +250,10 @@ export class AdminOrdersComponent implements OnInit {
   }
 
   clearFilters(): void {
-    this.searchTerm.set('');
-    this.selectedEvent.set('');
-    this.pageIndex.set(0);
+  this.searchTerm.set('');
+  this.searchField.set('all');
+  this.selectedEvent.set('');
+  this.pageIndex.set(0);
   }
 
 
