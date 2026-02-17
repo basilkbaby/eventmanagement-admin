@@ -138,6 +138,15 @@ export class OrderService {
     );
   }
 
+  exportOrderTickets(orderId: string): Observable<Blob> {
+  return this.http.get(`${this.apiUrl}/exportticket/${orderId}`, {
+    responseType: 'blob',
+    headers: new HttpHeaders({
+      'Accept': 'application/pdf, application/zip'
+    })
+  });
+}
+
   updateCustomerDetails(orderId: string, customerData: any): Observable<any> {
   return this.http.post(`${this.apiUrl}/${orderId}/updateordercustomer`, customerData, {
   });

@@ -64,7 +64,13 @@ export class AdminOrdersComponent implements OnInit {
   readonly hasAllEventAccess = signal(false);
 
   readonly allOrders = signal<OrderDto[]>([]);
-  readonly filteredOrders = computed(() => {
+
+  readonly searchPostcode = signal('');
+readonly searchMobile = signal('');
+readonly searchSeatNumber = signal('');
+
+
+readonly filteredOrders = computed(() => {
   const orders = this.allOrders();
   const search = this.searchTerm().toLowerCase().trim();
   const eventFilter = this.selectedEvent();
@@ -87,15 +93,26 @@ export class AdminOrdersComponent implements OnInit {
           return order.customerName.toLowerCase().includes(search);
         case 'customerEmail':
           return order.customerEmail.toLowerCase().includes(search);
-        case 'eventName':
-          return order.eventName.toLowerCase().includes(search);
+        case 'customerPhone':
+          return order.customerPhone?.toLowerCase().includes(search)
+        case 'customerPostcode':
+          return order.customerPostCode?.toLowerCase().includes(search)
+        case 'seatNumber':
+          return order.seats?.some(seat => 
+            seat.seatNumber?.toLowerCase().includes(search) ||
+            seat.seatId?.toLowerCase().includes(search)
+          );
         case 'all':
         default:
           return (
             order.orderNumber.toLowerCase().includes(search) ||
             order.customerName.toLowerCase().includes(search) ||
             order.customerEmail.toLowerCase().includes(search) ||
-            order.eventName.toLowerCase().includes(search)
+            order.customerPhone?.toLowerCase().includes(search) ||
+            order.customerPostCode?.toLowerCase().includes(search) ||
+            order.seats?.some(seat => 
+              seat.seatId?.toLowerCase().includes(search)
+            )
           );
       }
     });
@@ -109,7 +126,10 @@ readonly searchFields = [
   { value: 'orderNumber', label: 'Order Number' },
   { value: 'customerName', label: 'Customer Name' },
   { value: 'customerEmail', label: 'Customer Email' },
-  { value: 'eventName', label: 'Event Name' }
+  { value: 'customerPhone', label: 'Mobile Number' },
+  { value: 'customerPostcode', label: 'Postcode' },
+  { value: 'seatNumber', label: 'Seat Number' }
+  // { value: 'eventName', label: 'Event Name' }
 ];
 
   // Pagination signals
@@ -129,8 +149,7 @@ readonly searchFields = [
   // Search and filter signals
   readonly searchTerm = signal('');
   readonly selectedEvent = signal('');
-  readonly searchField = signal<'all' | 'orderNumber' | 'customerName' | 'customerEmail' | 'eventName'>('all');
-
+  readonly searchField = signal<'all' | 'orderNumber' | 'customerName' | 'customerEmail' | 'eventName' | 'customerPhone' | 'customerPostcode' | 'seatNumber'>('all');
   readonly stats = computed(() => {
     const orders = this.allOrders();
     const allSeats = orders.flatMap(order => order.seats);
@@ -178,6 +197,8 @@ readonly searchFields = [
   // For loading states
   readonly resendingEmail = signal<Record<string, boolean>>({});
   readonly editingCustomer = signal<Record<string, boolean>>({});
+  // Add this signal to track export loading states
+  readonly exportingTickets = signal<Record<string, boolean>>({});
 
   ngOnInit(): void {
     this.loadEvents();
@@ -536,6 +557,54 @@ private updateCustomerDetails(orderId: string, customerData: any) {
       panelClass: ['error-snackbar'] 
     });
   }
+
+
+  // Add this method to handle ticket export
+exportOrderTickets(order: OrderDto): void {
+
+
+  // Show loading state for this specific order
+  this.exportingTickets.update(map => ({
+    ...map,
+    [order.orderId]: true
+  }));
+
+  this.orderService.exportOrderTickets(order.orderId).subscribe({
+    next: (blob) => {
+      // Determine file type and extension
+      const contentType = blob.type;
+      let extension = 'pdf';
+      
+      if (contentType.includes('zip')) {
+        extension = 'zip';
+      } else if (contentType.includes('pdf')) {
+        extension = 'pdf';
+      }
+
+      const filename = `tickets-${order.orderNumber}-${new Date().toISOString().split('T')[0]}.${extension}`;
+      
+      this.downloadFile(blob, filename);
+      this.showSuccess(`Tickets exported successfully for order ${order.orderNumber}`);
+      
+      // Clear loading state
+      this.exportingTickets.update(map => ({
+        ...map,
+        [order.orderId]: false
+      }));
+    },
+    error: (error) => {
+      console.error('Error exporting tickets:', error);
+      this.showError('Failed to export tickets');
+      
+      // Clear loading state
+      this.exportingTickets.update(map => ({
+        ...map,
+        [order.orderId]: false
+      }));
+    }
+  });
+}
+
 
   // Getters for template
   get SeatType() {
