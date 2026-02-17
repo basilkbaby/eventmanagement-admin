@@ -209,6 +209,7 @@
                 <div class="customer-details">
                   <span class="customer-email">{{ order.customerEmail }}</span>
                   <span class="customer-phone" *ngIf="order.customerPhone">• {{ order.customerPhone }}</span>
+                  <span class="customer-postcode" *ngIf="order.customerPostCode">• {{ order.customerPostCode }}</span>
                 </div>
               </div>
             </div>
@@ -298,7 +299,7 @@
       <mat-icon *ngIf="!exportingTickets()[order.orderId]">confirmation_number</mat-icon>
       <mat-spinner diameter="20" *ngIf="exportingTickets()[order.orderId]"></mat-spinner>
     </button>
-    
+
                 <!-- <button mat-icon-button 
                         [matMenuTriggerFor]="orderMenu"
                         [matMenuTriggerData]="{ order: order }"
