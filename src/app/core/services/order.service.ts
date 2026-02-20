@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
-import { Observable, map, catchError, throwError } from 'rxjs';
-import { OrderDto, OrderSeatDto, OrderBreakdownDto ,  CartItemDto, CartCalculationDto, FeeCalculationDto } from '../models/DTOs/order.DTO.model';
+import { Observable, map, catchError, throwError, tap } from 'rxjs';
+import { OrderDto, OrderSeatDto, OrderBreakdownDto ,  CartItemDto, CartCalculationDto, FeeCalculationDto, CheckinRequest, CheckinResponse } from '../models/DTOs/order.DTO.model';
 import { OrderStatus, PaymentStatus, SeatType,  } from '../models/Enums/order.enum';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { environment } from '../../../environments/environment';
@@ -156,6 +156,26 @@ resendConfirmationEmail(orderId: string, emailData: any): Observable<any> {
   return this.http.post(`${this.apiUrl}/${orderId}/resend-confirmation`, emailData, {
   });
 }
+
+confirmCheckin(request: CheckinRequest): Observable<CheckinResponse> {
+    return this.http.post<CheckinResponse>(
+      `${this.apiUrl}/${request.orderId}/checkin`, 
+      {
+        seatIds: request.seatIds,
+        staffId: request.staffId,
+        staffName: request.staffName,
+        eventId: request.eventId
+      }
+    ).pipe(
+      tap(response => {
+        return response;
+      }),
+      catchError(error => {
+        console.error('Error during check-in:', error);
+        throw error;
+      })
+    );
+  }
 
   // ==================== CART MANAGEMENT ====================
 

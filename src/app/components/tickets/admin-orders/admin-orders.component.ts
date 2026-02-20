@@ -20,12 +20,13 @@ import { FormsModule } from '@angular/forms';
 import { EventDto } from '../../../core/models/DTOs/event.DTO.model';
 import { MatDividerModule } from '@angular/material/divider';
 import { EventService } from '../../../core/services/event.service';
-import { OrderDto, OrderSeatDto } from '../../../core/models/DTOs/order.DTO.model';
+import { CheckinResponse, OrderDto, OrderSeatDto } from '../../../core/models/DTOs/order.DTO.model';
 import { OrderStatus, PaymentStatus, SeatType } from '../../../core/models/Enums/order.enum';
 import { OrderService } from '../../../core/services/order.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { EditCustomerDialogComponent, EditCustomerDialogData } from './dialogs/edit-customer-dialog.component';
 import { ResendEmailDialogComponent, ResendEmailDialogData } from './dialogs/resend-email-dialog.component';
+import { CheckInDialogComponent } from './dialogs/check-in-dialog.component';
 
 @Component({
   selector: 'app-admin-orders',
@@ -199,6 +200,8 @@ readonly searchFields = [
   readonly editingCustomer = signal<Record<string, boolean>>({});
   // Add this signal to track export loading states
   readonly exportingTickets = signal<Record<string, boolean>>({});
+  readonly checkingIn = signal<Record<string, boolean>>({});
+  readonly checkinResults = signal<Record<string, any>>({});
 
   ngOnInit(): void {
     this.loadEvents();
@@ -358,14 +361,29 @@ readonly searchFields = [
     }
   }
 
-  getOrderStatusIcon(status: OrderStatus): string {
-    switch (status) {
-      case OrderStatus.CONFIRMED: return 'check_circle';
-      case OrderStatus.PENDING: return 'schedule';
-      case OrderStatus.CANCELLED: return 'cancel';
-      default: return 'help';
+getOrderStatusIcon(order: OrderDto): string {
+  // Check if all seats are checked in (only for confirmed orders)
+  if (order.status === OrderStatus.CONFIRMED) {
+    const allSeatsCheckedIn = order.seats?.every(s => s.isCheckedIn) || false;
+    if (allSeatsCheckedIn) {
+      return 'check_circle'; // Different icon for checked in
+    }
+    
+    // Check if partially checked in
+    const someSeatsCheckedIn = order.seats?.some(s => s.isCheckedIn) || false;
+    if (someSeatsCheckedIn) {
+      return 'remove_circle_outline'; // Different icon for partial check-in
     }
   }
+  
+  // Keep existing icon logic for all other cases
+  switch (order.status) {
+    case OrderStatus.CONFIRMED: return 'check_circle';
+    case OrderStatus.PENDING: return 'schedule';
+    case OrderStatus.CANCELLED: return 'cancel';
+    default: return 'help';
+  }
+}
 
   getPaymentStatusText(status: PaymentStatus): string {
     switch (status) {
@@ -398,18 +416,32 @@ readonly searchFields = [
     return 'pending';
   }
 
-  getStatusText(order: OrderDto): string {
-    const status = this.getMainStatus(order);
+getStatusText(order: OrderDto): string {
+  // Check if all seats are checked in (only for confirmed orders)
+  if (order.status === OrderStatus.CONFIRMED) {
+    const allSeatsCheckedIn = order.seats?.every(s => s.isCheckedIn) || false;
+    if (allSeatsCheckedIn) {
+      return 'Checked In';
+    }
     
-    switch (status) {
-      case 'confirmed': return 'Confirmed';
-      case 'pending': return 'Pending';
-      case 'cancelled': return 'Cancelled';
-      case 'refunded': return 'Refunded';
-      case 'failed': return 'Failed';
-      default: return 'Pending';
+    // Check if partially checked in
+    const someSeatsCheckedIn = order.seats?.some(s => s.isCheckedIn) || false;
+    if (someSeatsCheckedIn) {
+      return 'Partial Check-in';
     }
   }
+  
+  // Keep existing status text for all other cases
+  const status = this.getMainStatus(order);
+  switch (status) {
+    case 'confirmed': return 'Confirmed';
+    case 'pending': return 'Pending';
+    case 'cancelled': return 'Cancelled';
+    case 'refunded': return 'Refunded';
+    case 'failed': return 'Failed';
+    default: return 'Pending';
+  }
+}
 
   getStatusClass(order: OrderDto): string {
     const status = this.getMainStatus(order);
@@ -486,6 +518,137 @@ private updateCustomerDetails(orderId: string, customerData: any) {
   // Replace this with your actual API call
   return this.orderService.updateCustomerDetails(orderId, customerData);
 }
+
+checkInOrder(order: OrderDto): void {
+  if (order.status !== OrderStatus.CONFIRMED) {
+    this.showError('Cannot check-in unconfirmed orders');
+    return;
+  }
+
+  // Get staff info
+  const staffInfo = this.authService.getCurrentUser();
+  if (!staffInfo) {
+    this.showError('Staff information not found. Please login again.');
+    return;
+  }
+
+  // Check if any seats are already checked in
+  const checkedInSeats = order.seats?.filter(s => s.isCheckedIn) || [];
+  if (checkedInSeats.length > 0) {
+    const message = checkedInSeats.length === order.seats?.length
+      ? 'All seats in this order are already checked in'
+      : `${checkedInSeats.length} out of ${order.seats?.length} seats are already checked in`;
+    
+    if (!confirm(`${message}. Do you want to continue?`)) {
+      return;
+    }
+  }
+
+  const dialogRef = this.dialog.open(CheckInDialogComponent, {
+    width: '500px',
+    data: { 
+      order,
+      eventName: order.eventName,
+      eventDate: order.eventDate,
+      totalSeats: order.seats?.length || 0,
+      checkedInSeats: checkedInSeats.length
+    },
+    disableClose: true
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result) {
+      this.performCheckIn(order, result, staffInfo);
+    }
+  });
+}
+
+// Add this method to perform the actual check-in using the ticket service
+private performCheckIn(order: OrderDto, options: any, staffInfo: any): void {
+  this.checkingIn.update(map => ({
+    ...map,
+    [order.orderId]: true
+  }));
+
+  // Clear any previous results for this order
+  this.checkinResults.update(map => ({
+    ...map,
+    [order.orderId]: null
+  }));
+
+  const selectedSeatIds = options.selectedSeats || order.seats?.map(s => s.seatId);
+
+  this.orderService.confirmCheckin({
+    orderId: order.orderId,
+    seatIds: selectedSeatIds,
+    staffId: staffInfo.id,
+    staffName: `${staffInfo.firstName} ${staffInfo.lastName}`.trim(),
+    eventId: order.eventId
+  }).subscribe({
+    next: (response: CheckinResponse) => {
+      this.checkingIn.update(map => ({
+        ...map,
+        [order.orderId]: false
+      }));
+
+      if (response.success) {
+        // Store check-in result for display
+        this.checkinResults.update(map => ({
+          ...map,
+          [order.orderId]: response.data
+        }));
+
+        // Show detailed success message
+        if (response.data) {
+          const { checkedInCount, totalSelected, results } = response.data;
+          
+          const failedCount = results?.filter((r: any) => !r.success).length || 0;
+          
+          if (failedCount === 0) {
+            // All selected seats checked in successfully
+            this.showSuccess(`✅ Successfully checked in ${checkedInCount} of ${totalSelected} seats`);
+          } else {
+            // Some seats failed
+            const failedSeats = results
+              ?.filter((r: any) => !r.success)
+              .map((r: any) => r.seatNumber)
+              .join(', ');
+            //this.showWarning(`Checked in ${checkedInCount} seats. Failed: ${failedSeats}`);
+          }
+        } else {
+          this.showSuccess('Check-in completed successfully');
+        }
+        
+        // Refresh the orders list to show updated check-in status
+        this.loadData();
+      } else {
+        // API returned success: false
+        this.showError(response.message || 'Check-in failed');
+      }
+    },
+    error: (error: any) => {
+      this.checkingIn.update(map => ({
+        ...map,
+        [order.orderId]: false
+      }));
+      
+      console.error('Check-in error:', error);
+      
+      // Extract error message
+      let errorMsg = 'Check-in failed';
+      if (error.error?.message) {
+        errorMsg = error.error.message;
+      } else if (error.message) {
+        errorMsg = error.message;
+      } else if (typeof error.error === 'string') {
+        errorMsg = error.error;
+      }
+      
+      this.showError(errorMsg);
+    }
+  });
+}
+
 
   updateOrderStatus(order: OrderDto, status: OrderStatus): void {
     const action = status === OrderStatus.CANCELLED ? 'cancel' : 'update';
@@ -629,5 +792,26 @@ exportOrderTickets(order: OrderDto): void {
       currency: 'GBP'
     }).format(price);
   }
+
+getSeatCheckInStatus(seat: OrderSeatDto): { checkedIn: boolean; time?: string } {
+  if (seat.isCheckedIn) {
+    return {
+      checkedIn: true,
+      time: seat.checkedInAt ? this.formatDateTime(seat.checkedInAt) : undefined
+    };
+  }
+  return { checkedIn: false };
+}
+
+private showWarning(message: string): void {
+  this.snackBar.open(message, 'Close', { 
+    duration: 5000,
+    panelClass: ['warning-snackbar']
+  });
+}
+
+getCheckedInCount(order: OrderDto): number {
+  return order.seats?.filter(s => s.isCheckedIn).length || 0;
+}
 
 }

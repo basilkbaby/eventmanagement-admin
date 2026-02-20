@@ -665,3 +665,115 @@
     }
   }
 }
+
+.seat-tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  
+  &.checked-in {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #2e7d32;
+    
+    .check-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+      margin-left: 2px;
+    }
+  }
+}
+
+.checked-in-count {
+  font-size: 11px;
+  color: #666;
+  margin-left: 4px;
+  
+  &.all-checked {
+    color: #2e7d32;
+    font-weight: 500;
+  }
+}
+
+.checkin-result {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 11px;
+  
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    
+    &.success {
+      color: #2e7d32;
+    }
+    
+    &.warning {
+      color: #f57c00;
+    }
+  }
+  
+  span {
+    color: #666;
+  }
+}
+
+.checkin-btn {
+  mat-icon {
+    color: #4caf50;
+  }
+  
+  &:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+  }
+}
+
+// New status classes for check-in (keeping existing ones intact)
+.status-checked-in {
+  background-color: #e8f5e9 !important;
+  color: #2e7d32 !important;
+  
+  .status-icon {
+    color: #2e7d32 !important;
+  }
+}
+
+.status-partial-checked-in {
+  background-color: #fff3e0 !important;
+  color: #f57c00 !important;
+  
+  .status-icon {
+    color: #f57c00 !important;
+  }
+}
+
+// Check-in badge for status column
+.checkin-badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #666;
+  
+  &.all-checked {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+}
+
+// Snackbar styles
+::ng-deep .warning-snackbar {
+  background-color: #ff9800;
+  color: white;
+  
+  .mat-simple-snackbar-action {
+    color: white;
+  }
+}

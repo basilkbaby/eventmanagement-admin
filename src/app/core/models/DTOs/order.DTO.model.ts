@@ -65,6 +65,9 @@ export interface OrderSeatDto {
   couponDiscount?: number;
   priceAtBooking?: number;
   finalPrice?: number;
+  isCheckedIn: boolean;
+  checkedInAt?: string;
+  checkedInBy?: string;
 }
 
 export interface OrderBreakdownDto {
@@ -108,4 +111,35 @@ export interface FeeCalculationDto {
   bulkDiscountApplied: boolean;
   bulkDiscountName: string;
   totalAmount: number;
+}
+
+
+export interface CheckinRequest {
+  orderId: string;
+  staffId: string;
+  staffName: string;
+  eventId: string;
+  notes?: string;
+  seatIds ?: string[]; // For partial check-in
+}
+
+export interface CheckinResult {
+  seatId: string;
+  seatNumber: string;
+  success: boolean;
+  message: string;
+  checkedInAt?: string;
+  checkedInBy?: string;
+}
+
+export interface CheckinResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    orderId: string;
+    orderNumber: string;
+    checkedInCount: number;
+    totalSelected: number;
+    results: CheckinResult[];
+  };
 }
