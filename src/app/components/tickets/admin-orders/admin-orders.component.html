@@ -1,7 +1,7 @@
 <div class="admin-orders-container">
   <!-- Event Filter Header with Stats -->
   <div class="event-filter-header">
-    <div class="header-content">
+<div class="header-content">
       <div class="title-section">
         <h1>Orders</h1>
         <p>Manage seat orders and customer information</p>
@@ -38,7 +38,7 @@
       </div>
     </div>
     
-    <!-- Stats Section in Header -->
+<!-- Stats Section in Header -->
     <div class="header-stats" *ngIf="!loading()">
       <div class="stats-grid">
         <!-- Total Orders -->
@@ -69,46 +69,46 @@
           </div>
         </div>
 
-        <!-- Check-in Stats - New Card -->
-    <div class="stat-card checkin-stats">
-      <div class="stat-icon">
-        <mat-icon>qr_code_scanner</mat-icon>
-      </div>
-      <div class="stat-content">
-        <div class="stat-value">{{ stats().checkedInSeats }} / {{ stats().totalSeats }}</div>
-        <div class="stat-label">Checked In</div>
-        <div class="stat-subtext">
-          <span class="checkin-rate">{{ stats().checkInRate | number:'1.0-1' }}%</span>
-          <span class="pending-checkin" *ngIf="stats().pendingCheckInSeats > 0">
-            • {{ stats().pendingCheckInSeats }} pending
-          </span>
-        </div>
-        <div class="stat-progress">
-          <div class="progress-bar">
-            <div class="progress-fill" [style.width.%]="stats().checkInRate"></div>
+        <!-- Check-in Stats -->
+        <div class="stat-card checkin-stats">
+          <div class="stat-icon">
+            <mat-icon>qr_code_scanner</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats().checkedInSeats }} / {{ stats().totalSeats }}</div>
+            <div class="stat-label">Checked In</div>
+            <div class="stat-subtext">
+              <span class="checkin-rate">{{ stats().checkInRate | number:'1.0-1' }}%</span>
+              <span class="pending-checkin" *ngIf="stats().pendingCheckInSeats > 0">
+                • {{ stats().pendingCheckInSeats }} pending
+              </span>
+            </div>
+            <div class="stat-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="stats().checkInRate"></div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- Order Check-in Status -->
-    <div class="stat-card order-checkin-stats">
-      <div class="stat-icon">
-        <mat-icon>assignment_turned_in</mat-icon>
-      </div>
-      <div class="stat-content">
-        <div class="stat-value">{{ stats().ordersWithCheckIn }} / {{ stats().confirmedOrders }}</div>
-        <div class="stat-label">Orders with Check-in</div>
-        <div class="stat-subtext">
-          <span class="fully-checked" *ngIf="stats().fullyCheckedInOrders > 0">
-            {{ stats().fullyCheckedInOrders }} fully checked in
-          </span>
-          <span class="partially-checked" *ngIf="stats().partiallyCheckedInOrders > 0">
-            • {{ stats().partiallyCheckedInOrders }} partial
-          </span>
+        
+        <!-- Order Check-in Status -->
+        <div class="stat-card order-checkin-stats">
+          <div class="stat-icon">
+            <mat-icon>assignment_turned_in</mat-icon>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats().ordersWithCheckIn }} / {{ stats().confirmedOrders }}</div>
+            <div class="stat-label">Orders with Check-in</div>
+            <div class="stat-subtext">
+              <span class="fully-checked" *ngIf="stats().fullyCheckedInOrders > 0">
+                {{ stats().fullyCheckedInOrders }} fully checked in
+              </span>
+              <span class="partially-checked" *ngIf="stats().partiallyCheckedInOrders > 0">
+                • {{ stats().partiallyCheckedInOrders }} partial
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
         
         <!-- Total Revenue -->
         <div class="stat-card">
@@ -116,14 +116,14 @@
             <mat-icon>attach_money</mat-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ formatPrice(stats().totalRevenue) }}</div>
+            <div class="stat-value">{{ stats().totalRevenue | currency:'GBP' }}</div>
             <div class="stat-label">Revenue</div>
             <div class="stat-subtext">
               <span class="fee" *ngIf="stats().totalServiceFees > 0">
-                +{{ formatPrice(stats().totalServiceFees) }} fees
+                +{{ stats().totalServiceFees | currency:'GBP' }} fees
               </span>
               <span class="discount" *ngIf="(stats().totalBulkDiscounts + stats().totalCouponDiscounts) > 0">
-                -{{ formatPrice(stats().totalBulkDiscounts + stats().totalCouponDiscounts) }} discount
+                -{{ (stats().totalBulkDiscounts + stats().totalCouponDiscounts) | currency:'GBP' }} discount
               </span>
             </div>
           </div>
@@ -135,10 +135,10 @@
             <mat-icon>avg_pace</mat-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ formatPrice(stats().totalRevenue / stats().totalOrders) }}</div>
+            <div class="stat-value">{{ (stats().totalRevenue / stats().totalOrders) | currency:'GBP' }}</div>
             <div class="stat-label">Avg. Order</div>
             <div class="stat-subtext">
-              {{ stats().totalSeats / stats().totalOrders | number:'1.1-1' }} seats/order
+              {{ stats().averageSeatsPerOrder | number:'1.1-1' }} seats/order
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@
     </div>
   </div>
 
-  <!-- NEW: Search Section -->
+<!-- Search Section -->
   <div class="search-section">
     <div class="search-container">
       <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
@@ -191,7 +191,6 @@
       </div>
     </div>
   </div>
-
   <!-- Orders Table -->
   <div class="orders-table-section">
     <!-- Table Header -->
@@ -231,18 +230,18 @@
       </button>
     </div>
 
-    <!-- Orders List -->
+<!-- Orders List -->
     <div class="orders-list" *ngIf="!loading() && displayedOrders().length > 0">
       <!-- Orders Container -->
       <div class="orders-container">
-        <div *ngFor="let order of displayedOrders()" class="order-card">
+        <div *ngFor="let order of displayedOrders(); trackBy: trackByOrderId" class="order-card">
           <!-- Order Row -->
           <div class="order-row">
             <!-- Order Info -->
             <div class="cell order-info">
               <div class="order-header">
                 <div class="order-number">#{{ order.orderNumber }}</div>
-                <div class="order-date">{{ formatDateTime(order.createdAt) }}</div>
+                <div class="order-date">{{ order.createdAt | date:'medium' }}</div>
               </div>
               
               <div class="customer-info">
@@ -259,7 +258,7 @@
             <div class="cell event-info">
               <div class="event-name">{{ order.eventName }}</div>
               <div class="event-details">
-                <div class="event-date">{{ formatEventDate(order.eventDate) }}</div>
+                <div class="event-date">{{ order.eventDate | date:'mediumDate' }}</div>
               </div>
             </div>
             
@@ -270,19 +269,17 @@
                       class="seat-tag" 
                       [class.cancelled]="seat.isCancelled"
                       [class.checked-in]="seat.isCheckedIn"
-                      [matTooltip]="getSeatCheckInStatus(seat).checkedIn ? 'Checked in: ' + getSeatCheckInStatus(seat).time : 'Not checked in'">
+                      [matTooltip]="seat.isCheckedIn ? ('Checked in: ' + (seat.checkedInAt | date:'short')) : 'Not checked in'">
                   {{ seat.seatNumber }}
                   <mat-icon *ngIf="seat.isCheckedIn" class="check-icon">check_circle</mat-icon>
                 </span>
               </div>
               <div class="seats-count">
-                  {{ order.seatCount }} seats
-                  <!-- Fixed: Use a method or computed property instead of inline filter with as -->
-                  <span *ngIf="getCheckedInCount(order) as checkedIn" 
-                        class="checked-in-count" 
-                        [class.all-checked]="checkedIn === order.seats.length">
-                    ({{ checkedIn }}/{{ order.seats.length }} checked in)
-                  </span>
+                {{ order._totalSeats }} seats
+                <span class="checked-in-count" 
+                      [class.all-checked]="order._allCheckedIn">
+                  ({{ order._checkedInCount }}/{{ order._totalSeats }} checked in)
+                </span>
               </div>
               <div *ngIf="checkinResults()[order.orderId] as result" class="checkin-result">
                 <mat-icon [class.success]="result.checkedInCount === result.totalSelected" 
@@ -296,58 +293,61 @@
             <!-- Price Summary -->
             <div class="cell price-summary">
               <div class="total-amount">
-                {{ formatPrice(order.totalAmount) }}
+                {{ order.totalAmount | currency:'GBP' }}
               </div>
               <div class="price-breakdown">
                 <span class="subtotal" *ngIf="order.subtotal !== order.totalAmount">
-                  {{ formatPrice(order.subtotal) }}
+                  {{ order.subtotal | currency:'GBP' }}
                 </span>
                 <span class="service-fee" *ngIf="order.serviceFee > 0">
-                  + {{ formatPrice(order.serviceFee) }} fee
+                  + {{ order.serviceFee | currency:'GBP' }} fee
                 </span>
                 <span class="discount" *ngIf="order.discount > 0">
-                  - {{ formatPrice(order.discount) }} discount
+                  - {{ order.discount | currency:'GBP' }} discount
                 </span>
                 <span class="discount" *ngIf="order.couponDiscount > 0">
-                  - {{ formatPrice(order.couponDiscount) }} - {{order.couponCode}} coupon
+                  - {{ order.couponDiscount | currency:'GBP' }} - {{order.couponCode}} coupon
                 </span>
               </div>
             </div>
             
             <!-- Status -->
-<div class="cell status-col">
-  <div class="status-badge" [class]="getStatusClass(order)">
-    <mat-icon class="status-icon">{{ getOrderStatusIcon(order) }}</mat-icon>
-    <span class="status-text">{{ getStatusText(order) }}</span>
-  </div>
-  <!-- Fixed: Use a method instead of inline filter -->
-  <div *ngIf="order.status === OrderStatus.CONFIRMED && getCheckedInCount(order) as checkedIn" 
-       class="checkin-badge" 
-       [class.all-checked]="checkedIn === order.seats.length">
-    {{ checkedIn }}/{{ order.seats.length }}
-  </div>
-</div>
+            <div class="cell status-col">
+              <div class="status-badge" [class]="'status-' + getMainStatus(order)">
+                <mat-icon class="status-icon">
+                  {{ order.status === OrderStatus.CONFIRMED ? 
+                     (order._allCheckedIn ? 'check_circle' : 
+                      order._hasCheckedIn ? 'remove_circle_outline' : 'check_circle') :
+                     order.status === OrderStatus.PENDING ? 'schedule' : 'cancel' }}
+                </mat-icon>
+                <span class="status-text">
+                  {{ order.status === OrderStatus.CONFIRMED ? 
+                     (order._allCheckedIn ? 'Checked In' : 
+                      order._hasCheckedIn ? 'Partial Check-in' : 'Confirmed') :
+                     order.status === OrderStatus.PENDING ? 'Pending' : 
+                     order.status === OrderStatus.CANCELLED ? 'Cancelled' : 'Unknown' }}
+                </span>
+              </div>
+              <div *ngIf="order.status === OrderStatus.CONFIRMED" 
+                   class="checkin-badge" 
+                   [class.all-checked]="order._allCheckedIn">
+                {{ order._checkedInCount }}/{{ order._totalSeats }}
+              </div>
+            </div>
             
             <!-- Actions -->
             <div class="cell actions-col">
               <div class="action-buttons">
-                <!-- <button mat-icon-button 
-                        color="primary"
-                        matTooltip="View order details"
-                        (click)="viewOrder(order)">
-                  <mat-icon>visibility</mat-icon>
-                </button> -->
-
                 <button mat-icon-button 
-            *ngIf="order.status === OrderStatus.CONFIRMED"
-            color="primary"
-            matTooltip="Check in order"
-            (click)="checkInOrder(order)"
-            [disabled]="checkingIn()[order.orderId]"
-            class="checkin-btn">
-      <mat-icon *ngIf="!checkingIn()[order.orderId]">qr_code_scanner</mat-icon>
-      <mat-spinner diameter="20" *ngIf="checkingIn()[order.orderId]"></mat-spinner>
-    </button>
+                        *ngIf="order.status === OrderStatus.CONFIRMED"
+                        color="primary"
+                        matTooltip="Check in order"
+                        (click)="checkInOrder(order)"
+                        [disabled]="checkingIn()[order.orderId]"
+                        class="checkin-btn">
+                  <mat-icon *ngIf="!checkingIn()[order.orderId]">qr_code_scanner</mat-icon>
+                  <mat-spinner diameter="20" *ngIf="checkingIn()[order.orderId]"></mat-spinner>
+                </button>
                 
                 <button mat-icon-button 
                         color="primary"
@@ -365,28 +365,20 @@
                 </button>
                 
                 <button mat-icon-button 
-            color="primary"
-            matTooltip="Export tickets"
-            (click)="exportOrderTickets(order)"
-            [disabled]="order.status !== OrderStatus.CONFIRMED || exportingTickets()[order.orderId]"
-            class="export-ticket-btn">
-      <mat-icon *ngIf="!exportingTickets()[order.orderId]">confirmation_number</mat-icon>
-      <mat-spinner diameter="20" *ngIf="exportingTickets()[order.orderId]"></mat-spinner>
-    </button>
-
-                <!-- <button mat-icon-button 
-                        [matMenuTriggerFor]="orderMenu"
-                        [matMenuTriggerData]="{ order: order }"
-                        matTooltip="More actions">
-                  <mat-icon>more_vert</mat-icon>
-                </button> -->
+                        color="primary"
+                        matTooltip="Export tickets"
+                        (click)="exportOrderTickets(order)"
+                        [disabled]="order.status !== OrderStatus.CONFIRMED || exportingTickets()[order.orderId]"
+                        class="export-ticket-btn">
+                  <mat-icon *ngIf="!exportingTickets()[order.orderId]">confirmation_number</mat-icon>
+                  <mat-spinner diameter="20" *ngIf="exportingTickets()[order.orderId]"></mat-spinner>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    
   </div>
 </div>
 

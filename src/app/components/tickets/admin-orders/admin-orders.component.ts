@@ -69,10 +69,21 @@ export class AdminOrdersComponent implements OnInit {
   readonly searchPostcode = signal('');
 readonly searchMobile = signal('');
 readonly searchSeatNumber = signal('');
+private checkedInCountCache = new Map<string, number>();
+readonly ordersWithCheckinData = computed(() => {
+  const orders = this.allOrders();
+  return orders.map(order => ({
+    ...order,
+    _checkedInCount: order.seats?.filter(s => s.isCheckedIn).length || 0,
+    _totalSeats: order.seats?.length || 0,
+    _allCheckedIn: order.seats?.every(s => s.isCheckedIn) || false,
+    _hasCheckedIn: order.seats?.some(s => s.isCheckedIn) || false
+  }));
+});
 
 
 readonly filteredOrders = computed(() => {
-  const orders = this.allOrders();
+  const orders = this.ordersWithCheckinData(); // Use enriched data
   const search = this.searchTerm().toLowerCase().trim();
   const eventFilter = this.selectedEvent();
   const searchField = this.searchField();
@@ -95,9 +106,9 @@ readonly filteredOrders = computed(() => {
         case 'customerEmail':
           return order.customerEmail.toLowerCase().includes(search);
         case 'customerPhone':
-          return order.customerPhone?.toLowerCase().includes(search)
+          return order.customerPhone?.toLowerCase().includes(search);
         case 'customerPostcode':
-          return order.customerPostCode?.toLowerCase().includes(search)
+          return order.customerPostCode?.toLowerCase().includes(search);
         case 'seatNumber':
           return order.seats?.some(seat => 
             seat.seatNumber?.toLowerCase().includes(search) ||
@@ -138,68 +149,74 @@ readonly searchFields = [
   readonly pageIndex = signal(0);
   
   // Displayed orders for current page
-  readonly displayedOrders = computed(() => {
-    const filtered = this.filteredOrders();
-    const pageSize = this.pageSize();
-    const pageIndex = this.pageIndex();
-    
-    const startIndex = pageIndex * pageSize;
-    return filtered.slice(startIndex, startIndex + pageSize);
-  });
+readonly displayedOrders = computed(() => {
+  const filtered = this.filteredOrders(); // This should use ordersWithCheckinData
+  const pageSize = this.pageSize();
+  const pageIndex = this.pageIndex();
+  
+  const startIndex = pageIndex * pageSize;
+  return filtered.slice(startIndex, startIndex + pageSize);
+});
 
   // Search and filter signals
   readonly searchTerm = signal('');
   readonly selectedEvent = signal('');
   readonly searchField = signal<'all' | 'orderNumber' | 'customerName' | 'customerEmail' | 'eventName' | 'customerPhone' | 'customerPostcode' | 'seatNumber'>('all');
-  readonly stats = computed(() => {
-    const orders = this.allOrders();
-    const allSeats = orders.flatMap(order => order.seats);
-    const totalOrders = orders.length;
-    
-    const confirmedOrders = orders.filter(o => o.status === OrderStatus.CONFIRMED);
-    const totalRevenue = confirmedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    // Calculate check-in statistics
-    const checkedInSeats = allSeats.filter(s => s.isCheckedIn || s.checkedInAt).length;
-    const pendingCheckInSeats = allSeats.filter(s => !s.isCancelled && !(s.isCheckedIn || s.checkedInAt)).length;
-    
-    // Calculate orders with check-in status
-    const ordersWithCheckIn = orders.filter(o => 
-      o.seats?.some(s => s.isCheckedIn || s.checkedInAt)
-    ).length;
-    
-    const fullyCheckedInOrders = orders.filter(o => 
-      o.status === OrderStatus.CONFIRMED && 
-      o.seats?.every(s => s.isCheckedIn || s.checkedInAt)
-    ).length;
-    
-    const partiallyCheckedInOrders = orders.filter(o => 
-      o.status === OrderStatus.CONFIRMED && 
-      o.seats?.some(s => s.isCheckedIn || s.checkedInAt) && 
-      !o.seats?.every(s => s.isCheckedIn || s.checkedInAt)
-    ).length;
-      
-    return {
-      totalOrders: totalOrders,
-      totalSeats: allSeats.length,
-      activeSeats: allSeats.filter(s => !s.isCancelled).length,
-      cancelledSeats: allSeats.filter(s => s.isCancelled).length,
-      confirmedOrders: confirmedOrders.length,
-      totalRevenue: totalRevenue,
-      totalServiceFees: orders.reduce((sum, order) => sum + (order.serviceFee || 0), 0),
-      totalBulkDiscounts: orders.reduce((sum, order) => sum + (order.discount || 0), 0),
-      totalCouponDiscounts: orders.reduce((sum, order) => sum + (order.couponDiscount || 0), 0),
-      averageOrderValue: totalOrders > 0 ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / totalOrders : 0,
-      averageSeatsPerOrder: totalOrders > 0 ? allSeats.length / totalOrders : 0,
-      // New check-in statistics
-    checkedInSeats: checkedInSeats,
-    pendingCheckInSeats: pendingCheckInSeats,
+// Pre-compute stats with all values
+readonly stats = computed(() => {
+  const orders = this.allOrders();
+  const allSeats = orders.flatMap(order => order.seats || []);
+  const totalOrders = orders.length;
+  
+  const confirmedOrders = orders.filter(o => o.status === OrderStatus.CONFIRMED);
+  const totalRevenue = confirmedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  
+  // Calculate check-in statistics
+  const checkedInSeats = allSeats.filter(s => s.isCheckedIn).length;
+  const pendingCheckInSeats = allSeats.filter(s => !s.isCancelled && !s.isCheckedIn).length;
+  
+  const ordersWithCheckIn = orders.filter(o => 
+    o.seats?.some(s => s.isCheckedIn)
+  ).length;
+  
+  const fullyCheckedInOrders = orders.filter(o => 
+    o.status === OrderStatus.CONFIRMED && 
+    o.seats?.every(s => s.isCheckedIn)
+  ).length;
+  
+  const partiallyCheckedInOrders = orders.filter(o => 
+    o.status === OrderStatus.CONFIRMED && 
+    o.seats?.some(s => s.isCheckedIn) && 
+    !o.seats?.every(s => s.isCheckedIn)
+  ).length;
+  
+  return {
+    totalOrders,
+    totalSeats: allSeats.length,
+    activeSeats: allSeats.filter(s => !s.isCancelled).length,
+    cancelledSeats: allSeats.filter(s => s.isCancelled).length,
+    confirmedOrders: confirmedOrders.length,
+    totalRevenue,
+    totalServiceFees: orders.reduce((sum, order) => sum + (order.serviceFee || 0), 0),
+    totalBulkDiscounts: orders.reduce((sum, order) => sum + (order.discount || 0), 0),
+    totalCouponDiscounts: orders.reduce((sum, order) => sum + (order.couponDiscount || 0), 0),
+    averageOrderValue: totalOrders > 0 ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / totalOrders : 0,
+    averageSeatsPerOrder: totalOrders > 0 ? allSeats.length / totalOrders : 0,
+    checkedInSeats,
+    pendingCheckInSeats,
     checkInRate: allSeats.length > 0 ? (checkedInSeats / allSeats.length) * 100 : 0,
-    ordersWithCheckIn: ordersWithCheckIn,
-    fullyCheckedInOrders: fullyCheckedInOrders,
-    partiallyCheckedInOrders: partiallyCheckedInOrders
-    };
-  });
+    ordersWithCheckIn,
+    fullyCheckedInOrders,
+    partiallyCheckedInOrders
+  };
+});
+
+// Pre-compute event names map for quick lookup
+readonly eventNameMap = computed(() => {
+  const map = new Map<string, string>();
+  this.events.forEach(event => map.set(event.id, event.title));
+  return map;
+});
 
   events: EventDto[] = [];
   eventOptions = [
@@ -263,26 +280,23 @@ readonly searchFields = [
     });
   }
 
-  loadData(): void {
-    this.loading.set(true);
-    
-    this.orderService.getOrders( this.selectedEvent()).subscribe({
-      next: (response) => {
-        const ordersWithDetails: OrderDto[] = response.orders;
-        
-        this.allOrders.set(ordersWithDetails);
-        this.loading.set(false);
-        
-        // Reset to first page when data loads
-        this.pageIndex.set(0);
-      },
-      error: (error) => {
-        console.error('Error loading orders:', error);
-        this.loading.set(false);
-        this.showError('Failed to load orders');
-      }
-    });
-  }
+loadData(): void {
+  this.loading.set(true);
+  
+  this.orderService.getOrders(this.selectedEvent()).subscribe({
+    next: (response) => {
+      const ordersWithDetails: OrderDto[] = response.orders;
+      this.allOrders.set(ordersWithDetails); // This will trigger all computed signals
+      this.loading.set(false);
+      this.pageIndex.set(0);
+    },
+    error: (error) => {
+      console.error('Error loading orders:', error);
+      this.loading.set(false);
+      this.showError('Failed to load orders');
+    }
+  });
+}
 
   // Pagination handlers
   onPageChange(event: PageEvent): void {
@@ -334,10 +348,11 @@ readonly searchFields = [
     });
   }
 
-  getEventName(eventId: string): string {
-    const event = this.events.find(e => e.id === eventId);
-    return event?.title || '';
-  }
+// Simple getter for event name - just a map lookup
+getEventName(eventId: string): string {
+  return this.eventNameMap().get(eventId) || '';
+}
+  
 
   // Status helpers
   getSeatStatusClass(isCancelled: boolean): string {
@@ -838,7 +853,31 @@ private showWarning(message: string): void {
 }
 
 getCheckedInCount(order: OrderDto): number {
-  return order.seats?.filter(s => s.isCheckedIn).length || 0;
+  const key = order.orderId;
+  
+  // Return cached value if it exists and order hasn't changed
+  if (this.checkedInCountCache.has(key)) {
+    return this.checkedInCountCache.get(key) || 0;
+  }
+  
+  // Calculate and cache
+  const count = order.seats?.filter(s => s.isCheckedIn).length || 0;
+  this.checkedInCountCache.set(key, count);
+  
+  // Clear cache after a short delay to prevent memory leaks
+  setTimeout(() => {
+    this.checkedInCountCache.delete(key);
+  }, 5000);
+  
+  return count;
 }
+
+
+
+// TrackBy for better performance
+trackByOrderId(index: number, order: any): string {
+  return order.orderId;
+}
+
 
 }
