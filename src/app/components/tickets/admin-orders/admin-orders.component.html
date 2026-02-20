@@ -68,6 +68,47 @@
             </div>
           </div>
         </div>
+
+        <!-- Check-in Stats - New Card -->
+    <div class="stat-card checkin-stats">
+      <div class="stat-icon">
+        <mat-icon>qr_code_scanner</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats().checkedInSeats }} / {{ stats().totalSeats }}</div>
+        <div class="stat-label">Checked In</div>
+        <div class="stat-subtext">
+          <span class="checkin-rate">{{ stats().checkInRate | number:'1.0-1' }}%</span>
+          <span class="pending-checkin" *ngIf="stats().pendingCheckInSeats > 0">
+            • {{ stats().pendingCheckInSeats }} pending
+          </span>
+        </div>
+        <div class="stat-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="stats().checkInRate"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Order Check-in Status -->
+    <div class="stat-card order-checkin-stats">
+      <div class="stat-icon">
+        <mat-icon>assignment_turned_in</mat-icon>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats().ordersWithCheckIn }} / {{ stats().confirmedOrders }}</div>
+        <div class="stat-label">Orders with Check-in</div>
+        <div class="stat-subtext">
+          <span class="fully-checked" *ngIf="stats().fullyCheckedInOrders > 0">
+            {{ stats().fullyCheckedInOrders }} fully checked in
+          </span>
+          <span class="partially-checked" *ngIf="stats().partiallyCheckedInOrders > 0">
+            • {{ stats().partiallyCheckedInOrders }} partial
+          </span>
+        </div>
+      </div>
+    </div>
         
         <!-- Total Revenue -->
         <div class="stat-card">

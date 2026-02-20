@@ -158,7 +158,27 @@ readonly searchFields = [
     
     const confirmedOrders = orders.filter(o => o.status === OrderStatus.CONFIRMED);
     const totalRevenue = confirmedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // Calculate check-in statistics
+    const checkedInSeats = allSeats.filter(s => s.isCheckedIn || s.checkedInAt).length;
+    const pendingCheckInSeats = allSeats.filter(s => !s.isCancelled && !(s.isCheckedIn || s.checkedInAt)).length;
     
+    // Calculate orders with check-in status
+    const ordersWithCheckIn = orders.filter(o => 
+      o.seats?.some(s => s.isCheckedIn || s.checkedInAt)
+    ).length;
+    
+    const fullyCheckedInOrders = orders.filter(o => 
+      o.status === OrderStatus.CONFIRMED && 
+      o.seats?.every(s => s.isCheckedIn || s.checkedInAt)
+    ).length;
+    
+    const partiallyCheckedInOrders = orders.filter(o => 
+      o.status === OrderStatus.CONFIRMED && 
+      o.seats?.some(s => s.isCheckedIn || s.checkedInAt) && 
+      !o.seats?.every(s => s.isCheckedIn || s.checkedInAt)
+    ).length;
+      
     return {
       totalOrders: totalOrders,
       totalSeats: allSeats.length,
@@ -170,7 +190,14 @@ readonly searchFields = [
       totalBulkDiscounts: orders.reduce((sum, order) => sum + (order.discount || 0), 0),
       totalCouponDiscounts: orders.reduce((sum, order) => sum + (order.couponDiscount || 0), 0),
       averageOrderValue: totalOrders > 0 ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / totalOrders : 0,
-      averageSeatsPerOrder: totalOrders > 0 ? allSeats.length / totalOrders : 0
+      averageSeatsPerOrder: totalOrders > 0 ? allSeats.length / totalOrders : 0,
+      // New check-in statistics
+    checkedInSeats: checkedInSeats,
+    pendingCheckInSeats: pendingCheckInSeats,
+    checkInRate: allSeats.length > 0 ? (checkedInSeats / allSeats.length) * 100 : 0,
+    ordersWithCheckIn: ordersWithCheckIn,
+    fullyCheckedInOrders: fullyCheckedInOrders,
+    partiallyCheckedInOrders: partiallyCheckedInOrders
     };
   });
 

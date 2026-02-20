@@ -10,7 +10,7 @@
 .event-filter-header {
   background: white;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px 24px;
   margin-bottom: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
@@ -18,12 +18,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     
     .title-section {
       h1 {
-        margin: 0 0 4px 0;
-        font-size: 28px;
+        margin: 0 0 2px 0;
+        font-size: 24px;
         font-weight: 700;
         color: #333;
       }
@@ -31,20 +31,22 @@
       p {
         margin: 0;
         color: #666;
-        font-size: 14px;
+        font-size: 13px;
       }
     }
     
     .event-filter-section {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
       
       .event-selector {
-        width: 320px;
+        width: 280px;
         
         ::ng-deep .mat-mdc-form-field-infix {
-          min-height: 56px;
+          min-height: 48px;
+          padding-top: 12px !important;
+          padding-bottom: 12px !important;
         }
         
         mat-icon {
@@ -55,41 +57,34 @@
       .header-actions {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         
         .export-btn {
+          height: 40px;
+          
           mat-icon {
-            margin-right: 8px;
+            margin-right: 6px;
+            font-size: 18px;
           }
         }
       }
     }
   }
   
-  // Stats Section in Header
+  // Stats Section in Header - Compact version
   .header-stats {
-    margin-bottom: 16px;
-    
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      
-      @media (max-width: 1200px) {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      @media (max-width: 600px) {
-        grid-template-columns: 1fr;
-      }
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
       
       .stat-card {
         background: #f8f9fa;
         border-radius: 8px;
-        padding: 16px;
+        padding: 12px 10px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         border: 1px solid #e0e0e0;
         transition: transform 0.2s, box-shadow 0.2s;
         
@@ -99,76 +94,166 @@
         }
         
         .stat-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 8px;
+          width: 36px;
+          height: 36px;
+          border-radius: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
+          flex-shrink: 0;
           
           mat-icon {
-            font-size: 24px;
-            width: 24px;
-            height: 24px;
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
           }
         }
         
         .stat-content {
           flex: 1;
+          min-width: 0; // Prevents overflow
           
           .stat-value {
-            font-size: 24px;
+            font-size: 16px;
             font-weight: 700;
             line-height: 1.2;
             margin-bottom: 2px;
             color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
           
           .stat-label {
-            font-size: 13px;
+            font-size: 10px;
             color: #666;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
           }
           
           .stat-subtext {
-            font-size: 11px;
+            font-size: 9px;
             color: #888;
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 4px;
+            white-space: nowrap;
             
-            .fee {
+            .fee, .checkin-rate {
               color: #4caf50;
             }
             
             .discount {
               color: #f44336;
             }
+            
+            .pending-checkin {
+              color: #f57c00;
+            }
+            
+            .fully-checked {
+              color: #4caf50;
+            }
+            
+            .partially-checked {
+              color: #f57c00;
+            }
           }
+        }
+        
+        // Special styling for check-in stats
+        &.checkin-stats {
+          .stat-progress {
+            margin-top: 4px;
+            width: 100%;
+            
+            .progress-bar {
+              height: 3px;
+              background-color: #e0e0e0;
+              border-radius: 1.5px;
+              overflow: hidden;
+              
+              .progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #4caf50, #8bc34a);
+                border-radius: 1.5px;
+                transition: width 0.3s ease;
+              }
+            }
+          }
+        }
+        
+        // Make revenue and order stats stand out a bit
+        &:nth-child(4) .stat-icon {
+          background: linear-gradient(135deg, #4caf50, #45a049);
+        }
+        
+        &:nth-child(5) .stat-icon {
+          background: linear-gradient(135deg, #ff9800, #f57c00);
+        }
+        
+        &:nth-child(6) .stat-icon {
+          background: linear-gradient(135deg, #9c27b0, #7b1fa2);
         }
       }
     }
   }
   
   .access-info {
-    padding: 12px 16px;
+    margin-top: 12px;
+    padding: 8px 12px;
     background: #e3f2fd;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     color: #1976d2;
-    font-size: 14px;
+    font-size: 13px;
     
     mat-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
     }
   }
 }
+
+// Responsive breakpoints for stats grid
+@media (max-width: 1400px) {
+  .event-filter-header {
+    .header-stats {
+      .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .event-filter-header {
+    .header-stats {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .event-filter-header {
+    .header-stats {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+
+// Rest of your existing styles remain the same...
+// (Keep all the styles below this point exactly as they were)
 
 // Orders Table Section
 .orders-table-section {
@@ -178,26 +263,26 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   
   .table-header {
-    padding: 20px 24px;
+    padding: 16px 24px;
     border-bottom: 1px solid #e0e0e0;
     
     .table-info {
       .results-count {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         color: #333;
         
         .event-info {
           font-weight: normal;
           color: #666;
-          font-size: 14px;
+          font-size: 13px;
         }
       }
     }
   }
   
   .loading-overlay {
-    padding: 80px 24px;
+    padding: 60px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -211,35 +296,30 @@
   }
   
   .empty-state {
-    padding: 80px 24px;
+    padding: 60px 24px;
     text-align: center;
     
     .empty-icon {
-      font-size: 64px;
-      height: 64px;
-      width: 64px;
+      font-size: 48px;
+      height: 48px;
+      width: 48px;
       color: #ddd;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     
     h3 {
-      margin: 0 0 12px 0;
-      font-size: 20px;
+      margin: 0 0 8px 0;
+      font-size: 18px;
       color: #333;
     }
     
     p {
       color: #666;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       max-width: 400px;
       margin-left: auto;
       margin-right: auto;
-    }
-    
-    button {
-      mat-icon {
-        margin-right: 8px;
-      }
+      font-size: 14px;
     }
   }
 }
@@ -262,7 +342,7 @@
       .order-row {
         display: grid;
         grid-template-columns: 2fr 1.5fr 1.5fr 1fr 120px 160px;
-        padding: 20px 24px;
+        padding: 16px 24px;
         align-items: start;
         gap: 20px;
         
@@ -276,40 +356,40 @@
             .order-header {
               display: flex;
               align-items: center;
-              gap: 12px;
-              margin-bottom: 12px;
+              gap: 10px;
+              margin-bottom: 8px;
               
               .order-number {
-                font-size: 16px;
+                font-size: 15px;
                 font-weight: 700;
                 color: #333;
               }
               
               .order-date {
-                font-size: 12px;
+                font-size: 11px;
                 color: #666;
                 background: #f5f5f5;
-                padding: 4px 8px;
+                padding: 3px 6px;
                 border-radius: 4px;
               }
             }
             
             .customer-info {
               .customer-name {
-                font-size: 15px;
+                font-size: 14px;
                 font-weight: 600;
                 color: #333;
-                margin-bottom: 4px;
+                margin-bottom: 3px;
               }
               
               .customer-details {
-                font-size: 13px;
+                font-size: 12px;
                 color: #666;
                 
                 .customer-email {
                   font-weight: 500;
                   display: inline-block;
-                  margin-right: 8px;
+                  margin-right: 6px;
                 }
                 
                 .customer-phone {
@@ -322,16 +402,16 @@
           // Event Info
           &.event-info {
             .event-name {
-              font-size: 15px;
+              font-size: 14px;
               font-weight: 600;
               color: #333;
-              margin-bottom: 6px;
+              margin-bottom: 4px;
               line-height: 1.3;
             }
             
             .event-details {
               .event-date {
-                font-size: 13px;
+                font-size: 12px;
                 color: #666;
               }
             }
@@ -342,15 +422,15 @@
             .seats-tags {
               display: flex;
               flex-wrap: wrap;
-              gap: 6px;
-              margin-bottom: 8px;
+              gap: 4px;
+              margin-bottom: 6px;
               
               .seat-tag {
                 background: #e3f2fd;
                 color: #1976d2;
-                padding: 6px 12px;
-                border-radius: 16px;
-                font-size: 12px;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 11px;
                 font-weight: 500;
                 display: inline-flex;
                 align-items: center;
@@ -360,22 +440,72 @@
                   color: #d32f2f;
                   text-decoration: line-through;
                 }
+                
+                &.checked-in {
+                  background-color: #e8f5e9;
+                  color: #2e7d32;
+                  border-color: #2e7d32;
+                  
+                  .check-icon {
+                    font-size: 12px;
+                    width: 12px;
+                    height: 12px;
+                    margin-left: 2px;
+                  }
+                }
               }
             }
             
             .seats-count {
-              font-size: 13px;
+              font-size: 12px;
               color: #666;
+              
+              .checked-in-count {
+                font-size: 10px;
+                color: #666;
+                margin-left: 4px;
+                
+                &.all-checked {
+                  color: #2e7d32;
+                  font-weight: 500;
+                }
+              }
+            }
+            
+            .checkin-result {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              margin-top: 4px;
+              font-size: 10px;
+              
+              mat-icon {
+                font-size: 12px;
+                width: 12px;
+                height: 12px;
+                
+                &.success {
+                  color: #2e7d32;
+                }
+                
+                &.warning {
+                  color: #f57c00;
+                }
+              }
+              
+              span {
+                color: #666;
+              }
             }
           }
           
           // Price Summary
           &.price-summary {
             .total-amount {
-              font-size: 18px;
+              font-size: 16px;
               font-weight: 700;
               color: #333;
-              margin-bottom: 4px;
+              margin-bottom: 3px;
             }
             
             .price-breakdown {
@@ -384,18 +514,18 @@
               gap: 2px;
               
               .subtotal {
-                font-size: 11px;
+                font-size: 10px;
                 color: #888;
                 text-decoration: line-through;
               }
               
               .service-fee {
-                font-size: 11px;
+                font-size: 10px;
                 color: #4caf50;
               }
               
               .discount {
-                font-size: 11px;
+                font-size: 10px;
                 color: #f44336;
               }
             }
@@ -406,10 +536,10 @@
             .status-badge {
               display: inline-flex;
               align-items: center;
-              gap: 6px;
-              padding: 8px 12px;
-              border-radius: 20px;
-              font-size: 13px;
+              gap: 4px;
+              padding: 6px 10px;
+              border-radius: 16px;
+              font-size: 12px;
               font-weight: 500;
               
               &.status-confirmed {
@@ -437,10 +567,35 @@
                 color: #616161;
               }
               
+              &.status-checked-in {
+                background-color: #e8f5e9 !important;
+                color: #2e7d32 !important;
+              }
+              
+              &.status-partial-checked-in {
+                background-color: #fff3e0 !important;
+                color: #f57c00 !important;
+              }
+              
               .status-icon {
-                font-size: 16px;
-                width: 16px;
-                height: 16px;
+                font-size: 14px;
+                width: 14px;
+                height: 14px;
+              }
+            }
+            
+            .checkin-badge {
+              display: inline-block;
+              margin-top: 4px;
+              padding: 2px 6px;
+              background-color: #f5f5f5;
+              border-radius: 10px;
+              font-size: 10px;
+              color: #666;
+              
+              &.all-checked {
+                background-color: #e8f5e9;
+                color: #2e7d32;
               }
             }
           }
@@ -449,12 +604,12 @@
           &.actions-col {
             .action-buttons {
               display: flex;
-              gap: 8px;
+              gap: 6px;
               
               button {
-                width: 36px;
-                height: 36px;
-                line-height: 36px;
+                width: 32px;
+                height: 32px;
+                line-height: 32px;
                 
                 &[disabled] {
                   opacity: 0.5;
@@ -462,9 +617,19 @@
                 }
                 
                 mat-icon {
-                  font-size: 20px;
-                  width: 20px;
-                  height: 20px;
+                  font-size: 18px;
+                  width: 18px;
+                  height: 18px;
+                }
+              }
+              
+              .checkin-btn {
+                mat-icon {
+                  color: #4caf50;
+                }
+                
+                &:hover {
+                  background-color: rgba(76, 175, 80, 0.1);
                 }
               }
             }
@@ -480,18 +645,20 @@
   border-top: 1px solid #e0e0e0;
   
   ::ng-deep .mat-mdc-paginator-container {
-    padding: 16px 24px;
+    padding: 12px 24px;
   }
 }
 
 // Menu Styles
 .order-actions-menu {
   .mat-mdc-menu-item {
-    min-height: 44px;
+    min-height: 40px;
+    font-size: 13px;
     
     mat-icon {
-      margin-right: 12px;
+      margin-right: 10px;
       color: #666;
+      font-size: 18px;
     }
     
     &.danger-action {
@@ -509,12 +676,117 @@
   }
 }
 
+// Search Section
+.search-section {
+  margin: 16px 0 20px;
+
+  .search-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .search-field {
+      flex: 1;
+      min-width: 300px;
+      
+      .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+      }
+      
+      ::ng-deep .mat-mdc-form-field-infix {
+        min-height: 48px;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+      }
+    }
+
+    .search-field-select {
+      width: 160px;
+      
+      ::ng-deep .mat-mdc-form-field-infix {
+        min-height: 48px;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+      }
+    }
+
+    .search-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-left: auto;
+
+      .results-hint {
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 0.875rem;
+        white-space: nowrap;
+      }
+    }
+  }
+}
+
+// Tooltip styles
+.stat-details-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s;
+  margin-top: 6px;
+  
+  .tooltip-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 11px;
+    
+    .label {
+      color: #666;
+    }
+    
+    .value {
+      font-weight: 500;
+      color: #333;
+      
+      &.success {
+        color: #4caf50;
+      }
+      
+      &.warning {
+        color: #f57c00;
+      }
+      
+      &.danger {
+        color: #f44336;
+      }
+    }
+  }
+}
+
+// Snackbar styles
+::ng-deep .warning-snackbar {
+  background-color: #ff9800;
+  color: white;
+  
+  .mat-simple-snackbar-action {
+    color: white;
+  }
+}
+
 // Responsive Design
 @media (max-width: 1200px) {
   .event-filter-header .header-content {
     flex-direction: column;
     align-items: stretch;
-    gap: 20px;
+    gap: 16px;
     
     .event-filter-section {
       flex-direction: column;
@@ -572,7 +844,7 @@
     padding: 16px;
   }
   
-  .header-stats .stats-grid {
+  .event-filter-header .header-stats .stats-grid {
     grid-template-columns: 1fr !important;
   }
   
@@ -599,181 +871,4 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-.search-section {
-  margin: 16px 0;
-
-  .search-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-
-    .search-field {
-      flex: 1;
-      min-width: 300px;
-      
-      .mat-mdc-form-field-subscript-wrapper {
-        display: none;
-      }
-    }
-
-    .search-field-select {
-      width: 180px;
-    }
-
-    .search-actions {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-left: auto;
-
-      .results-hint {
-        color: rgba(0, 0, 0, 0.6);
-        font-size: 0.875rem;
-        white-space: nowrap;
-      }
-    }
-  }
-}
-
-// Update existing styles to accommodate new section
-.event-filter-header {
-  margin-bottom: 8px; // Reduce bottom margin since we added search section
-}
-
-// Responsive adjustments
-@media (max-width: 768px) {
-  .search-section {
-    .search-container {
-      flex-direction: column;
-      align-items: stretch;
-
-      .search-field {
-        min-width: auto;
-      }
-
-      .search-field-select {
-        width: 100%;
-      }
-
-      .search-actions {
-        margin-left: 0;
-        justify-content: space-between;
-      }
-    }
-  }
-}
-
-.seat-tag {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  
-  &.checked-in {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    border-color: #2e7d32;
-    
-    .check-icon {
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-      margin-left: 2px;
-    }
-  }
-}
-
-.checked-in-count {
-  font-size: 11px;
-  color: #666;
-  margin-left: 4px;
-  
-  &.all-checked {
-    color: #2e7d32;
-    font-weight: 500;
-  }
-}
-
-.checkin-result {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-  font-size: 11px;
-  
-  mat-icon {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
-    
-    &.success {
-      color: #2e7d32;
-    }
-    
-    &.warning {
-      color: #f57c00;
-    }
-  }
-  
-  span {
-    color: #666;
-  }
-}
-
-.checkin-btn {
-  mat-icon {
-    color: #4caf50;
-  }
-  
-  &:hover {
-    background-color: rgba(76, 175, 80, 0.1);
-  }
-}
-
-// New status classes for check-in (keeping existing ones intact)
-.status-checked-in {
-  background-color: #e8f5e9 !important;
-  color: #2e7d32 !important;
-  
-  .status-icon {
-    color: #2e7d32 !important;
-  }
-}
-
-.status-partial-checked-in {
-  background-color: #fff3e0 !important;
-  color: #f57c00 !important;
-  
-  .status-icon {
-    color: #f57c00 !important;
-  }
-}
-
-// Check-in badge for status column
-.checkin-badge {
-  display: inline-block;
-  margin-top: 4px;
-  padding: 2px 6px;
-  background-color: #f5f5f5;
-  border-radius: 12px;
-  font-size: 11px;
-  color: #666;
-  
-  &.all-checked {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-  }
-}
-
-// Snackbar styles
-::ng-deep .warning-snackbar {
-  background-color: #ff9800;
-  color: white;
-  
-  .mat-simple-snackbar-action {
-    color: white;
-  }
 }
