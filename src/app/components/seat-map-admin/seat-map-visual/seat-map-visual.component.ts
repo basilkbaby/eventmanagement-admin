@@ -354,6 +354,14 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
     for (const seat of selected) this.drawOneSeat(ctx, seat);
   }
 
+  // Admin-specific status colours — distinct, clear at a glance
+  private readonly ADMIN_COLORS: Partial<Record<SeatStatus, string>> = {
+    [SeatStatus.BOOKED]:    '#3b82f6',  // blue — sold/purchased
+    [SeatStatus.BLOCKED]:   '#ef4444',  // red — administratively blocked
+    [SeatStatus.RESERVED]:  '#f59e0b',  // amber — reserved/held
+    [SeatStatus.SELECTED]:  '#22C55E',  // green — selected in current action
+  };
+
   private drawOneSeat(ctx: CanvasRenderingContext2D, seat: Seat) {
     const SR    = this.SR;
     const isSel = this.selectedSet.has(seat.id);
@@ -378,7 +386,10 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
       ctx.fill();
     }
 
-    const fill = isSel ? this.SEL_COLOR : (this.colorCache.get(seat.id) ?? '#d1d5db');
+    // Use admin colour override for status, else ticket tier colour
+    const adminColor = this.ADMIN_COLORS[seat.status as SeatStatus];
+    const fill = isSel ? this.SEL_COLOR : (adminColor ?? this.colorCache.get(seat.id) ?? '#d1d5db');
+
     ctx.beginPath();
     ctx.arc(seat.cx, seat.cy, SR, 0, Math.PI * 2);
     ctx.fillStyle = fill;
@@ -389,11 +400,13 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
     ctx.textBaseline = 'middle';
 
     if (isSel) {
+      // Selected — show checkmark
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 ${Math.round(SR * 1.05)}px "DM Sans","Helvetica Neue",sans-serif`;
       ctx.fillText('✓', seat.cx, seat.cy + 0.5);
-    } else if (this.zoom >= 1.0) {
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    } else {
+      // Admin always shows seat number regardless of zoom
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.font = `600 ${Math.round(SR * 0.68)}px "DM Sans","Helvetica Neue",sans-serif`;
       ctx.fillText(String(seat.seatNumber), seat.cx, seat.cy + 0.5);
     }

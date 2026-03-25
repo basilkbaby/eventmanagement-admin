@@ -255,9 +255,21 @@
         </div>
       </div>
       <div class="legend-container" style="margin-top:8px">
-        <div class="legend-item-compact" *ngFor="let status of getDisplayStatuses()">
-          <div class="legend-color-compact" [style.background-color]="seatStatusConfig[status.status].color"></div>
-          <span class="legend-label-compact">{{ status.displayText }}</span>
+        <div class="legend-item-compact">
+          <div class="legend-color-compact" style="background:#22C55E"></div>
+          <span class="legend-label-compact">Selected</span>
+        </div>
+        <div class="legend-item-compact">
+          <div class="legend-color-compact" style="background:#3b82f6"></div>
+          <span class="legend-label-compact">Booked</span>
+        </div>
+        <div class="legend-item-compact">
+          <div class="legend-color-compact" style="background:#ef4444"></div>
+          <span class="legend-label-compact">Blocked</span>
+        </div>
+        <div class="legend-item-compact">
+          <div class="legend-color-compact" style="background:#f59e0b"></div>
+          <span class="legend-label-compact">Reserved</span>
         </div>
       </div>
     </div>
