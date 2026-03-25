@@ -356,7 +356,7 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
 
   // Admin-specific status colours — distinct, clear at a glance
   private readonly ADMIN_COLORS: Partial<Record<SeatStatus, string>> = {
-    [SeatStatus.BOOKED]:    '#3b82f6',  // blue — sold/purchased
+    [SeatStatus.BOOKED]:    '#1e293b',  // dark slate — sold/purchased
     [SeatStatus.BLOCKED]:   '#ef4444',  // red — administratively blocked
     [SeatStatus.RESERVED]:  '#f59e0b',  // amber — reserved/held
     [SeatStatus.SELECTED]:  '#22C55E',  // green — selected in current action
