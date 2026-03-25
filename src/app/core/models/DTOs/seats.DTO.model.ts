@@ -41,6 +41,8 @@ export interface VenueSection {
   hasColumnGap?: boolean;          // Enable column gap
   gapAfterColumn?: number;         // Gap after this column (e.g., 12)
   gapSize?: number;                // Size of gap (default: 1)
+  gapColumns?: string;   // Comma-separated columns after which gaps appear e.g. "10,15,20"
+
 }
 
 export interface SectionRowConfig {
