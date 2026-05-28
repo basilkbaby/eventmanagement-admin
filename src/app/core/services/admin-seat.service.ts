@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { BlockSeatRequestDto, Seat, SeatItemDto, SeatOverride, SectionRowConfig, SelectedSeat, VenueData, VenueSection } from '../models/DTOs/seats.DTO.model';
+import { BlockSeatRequestDto, SeatItemDto, VenueData } from '../models/DTOs/seats.DTO.model';
 
 interface ApiResponse {
   success: boolean;
@@ -94,6 +94,27 @@ blockSeats(eventId: string, seatItems: SeatItemDto[], reason: string = 'Administ
       `${this.apiUrl}/events/${eventId}/admin/release-seats`,
       { seatIds }
     );
+  }
+
+  // Mark seats as unavailable — reuses /seat/block with status: UNAVAILABLE
+  makeUnavailable(eventId: string, seatItems: SeatItemDto[], reason: string = 'Marked unavailable'): Observable<ApiResponse> {
+    const data: BlockSeatRequestDto = {
+      seats: seatItems,
+      eventId,
+      reason,
+      blockedBy: 'admin',
+      status: 'UNAVAILABLE'
+    };
+    return this.http.post<ApiResponse>(`${this.apiUrl}/block`, data);
+  }
+
+  // Restore unavailable seats — reuses /seat/release (handles both BLOCKED and UNAVAILABLE)
+  restoreAvailable(eventId: string, seatItems: SeatItemDto[]): Observable<ApiResponse> {
+    const data: BlockSeatRequestDto = {
+      seats: seatItems,
+      eventId
+    };
+    return this.http.post<ApiResponse>(`${this.apiUrl}/release`, data);
   }
 
 

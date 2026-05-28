@@ -16,7 +16,8 @@
       <span class="tt-badge"
             [class.avail]="isAvail(tooltip.seat)"
             [class.sel]="isSel(tooltip.seat)"
-            [class.taken]="isTaken(tooltip.seat)">
+            [class.unavail]="isUnavail(tooltip.seat)"
+            [class.taken]="isTaken(tooltip.seat) && !isUnavail(tooltip.seat)">
         {{ isSel(tooltip.seat) ? '✓ Selected' : getStatusText(tooltip.seat) }}
       </span>
     </div>

@@ -30,7 +30,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   eventId = '';
   isLoading = false;
 
-  adminAction: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release' = 'block';
+  adminAction: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release' | 'unavailable' | 'available' = 'block';
 
   customerInfo = {
     name: '', email: '', phone: '', postCode: '', transactionRef: ''
@@ -49,7 +49,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   showConfirmationModal = false;
   confirmationData: {
     title: string; message: string;
-    action: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release';
+    action: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release' | 'unavailable' | 'available';
     seats: SelectedSeat[];
   } = { title: '', message: '', action: 'block', seats: [] };
 
@@ -123,8 +123,9 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
 
   // ── Admin actions ──────────────────────────────────────────────────────────
 
-  setAdminAction(action: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release') {
+  setAdminAction(action: 'block' | 'unblock' | 'reserve' | 'purchase' | 'release' | 'unavailable' | 'available') {
     this.adminAction = action;
+    this.clearSelection();
     if (this.adminAction === 'purchase') this.updatePricingDetails();
   }
 
@@ -143,11 +144,13 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   confirmAction() {
     this.isLoading = true;
     switch (this.confirmationData.action) {
-      case 'block':    this.performBlock();    break;
-      case 'unblock':  this.performUnblock();  break;
-      case 'reserve':  this.performReserve();  break;
-      case 'purchase': this.performPurchase(); break;
-      case 'release':  this.performRelease();  break;
+      case 'block':       this.performBlock();            break;
+      case 'unblock':     this.performUnblock();          break;
+      case 'reserve':     this.performReserve();          break;
+      case 'purchase':    this.performPurchase();         break;
+      case 'release':     this.performRelease();          break;
+      case 'unavailable': this.performMakeUnavailable();  break;
+      case 'available':   this.performRestoreAvailable(); break;
     }
   }
 
@@ -238,6 +241,36 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     });
   }
 
+  private performMakeUnavailable() {
+    const seatItems: SeatItemDto[] = this.confirmationData.seats.map(s => ({
+      seatId: s.seatId, seatSection: s.sectionName, seatSectionId: s.sectionId, price: s.price
+    }));
+    this.seatService.makeUnavailable(this.eventId, seatItems).subscribe({
+      next: (r) => {
+        if (r.success) {
+          this.notificationService.showSuccess(`${seatItems.length} seat${seatItems.length > 1 ? 's' : ''} marked unavailable`);
+          this.completeAction(); this.getSeatMap(this.eventId);
+        } else { this.notificationService.showError(r.error || 'Failed to mark seats unavailable'); this.isLoading = false; }
+      },
+      error: () => { this.notificationService.showError('Failed to mark seats unavailable'); this.isLoading = false; }
+    });
+  }
+
+  private performRestoreAvailable() {
+    const seatItems: SeatItemDto[] = this.confirmationData.seats.map(s => ({
+      seatId: s.seatId, seatSection: s.sectionName, seatSectionId: s.sectionId, price: s.price
+    }));
+    this.seatService.restoreAvailable(this.eventId, seatItems).subscribe({
+      next: (r) => {
+        if (r.success) {
+          this.notificationService.showSuccess(`${seatItems.length} seat${seatItems.length > 1 ? 's' : ''} restored to available`);
+          this.completeAction(); this.getSeatMap(this.eventId);
+        } else { this.notificationService.showError(r.error || 'Failed to restore seats'); this.isLoading = false; }
+      },
+      error: () => { this.notificationService.showError('Failed to restore seats'); this.isLoading = false; }
+    });
+  }
+
   private completeAction() {
     this.showConfirmationModal = false;
     this.clearSelection();
@@ -249,7 +282,11 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   // ── Helper text ────────────────────────────────────────────────────────────
 
   private getActionTitle(): string {
-    const map: Record<string, string> = { block: 'Block Seats', unblock: 'Unblock Seats', reserve: 'Reserve Seats', purchase: 'Purchase Seats', release: 'Release Seats' };
+    const map: Record<string, string> = {
+      block: 'Block Seats', unblock: 'Unblock Seats',
+      reserve: 'Reserve Seats', purchase: 'Purchase Seats', release: 'Release Seats',
+      unavailable: 'Mark as Unavailable', available: 'Make Available'
+    };
     return map[this.adminAction] ?? 'Confirm';
   }
 
@@ -257,24 +294,34 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     const count = this.selectedSeats.length;
     const st = count === 1 ? 'seat' : 'seats';
     switch (this.adminAction) {
-      case 'block':    return `Block ${count} ${st}? This will make them unavailable for customers.`;
-      case 'unblock':  return `Unblock ${count} ${st}? This will make them available again.`;
-      case 'reserve':  return `Reserve ${count} ${st} for ${this.customerInfo.name}?`;
-      case 'purchase': return `Purchase ${count} ${st} for ${this.customerInfo.name}? Total: ${this.formatPrice(this.pricingDetails.total)}`;
-      case 'release':  return `Release ${count} ${st} back to available?`;
-      default:         return `Apply to ${count} ${st}?`;
+      case 'block':       return `Block ${count} ${st}? This will make them unavailable for customers.`;
+      case 'unblock':     return `Unblock ${count} ${st}? This will make them available again.`;
+      case 'reserve':     return `Reserve ${count} ${st} for ${this.customerInfo.name}?`;
+      case 'purchase':    return `Purchase ${count} ${st} for ${this.customerInfo.name}? Total: ${this.formatPrice(this.pricingDetails.total)}`;
+      case 'release':     return `Release ${count} ${st} back to available?`;
+      case 'unavailable': return `Mark ${count} ${st} as unavailable? They will be hidden from customers.`;
+      case 'available':   return `Make ${count} ${st} available? They will become visible to customers.`;
+      default:            return `Apply to ${count} ${st}?`;
     }
   }
 
   getActionButtonText(): string {
     const count = this.selectedSeats.length;
     const st = count === 1 ? 'Seat' : 'Seats';
-    const map: Record<string, string> = { block: `Block ${count} ${st}`, unblock: `Unblock ${count} ${st}`, reserve: `Reserve ${count} ${st}`, purchase: `Purchase ${count} ${st}`, release: `Release ${count} ${st}` };
+    const map: Record<string, string> = {
+      block: `Block ${count} ${st}`, unblock: `Unblock ${count} ${st}`,
+      reserve: `Reserve ${count} ${st}`, purchase: `Purchase ${count} ${st}`, release: `Release ${count} ${st}`,
+      unavailable: `Mark ${count} ${st} Unavailable`, available: `Make ${count} ${st} Available`
+    };
     return map[this.adminAction] ?? `Apply to ${count} ${st}`;
   }
 
   getActionIcon(): string {
-    const map: Record<string, string> = { block: 'bi-slash-circle', unblock: 'bi-check-circle', reserve: 'bi-clock', purchase: 'bi-credit-card', release: 'bi-arrow-clockwise' };
+    const map: Record<string, string> = {
+      block: 'bi-slash-circle', unblock: 'bi-check-circle',
+      reserve: 'bi-clock', purchase: 'bi-credit-card', release: 'bi-arrow-clockwise',
+      unavailable: 'bi-eye-slash', available: 'bi-eye'
+    };
     return map[this.adminAction] ?? 'bi-gear';
   }
 
@@ -300,9 +347,9 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
     this.middleBottomY = 0;
 
     const statusMap = new Map<string, SeatOverride>();
-    const categories: (keyof SeatManagement)[] = ['reservedSeats', 'blockedSeats', 'soldSeats'];
+    const categories: (keyof SeatManagement)[] = ['reservedSeats', 'blockedSeats', 'soldSeats', 'unavailableSeats'];
     categories.forEach(cat => {
-      this.venueData.seatManagement[cat].forEach(o => statusMap.set(o.seatId, o));
+      (this.venueData.seatManagement[cat] ?? []).forEach(o => statusMap.set(o.seatId, o));
     });
 
     const getDefaultBlockLetter = (i: number) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[i % 26];
@@ -499,7 +546,10 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
   // ── Seat selection ─────────────────────────────────────────────────────────
 
   onSeatClicked(seat: Seat) {
-    if (!isSeatSelectable(seat.status)) return;
+    const canSelect = this.adminAction === 'available'
+      ? seat.status === SeatStatus.UNAVAILABLE || seat.status === SeatStatus.SELECTED
+      : isSeatSelectable(seat.status);
+    if (!canSelect) return;
     seat.status === SeatStatus.SELECTED ? this.deselectSeat(seat) : this.selectSeat(seat);
   }
 

@@ -10,6 +10,7 @@
         [selectedSeatIds]="selectedSeatIds"
         [hoveredSeatId]="hoveredSeatId"
         [rowLabels]="rowLabels"
+        [adminAction]="adminAction"
         (seatClicked)="onSeatClicked($event)"
         (seatHovered)="onSeatHovered($event)">
       </app-seat-map-visual>
@@ -78,11 +79,19 @@
         <button class="action-btn" [class.active]="adminAction === 'purchase'" (click)="setAdminAction('purchase')">
           <i class="bi bi-credit-card"></i><span>Purchase</span>
         </button>
+        <button class="action-btn" [class.active]="adminAction === 'unavailable'" (click)="setAdminAction('unavailable')">
+          <i class="bi bi-eye-slash"></i><span>Unavailable</span>
+        </button>
+        <button class="action-btn" [class.active]="adminAction === 'available'" (click)="setAdminAction('available')">
+          <i class="bi bi-eye"></i><span>Make Available</span>
+        </button>
       </div>
       <div class="current-action-info">
         <h4>{{ getActionButtonText() }}</h4>
         <p *ngIf="adminAction === 'purchase'">Select seats and enter customer information below</p>
         <p *ngIf="adminAction === 'block' || adminAction === 'unblock'">Select seats to apply action</p>
+        <p *ngIf="adminAction === 'unavailable'">Select available seats to hide from customers</p>
+        <p *ngIf="adminAction === 'available'">Select unavailable seats (violet) to make them available</p>
       </div>
     </div>
 
@@ -271,6 +280,10 @@
           <div class="legend-color-compact" style="background:#f59e0b"></div>
           <span class="legend-label-compact">Reserved</span>
         </div>
+        <div class="legend-item-compact">
+          <div class="legend-color-compact" style="background:rgba(139,92,246,0.18);border:1.5px dashed #8b5cf6"></div>
+          <span class="legend-label-compact">Unavailable</span>
+        </div>
       </div>
     </div>
 
@@ -288,6 +301,8 @@
           <span *ngIf="confirmationData.action === 'reserve'">Reservation expires in 24 hours.</span>
           <span *ngIf="confirmationData.action === 'purchase'">This action cannot be undone.</span>
           <span *ngIf="confirmationData.action === 'unblock'">Seats will become available for customers.</span>
+          <span *ngIf="confirmationData.action === 'unavailable'">Seats will be hidden from customers but visible to admins.</span>
+          <span *ngIf="confirmationData.action === 'available'">Seats will be restored and visible to customers.</span>
         </div>
       </div>
       <div class="modal-footer">

@@ -6,7 +6,7 @@ import {
 import { CommonModule } from '@angular/common';
 import {
   Seat, VenueData, SeatStatus, SeatSectionType,
-  getSeatColor, getSeatStatusConfig, getSeatDisplayText, TicketType
+  getSeatColor, getSeatStatusConfig, getSeatDisplayText
 } from '../../../core/models/DTOs/seats.DTO.model';
 
 export interface TooltipData {
@@ -33,6 +33,7 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
   @Input() selectedSeatIds: string[] = [];
   @Input() hoveredSeatId:   string | null = null;
   @Input() rowLabels:       { x: number; y: number; label: string; side: 'left' | 'right' }[] = [];
+  @Input() adminAction:     string = 'block';
 
   @Output() seatClicked = new EventEmitter<Seat>();
   @Output() seatHovered = new EventEmitter<{ seat: Seat | null; mouseX: number; mouseY: number }>();
@@ -356,10 +357,11 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
 
   // Admin-specific status colours — distinct, clear at a glance
   private readonly ADMIN_COLORS: Partial<Record<SeatStatus, string>> = {
-    [SeatStatus.BOOKED]:    '#1e293b',  // dark slate — sold/purchased
-    [SeatStatus.BLOCKED]:   '#ef4444',  // red — administratively blocked
-    [SeatStatus.RESERVED]:  '#f59e0b',  // amber — reserved/held
-    [SeatStatus.SELECTED]:  '#22C55E',  // green — selected in current action
+    [SeatStatus.BOOKED]:      '#1e293b',  // dark slate — sold/purchased
+    [SeatStatus.BLOCKED]:     '#ef4444',  // red — administratively blocked
+    [SeatStatus.RESERVED]:    '#f59e0b',  // amber — reserved/held
+    [SeatStatus.SELECTED]:    '#22C55E',  // green — selected in current action
+    [SeatStatus.UNAVAILABLE]: '#8b5cf6',  // violet — seat marked unavailable (admin-only view)
   };
 
   private drawOneSeat(ctx: CanvasRenderingContext2D, seat: Seat) {
@@ -388,12 +390,24 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
 
     // Use admin colour override for status, else ticket tier colour
     const adminColor = this.ADMIN_COLORS[seat.status as SeatStatus];
+    const isUnavailable = seat.status === SeatStatus.UNAVAILABLE;
     const fill = isSel ? this.SEL_COLOR : (adminColor ?? this.colorCache.get(seat.id) ?? '#d1d5db');
 
     ctx.beginPath();
     ctx.arc(seat.cx, seat.cy, SR, 0, Math.PI * 2);
-    ctx.fillStyle = fill;
+    ctx.fillStyle = isUnavailable ? 'rgba(139,92,246,0.18)' : fill;
     ctx.fill();
+
+    // Unavailable: dashed violet border to clearly signal admin-only view
+    if (isUnavailable) {
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#8b5cf6';
+      ctx.lineWidth   = 1.5;
+      ctx.beginPath();
+      ctx.arc(seat.cx, seat.cy, SR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
     ctx.globalAlpha = 1;
     ctx.textAlign    = 'center';
@@ -404,6 +418,11 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 ${Math.round(SR * 1.05)}px "DM Sans","Helvetica Neue",sans-serif`;
       ctx.fillText('✓', seat.cx, seat.cy + 0.5);
+    } else if (isUnavailable) {
+      // Unavailable — show × so admin recognises it at a glance
+      ctx.fillStyle = '#8b5cf6';
+      ctx.font = `700 ${Math.round(SR * 0.85)}px "DM Sans","Helvetica Neue",sans-serif`;
+      ctx.fillText('×', seat.cx, seat.cy + 0.5);
     } else {
       // Admin always shows seat number regardless of zoom
       ctx.fillStyle = 'rgba(255,255,255,0.95)';
@@ -484,7 +503,9 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
     const c = this.canvasRef.nativeElement;
     if (this.mouseDown) { c.style.cursor = 'grabbing'; return; }
     const seat = this.hitTest(e.clientX, e.clientY);
-    if (seat && (seat.status === SeatStatus.AVAILABLE || seat.status === SeatStatus.BLOCKED || this.selectedSet.has(seat.id))) c.style.cursor = 'pointer';
+    if (seat && this.selectedSet.has(seat.id)) { c.style.cursor = 'pointer'; return; }
+    if (seat && this.adminAction === 'available' && seat.status === SeatStatus.UNAVAILABLE) { c.style.cursor = 'pointer'; return; }
+    if (seat && (seat.status === SeatStatus.AVAILABLE || seat.status === SeatStatus.BLOCKED)) c.style.cursor = 'pointer';
     else if (seat) c.style.cursor = 'not-allowed';
     else           c.style.cursor = 'grab';
   };
@@ -625,9 +646,10 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  isAvail(s: Seat)  { return s.status === SeatStatus.AVAILABLE && !this.selectedSet.has(s.id); }
-  isSel(s: Seat)    { return this.selectedSet.has(s.id); }
-  isTaken(s: Seat)  { return s.status === SeatStatus.BOOKED || s.status === SeatStatus.RESERVED || s.status === SeatStatus.BLOCKED; }
+  isAvail(s: Seat)    { return s.status === SeatStatus.AVAILABLE && !this.selectedSet.has(s.id); }
+  isSel(s: Seat)      { return this.selectedSet.has(s.id); }
+  isUnavail(s: Seat)  { return s.status === SeatStatus.UNAVAILABLE; }
+  isTaken(s: Seat)    { return s.status === SeatStatus.BOOKED || s.status === SeatStatus.RESERVED || s.status === SeatStatus.BLOCKED || s.status === SeatStatus.UNAVAILABLE; }
   getStatusText(s: Seat) { return getSeatDisplayText(s.status, s.ticketType); }
   getSeatFill(s: Seat) { return this.selectedSet.has(s.id) ? this.SEL_COLOR : (this.colorCache.get(s.id) ?? '#d1d5db'); }
   fmt(p: number) { return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(p); }

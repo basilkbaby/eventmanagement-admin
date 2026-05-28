@@ -6,10 +6,10 @@ export interface VenueData {
 }
 
 export interface SeatManagement {
-  // Only these three statuses needed
   reservedSeats: SeatOverride[];
   blockedSeats: SeatOverride[];
   soldSeats: SeatOverride[];
+  unavailableSeats: SeatOverride[];
 }
 
 export interface SeatOverride {
@@ -167,6 +167,7 @@ export interface BlockSeatRequestDto {
   eventId: string;
   reason?: string;
   blockedBy?: string;
+  status?: 'BLOCKED' | 'UNAVAILABLE';
 }
 
 // Main configuration object
@@ -207,9 +208,9 @@ export const SEAT_STATUS_CONFIG: Record<SeatStatus, SeatStatusConfig> = {
     strokeWidth: 1,
     opacity: 0.6,
     displayText: 'Unavailable',
-    cursor: 'pointer',
-    canSelect: true,
-    tooltip: 'Not available for sale'
+    cursor: 'not-allowed',
+    canSelect: false,
+    tooltip: 'Seat is unavailable'
   },
   [SeatStatus.PARTIAL_VIEW]: {
     color: 'transparent',
@@ -279,10 +280,6 @@ export function getSeatColor(seat: Seat): string {
   if (seat.status === SeatStatus.AVAILABLE) {
     return seat.color || config.color;
   }
-  else{
-    return "#ffff"
-  }
-  
   return config.color;
 }
 
