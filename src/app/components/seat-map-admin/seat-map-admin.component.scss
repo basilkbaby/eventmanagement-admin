@@ -16,7 +16,14 @@ $font:     'DM Sans','Helvetica Neue',sans-serif;
 $ease:     cubic-bezier(0.4,0,0.2,1);
 $sw:       360px;
 
-:host { display: block; height: calc(100dvh - var(--header-h, 80px)); font-family: $font; }
+:host {
+  display: block;
+  // Pull top/bottom into content-wrapper padding so map fills full height
+  margin-top: -24px;
+  margin-bottom: -24px;
+  height: calc(100dvh - 70px);
+  font-family: $font;
+}
 
 // ── Layout ─────────────────────────────────────────────────────────────────
 .seat-selection-layout {
@@ -336,25 +343,133 @@ $sw:       360px;
 
 // ── Responsive ─────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
-  :host { height: calc(100dvh - var(--header-h, 80px)); }
+  :host {
+    margin-top: -16px;
+    margin-bottom: -16px;
+    height: calc(100dvh - 64px);
+  }
 
   .seat-selection-layout { flex-direction: column; }
 
-  .canvas-area {
-    flex: none; height: calc(100dvh - var(--header-h, 80px) - 40vh);
-    padding: 0;
-  }
+  // Map fills remaining space above the bottom panel
+  .canvas-area { flex: 1; min-height: 160px; padding: 0; }
   .canvas-wrapper { border-radius: 0; border: none; box-shadow: none; }
 
+  // ── Bottom panel: 40dvh ──────────────────────────────────────────────────
+  $panel-h: 40dvh;
+
   .controls-sidebar {
-    width: 100%; height: 40vh; border-left: none; border-top: 1px solid $border;
+    width: 100%;
+    flex-shrink: 0;
+    height: $panel-h;
+    min-height: 200px;
+    border-left: none;
+    border-top: 2px solid $border;
+    overflow-y: auto;
   }
 
-  .zoom-bar { bottom: 12px; left: 50%; transform: translateX(-50%); flex-direction: row; }
-  .zb { padding: 8px 12px; flex-direction: row; gap: 5px; font-size: 11px; }
-  .zb-divider { width: 1px; height: 24px; }
+  // Zoom bar floats just above the panel
+  .zoom-bar {
+    bottom: calc(#{$panel-h} + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .zb { padding: 6px 10px; flex-direction: row; gap: 4px; font-size: 10px; }
+  .zb-divider { width: 1px; height: 18px; }
 
+  // ── Sticky event header — very compact ───────────────────────────────────
+  .compact-header {
+    position: sticky; top: 0; z-index: 5; background: $surface;
+    padding: 8px 14px 6px;
+    border-bottom: 1px solid $border-s;
+
+    .event-info-ultra-compact {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      h1 { font-size: 13px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .event-details-minimal { font-size: 11px; color: $t3; white-space: nowrap; flex-shrink: 0; }
+    }
+  }
+
+  // ── Action pill strip — sticky, horizontally scrollable ──────────────────
+  .admin-actions-panel {
+    position: sticky; top: 38px; z-index: 4; background: $surface;
+    padding: 7px 14px;
+    border-bottom: 1px solid $border;
+
+    h3 { display: none; }
+
+    .action-buttons {
+      display: flex !important;
+      grid-template-columns: unset !important;
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 6px;
+      padding-bottom: 1px;
+      margin-bottom: 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      &::-webkit-scrollbar { display: none; }
+
+      .action-btn {
+        flex-direction: row;
+        flex-shrink: 0;
+        padding: 6px 12px;
+        border-radius: 16px;
+        gap: 5px;
+        white-space: nowrap;
+        min-width: auto;
+        border-width: 1.5px;
+
+        i    { font-size: 14px; color: $t2; }
+        span { font-size: 11px; font-weight: 500; color: $t2; }
+
+        &.active {
+          background: $btn; border-color: $btn;
+          i, span { color: #fff; }
+          span { font-weight: 600; }
+        }
+
+        &:hover:not(.active) { background: $bg; border-color: $t3; }
+      }
+    }
+
+    .current-action-info { display: none; }
+  }
+
+  // ── Scrollable content panels ─────────────────────────────────────────────
+  .selected-summary    { padding: 10px 14px; }
+  .customer-info-panel { padding: 10px 14px; }
+  .pricing-section     { padding: 10px 14px; }
+  .compact-legend      { padding: 8px 14px 10px; }
+
+  // Empty state: single line, no big icon
+  .empty-state-compact {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    .empty-icon { font-size: 18px; opacity: .5; margin: 0; }
+    p { font-size: 12px; margin: 0; text-align: left; }
+    .hint { margin-top: 2px; }
+  }
+
+  // Legend: 2-column, tighter items
+  .compact-legend {
+    h4 { margin-bottom: 6px; font-size: 11px; }
+    .legend-container {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 5px;
+      .legend-item-compact { font-size: 11px; gap: 5px; }
+      .legend-color-compact { width: 11px; height: 11px; }
+    }
+  }
+
+  // Customer email/phone stack
   .customer-form .form-row { grid-template-columns: 1fr !important; }
-  .compact-legend .legend-container { grid-template-columns: 1fr !important; }
-  .admin-actions-panel .action-buttons { grid-template-columns: repeat(2,1fr) !important; }
+}
+
+@media (max-width: 480px) {
+  :host { height: calc(100dvh - 64px); }
 }

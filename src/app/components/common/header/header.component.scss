@@ -325,67 +325,77 @@
   }
 }
 
-// User Menu Styles
-.user-menu {
-  min-width: 240px;
-  border-radius: 12px;
-  box-shadow: var(--shadow-4);
-  border: 1px solid var(--border-color);
-  
-  .mat-mdc-menu-content {
-    padding: 0;
-  }
-}
+// User Menu Styles — must use ::ng-deep because mat-menu renders in a CDK overlay outside the component DOM
+::ng-deep .user-menu {
+  min-width: 240px !important;
 
-.user-menu-header {
-  padding: 20px;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  
-  .user-avatar-large {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--primary-color);
+  .mat-mdc-menu-panel {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+  }
+
+  .mat-mdc-menu-content {
+    padding: 0 !important;
+  }
+
+  .user-menu-header {
+    padding: 20px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
-    color: white;
-  }
-  
-  .user-details {
-    flex: 1;
-    
-    h4 {
-      margin: 0 0 4px 0;
+    gap: 12px;
+
+    .user-avatar-large {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 14px;
       font-weight: 600;
-      color: var(--text-color);
-    }
-    
-    p {
-      margin: 0 0 8px 0;
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-    
-    .user-role-badge {
-      background: var(--primary-color);
       color: white;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 10px;
-      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .user-details {
+      flex: 1;
+      min-width: 0;
+
+      h4 {
+        margin: 0 0 4px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      p {
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .user-role-badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+      }
     }
   }
-}
 
-.user-menu {
   .mat-mdc-menu-item {
     display: flex;
     align-items: center;
@@ -393,33 +403,34 @@
     font-size: 13px;
     padding: 12px 16px;
     color: var(--text-color);
-    transition: all 0.2s ease;
-    
+    transition: background 0.2s ease;
+    min-height: 44px;
+
     .mat-icon {
       font-size: 18px;
       width: 18px;
       height: 18px;
       color: var(--text-secondary);
     }
-    
+
     &:hover {
-      background: var(--hover-color);
-      
+      background: var(--hover-color) !important;
+
       .mat-icon {
         color: var(--primary-color);
       }
     }
   }
-  
+
   .logout-button {
-    color: var(--danger-color);
-    
+    color: var(--danger-color) !important;
+
     .mat-icon {
-      color: var(--danger-color);
+      color: var(--danger-color) !important;
     }
-    
+
     &:hover {
-      background: var(--hover-color);
+      background: var(--hover-color) !important;
     }
   }
 }
@@ -453,34 +464,51 @@
     height: 64px;
     gap: 16px;
   }
-  
+
   .brand-section .brand-text {
     display: none;
   }
-  
+
   .header-center {
     display: none;
   }
-  
+
   .quick-actions {
     display: none;
   }
-  
+
+  .header-right {
+    margin-left: auto;
+    gap: 8px;
+  }
+
   .user-menu-button {
     padding: 6px;
     background: transparent;
     height: 44px;
-    
-    .user-content .user-info {
-      display: none;
+    min-width: auto;
+    width: auto;
+
+    .user-content {
+      gap: 6px;
+
+      .user-info {
+        display: none;
+      }
     }
-    
+
     .user-avatar {
       width: 36px;
       height: 36px;
       font-size: 13px;
     }
-    
+
+    .dropdown-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
     &:hover {
       background: var(--hover-color);
     }

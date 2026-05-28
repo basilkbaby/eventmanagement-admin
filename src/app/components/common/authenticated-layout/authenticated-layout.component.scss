@@ -40,6 +40,18 @@
   }
 }
 
+// Mobile sidebar backdrop
+.mobile-overlay {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 95;
+  cursor: pointer;
+}
+
 // Mobile styles
 @media (max-width: 768px) {
   .content-area {

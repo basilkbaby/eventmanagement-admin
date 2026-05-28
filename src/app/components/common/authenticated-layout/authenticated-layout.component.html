@@ -9,10 +9,16 @@
   <!-- Main Content Area -->
   <div class="main-content">
     <!-- Sidebar -->
-    <app-sidebar 
+    <app-sidebar
       [isOpen]="isSidebarOpen"
       [isMobile]="isMobile">
     </app-sidebar>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div class="mobile-overlay"
+         *ngIf="isMobile && isSidebarOpen"
+         (click)="onSidebarToggle()">
+    </div>
 
     <!-- Content Area -->
     <main class="content-area" [class.content-shifted]="isSidebarOpen && !isMobile">

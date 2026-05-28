@@ -152,13 +152,35 @@
   <mat-divider></mat-divider>
 </div>
 
-<div class="dashboard-container" *ngIf="true">
-  <!-- Dashboard Header -->
+<div class="dashboard-container">
   <div class="dashboard-header">
     <div class="header-content">
-      <h1 class="dashboard-title">Dashboard Overview</h1>
-      <p class="dashboard-subtitle">Welcome back! Here's what's happening with your events.</p>
-      <p class="dashboard-subtitle">coming soon</p>
+      <h1 class="dashboard-title">Dashboard</h1>
+      <p class="dashboard-subtitle">Welcome back! Select a section below to get started.</p>
     </div>
+  </div>
+
+  <div class="quick-links-grid">
+    <a routerLink="/admin/events" class="quick-link-card">
+      <div class="card-icon icon-events">
+        <mat-icon>event</mat-icon>
+      </div>
+      <div class="card-body">
+        <h3>Events</h3>
+        <p>View and manage your events</p>
+      </div>
+      <mat-icon class="card-arrow">arrow_forward_ios</mat-icon>
+    </a>
+
+    <a routerLink="/admin/orders" class="quick-link-card">
+      <div class="card-icon icon-orders">
+        <mat-icon>confirmation_number</mat-icon>
+      </div>
+      <div class="card-body">
+        <h3>Ticket Sales</h3>
+        <p>Manage orders and check-ins</p>
+      </div>
+      <mat-icon class="card-arrow">arrow_forward_ios</mat-icon>
+    </a>
   </div>
 </div>

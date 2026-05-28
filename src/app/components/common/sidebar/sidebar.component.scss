@@ -160,15 +160,9 @@
 .dark-theme .copyright-text {
   color: rgba(255, 255, 255, 0.6);
 }
-// Mobile overlay when sidebar is open
 @media (max-width: 768px) {
-  .sidebar-overlay {
-    position: fixed;
-    top: 70px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 95;
+  .sidebar {
+    top: 64px;
+    height: calc(100vh - 64px);
   }
 }
