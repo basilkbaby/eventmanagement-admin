@@ -1,3 +1,12 @@
+<!-- ── Loading state ──────────────────────────────────────────────────────── -->
+<div class="seatmap-loading" *ngIf="loading">
+  <div class="seatmap-loading-card">
+    <div class="seatmap-spinner"></div>
+    <h3>Loading seat map</h3>
+    <p>Fetching seat availability…</p>
+  </div>
+</div>
+
 <div class="seat-selection-layout" *ngIf="!loading">
 
   <!-- Map -->

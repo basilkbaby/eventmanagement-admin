@@ -161,13 +161,17 @@
   </div>
 
   <div class="quick-links-grid">
-    <a routerLink="/admin/events" class="quick-link-card">
-      <div class="card-icon icon-events">
-        <mat-icon>event</mat-icon>
+    <a [routerLink]="seatsLink" class="quick-link-card"
+       [class.card-disabled]="!seatsLink">
+      <div class="card-icon icon-seats">
+        <mat-icon>event_seat</mat-icon>
       </div>
       <div class="card-body">
-        <h3>Events</h3>
-        <p>View and manage your events</p>
+        <h3>Seats</h3>
+        <p *ngIf="eventContext.selectedEvent()">
+          Manage seating for <strong>{{ eventContext.selectedEvent()!.title }}</strong>
+        </p>
+        <p *ngIf="!eventContext.selectedEvent()">Select an event from the top bar</p>
       </div>
       <mat-icon class="card-arrow">arrow_forward_ios</mat-icon>
     </a>
@@ -179,6 +183,28 @@
       <div class="card-body">
         <h3>Ticket Sales</h3>
         <p>Manage orders and check-ins</p>
+      </div>
+      <mat-icon class="card-arrow">arrow_forward_ios</mat-icon>
+    </a>
+
+    <a routerLink="/admin/coupons" class="quick-link-card">
+      <div class="card-icon icon-coupons">
+        <mat-icon>local_offer</mat-icon>
+      </div>
+      <div class="card-body">
+        <h3>Coupons</h3>
+        <p>Create and manage discount codes</p>
+      </div>
+      <mat-icon class="card-arrow">arrow_forward_ios</mat-icon>
+    </a>
+
+    <a routerLink="/admin/discounts" class="quick-link-card">
+      <div class="card-icon icon-discounts">
+        <mat-icon>sell</mat-icon>
+      </div>
+      <div class="card-body">
+        <h3>Bulk Discounts</h3>
+        <p>Automatic quantity-based discount rules</p>
       </div>
       <mat-icon class="card-arrow">arrow_forward_ios</mat-icon>
     </a>

@@ -1,11 +1,11 @@
 import { DiscountType } from "../Enums/coupon.enum";
 
 export interface CouponDto {
-  id: string;
+  id?: string;
   code: string;
   name: string;
   description: string;
-  discountType: DiscountType; //'Percentage' | 'FixedAmount' | 'Both';
+  discountType: DiscountType;
   discountAmount: number;
   discountPercentage: number;
   minimumPurchaseAmount: number;
@@ -27,12 +27,28 @@ export interface CouponDto {
   isValid?: boolean;
   validationMessage?: string;
   calculatedDiscount?: number;
- // Ticket quantity rules
+  discountValue?: number;
+  // Ticket quantity rules
   minTickets: number;
   maxTickets?: number;
   applyToAllTickets: boolean;
   ticketsRequired?: number;
   ticketRuleDescription?: string;
+  // Section exclusions
+  excludedSections?: string[];
+  // Bulk-discount specific
+  allSectionsEvents?: string[];   // events where excludedSections is ignored
+  isAutomatic: boolean;           // false = coupon code, true = bulk discount rule
+  canApplyWithCoupon: boolean;    // true = stacks with a manual coupon code
+}
+
+export interface CouponStats {
+  total: number;
+  active: number;
+  expired: number;
+  inactive: number;
+  upcoming: number;
+  totalUses: number;
 }
 
 export interface CouponFilter {

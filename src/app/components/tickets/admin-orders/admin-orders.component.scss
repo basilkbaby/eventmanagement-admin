@@ -840,71 +840,185 @@
 }
 
 @media (max-width: 768px) {
-  .admin-orders-container {
-    padding: 12px;
-  }
+  .admin-orders-container { padding: 10px; }
 
+  // ── Header ──────────────────────────────────────────────────────────────
   .event-filter-header {
-    padding: 16px;
+    padding: 14px;
+    margin-bottom: 10px;
 
+    .header-content {
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+
+      .title-section {
+        h1 { font-size: 20px; margin-bottom: 2px; }
+        p  { font-size: 12px; }
+      }
+
+      .event-filter-section {
+        flex-direction: column;
+        gap: 8px;
+
+        .event-selector { width: 100%; }
+
+        .header-actions {
+          display: flex;
+          gap: 8px;
+
+          .export-btn { flex: 1; justify-content: center; }
+        }
+      }
+    }
+
+    // Stats: compact 2-column grid
     .header-stats .stats-grid {
       grid-template-columns: repeat(2, 1fr) !important;
+      gap: 8px;
+
+      .stat-card {
+        padding: 10px 8px;
+        gap: 8px;
+
+        .stat-icon {
+          width: 30px;
+          height: 30px;
+          border-radius: 6px;
+          mat-icon { font-size: 16px; width: 16px; height: 16px; }
+        }
+
+        .stat-content {
+          .stat-value { font-size: 14px; }
+          .stat-label { font-size: 9px; letter-spacing: 0; }
+          .stat-subtext { font-size: 9px; white-space: normal; }
+        }
+      }
     }
   }
 
+  // ── Search ───────────────────────────────────────────────────────────────
   .search-section {
+    margin-bottom: 10px;
+
     .search-container {
       flex-direction: column;
-      align-items: stretch;
+      gap: 8px;
 
-      .search-field {
-        min-width: 0;
-        width: 100%;
-      }
-
-      .search-field-select {
-        width: 100%;
-      }
+      .search-field     { min-width: 0; width: 100%; }
+      .search-field-select { width: 100%; }
 
       .search-actions {
         margin-left: 0;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
       }
     }
   }
 
-  .order-row {
-    grid-template-columns: 1fr !important;
-    grid-template-areas:
-      "order-info"
-      "event-info"
-      "seats-info"
-      "price-summary"
-      "status-col"
-      "actions-col" !important;
-    padding: 12px 16px !important;
-    gap: 12px !important;
-  }
+  // ── Table header ─────────────────────────────────────────────────────────
+  .orders-table-section .table-header { padding: 10px 14px; }
 
-  .action-buttons {
-    justify-content: flex-start !important;
+  // ── Order cards — proper 2-column mobile card layout ─────────────────────
+  .order-row {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-areas:
+      "order-info  status-col"
+      "event-info  price-summary"
+      "seats-info  seats-info"
+      "actions-col actions-col" !important;
+    padding: 14px !important;
+    gap: 4px 10px !important;
+
+    .cell {
+      &.order-info {
+        grid-area: order-info;
+
+        .order-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1px;
+          margin-bottom: 5px;
+
+          .order-number { font-size: 14px; font-weight: 700; }
+          .order-date   { font-size: 10px; background: none; padding: 0; }
+        }
+
+        .customer-name    { font-size: 13px; margin-bottom: 2px; }
+        .customer-details { font-size: 11px; display: flex; flex-wrap: wrap; gap: 2px; }
+      }
+
+      &.event-info {
+        grid-area: event-info;
+        .event-name { font-size: 12px; color: #555; }
+        .event-date { font-size: 11px; }
+      }
+
+      &.price-summary {
+        grid-area: price-summary;
+        text-align: right;
+
+        .total-amount  { font-size: 15px; font-weight: 700; }
+        .price-breakdown { align-items: flex-end; }
+      }
+
+      &.status-col {
+        grid-area: status-col;
+        align-self: start;
+
+        .status-badge {
+          padding: 4px 8px;
+          font-size: 11px;
+          white-space: nowrap;
+
+          .status-icon { font-size: 12px; width: 12px; height: 12px; }
+        }
+
+        .checkin-badge { font-size: 9px; text-align: right; }
+      }
+
+      &.seats-info {
+        grid-area: seats-info;
+        padding-top: 4px;
+        border-top: 1px solid #f0f0f0;
+
+        .seats-tags { gap: 3px; margin-bottom: 4px; }
+        .seat-tag   { font-size: 10px; padding: 3px 6px 3px 8px; }
+        .seats-count { font-size: 11px; }
+      }
+
+      &.actions-col {
+        grid-area: actions-col;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 10px;
+        margin-top: 2px;
+
+        .action-buttons {
+          justify-content: space-around !important;
+          width: 100%;
+
+          button {
+            width: 36px;
+            height: 36px;
+          }
+        }
+      }
+    }
   }
 }
 
 @media (max-width: 480px) {
-  .admin-orders-container {
-    padding: 8px;
-  }
+  .admin-orders-container { padding: 8px; }
 
   .event-filter-header {
-    padding: 12px;
+    padding: 10px;
 
-    .header-stats .stats-grid {
-      grid-template-columns: 1fr !important;
-    }
+    .header-stats .stats-grid { gap: 6px; }
   }
+
+  .order-row { padding: 12px !important; }
 }
 
 .spinner {

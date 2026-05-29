@@ -102,6 +102,10 @@ export const ADMIN_ROUTES: Routes = [
     loadChildren: () => import('./coupons.routes').then(m => m.Coupons_Routes)
   },
   {
+    path: 'discounts',
+    loadChildren: () => import('./discounts.routes').then(m => m.DISCOUNTS_ROUTES)
+  },
+  {
     path: 'reports',
     loadChildren: () => import('./reports.routes').then(m => m.REPORTS_ROUTES)
   },

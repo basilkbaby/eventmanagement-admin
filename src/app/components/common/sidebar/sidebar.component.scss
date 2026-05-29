@@ -84,8 +84,15 @@
         }
       }
       
-      &:hover:not(.active) {
+      &:hover:not(.active):not(.nav-disabled) {
         background: var(--hover-color);
+      }
+
+      // Seats link when no event is selected yet
+      &.nav-disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
       }
     }
     

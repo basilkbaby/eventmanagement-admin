@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { EventContextService } from '../../core/services/event-context.service';
 import { FormsModule } from '@angular/forms';
 
 // Angular Material
@@ -35,6 +36,14 @@ import {  DashboardStats,DashboardEvent } from '../../core/services/dashboard.se
   styleUrls: ['./admin-dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit {
+  readonly eventContext = inject(EventContextService);
+
+  /** Returns the router-link array for the Seats card, or null to disable it. */
+  get seatsLink(): string[] | null {
+    const id = this.eventContext.selectedEventId();
+    return id ? ['/admin/events/seatmap', id] : null;
+  }
+
   selectedEvent: string = 'all';
   isLoading: boolean = true;
   events: DashboardEvent[] = [];

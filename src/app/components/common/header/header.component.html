@@ -1,111 +1,171 @@
 <mat-toolbar class="header-toolbar">
-  <!-- Left Section - Menu toggle & Brand -->
+
+  <!-- ── Left: Menu toggle + Brand ────────────────────────────────────────── -->
   <div class="header-left">
-    <button 
-      mat-icon-button 
-      class="menu-button" 
-      (click)="onToggleSidenav()"
-      aria-label="Toggle menu">
+    <button mat-icon-button class="menu-button" (click)="onToggleSidenav()" aria-label="Toggle menu">
       <mat-icon>menu</mat-icon>
     </button>
-    
+
     <div class="brand-section">
-      <div class="brand-logo">
-        <mat-icon>confirmation_number</mat-icon>
-      </div>
+      <div class="brand-logo"><mat-icon>confirmation_number</mat-icon></div>
       <span class="brand-text" *ngIf="!sidebarOpen">Event Admin</span>
     </div>
   </div>
 
-  
+  <span class="header-spacer"></span>
 
-  <!-- Right Section - User Actions -->
+  <!-- ── Right: Event Switcher + Profile ──────────────────────────────────── -->
   <div class="header-right">
-    <!-- Quick Actions -->
+
+    <!-- Quick Actions (all disabled, hidden until enabled) -->
     <div class="quick-actions">
       <ng-container *ngFor="let action of quickActions">
-        <button 
-          mat-raised-button 
-          [color]="action.color"
-          class="quick-action-button"
-          [routerLink]="action.route"
-          [matTooltip]="action.label"
-          *ngIf="action.enabled">
+        <button mat-raised-button [color]="action.color" class="quick-action-button"
+          [routerLink]="action.route" [matTooltip]="action.label" *ngIf="action.enabled">
           <mat-icon>{{ action.icon }}</mat-icon>
           <span class="action-label">{{ action.label }}</span>
         </button>
       </ng-container>
     </div>
 
+    <!-- ── Event Switcher ─────────────────────────────────────────────────── -->
+    <ng-container *ngIf="authService.isAuthenticated() && eventContext.events().length > 0">
 
-  <ng-container *ngIf="authService.isAuthenticated() && currentUser">
+      <!-- Single event: static pill, no dropdown -->
+      <div class="event-switcher-wrap" *ngIf="eventContext.events().length === 1">
+        <div class="event-switcher-btn esw-static">
+          <div class="switcher-icon-wrap">
+            <mat-icon class="switcher-icon">event</mat-icon>
+            <span class="switcher-dot" *ngIf="eventContext.selectedEvent()?.isActive"></span>
+          </div>
+          <div class="switcher-label">
+            <span class="switcher-eyebrow">Event</span>
+            <span class="switcher-name">{{ eventContext.selectedEvent()?.title }}</span>
+            <span class="switcher-date" *ngIf="eventContext.selectedEvent()">
+              {{ eventContext.formatEventDate(eventContext.selectedEvent()!.startDate) }}
+            </span>
+          </div>
+        </div>
+      </div>
 
-    <!-- User Menu -->
-<button 
-  mat-button 
-  class="user-menu-button"
-  [matMenuTriggerFor]="userMenu"
-  matTooltip="Account menu" >
-  
-  <div class="user-content">
-    <div class="user-avatar">            
-      {{ getAvatarInitials() }}
+      <!-- Multiple events: interactive dropdown -->
+      <div class="event-switcher-wrap" *ngIf="eventContext.events().length > 1">
+        <div class="esw-backdrop" *ngIf="switcherOpen" (click)="closeSwitcher()"></div>
+
+        <button class="event-switcher-btn" (click)="toggleSwitcher($event)"
+          [class.esw-btn-open]="switcherOpen">
+          <div class="switcher-icon-wrap">
+            <mat-icon class="switcher-icon">event</mat-icon>
+            <span class="switcher-dot" *ngIf="eventContext.selectedEvent()?.isActive"></span>
+          </div>
+          <div class="switcher-label">
+            <span class="switcher-eyebrow">Viewing Event</span>
+            <span class="switcher-name">
+              {{ eventContext.selectedEvent()?.title ?? (eventContext.isLoading() ? 'Loading…' : 'No events') }}
+            </span>
+            <span class="switcher-date" *ngIf="eventContext.selectedEvent()">
+              {{ eventContext.formatEventDate(eventContext.selectedEvent()!.startDate) }}
+            </span>
+          </div>
+          <mat-icon class="switcher-chevron" [class.rotated]="switcherOpen">expand_more</mat-icon>
+        </button>
+
+        <div class="esw-dropdown" *ngIf="switcherOpen">
+
+          <!-- Currently viewing card -->
+          <div class="esw-current-section" *ngIf="eventContext.selectedEvent()">
+            <span class="esw-section-label">Currently viewing</span>
+            <div class="esw-current-card">
+              <div class="esw-current-icon">
+                <mat-icon>event</mat-icon>
+              </div>
+              <div class="esw-current-body">
+                <span class="esw-current-title">{{ eventContext.selectedEvent()!.title }}</span>
+                <span class="esw-current-date">
+                  {{ eventContext.formatEventDate(eventContext.selectedEvent()!.startDate) }}
+                </span>
+              </div>
+              <span class="esw-status-pill" [class.active]="eventContext.selectedEvent()!.isActive">
+                {{ eventContext.selectedEvent()!.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="esw-dropdown-divider"></div>
+          <span class="esw-section-label esw-section-label--list">Switch to</span>
+
+          <button class="esw-item"
+            *ngFor="let event of eventContext.events()"
+            (click)="selectEvent(event.id)"
+            [class.esw-item-active]="event.id === eventContext.selectedEventId()">
+            <mat-icon class="esw-item-icon">
+              {{ event.id === eventContext.selectedEventId() ? 'check_circle' : 'radio_button_unchecked' }}
+            </mat-icon>
+            <div class="esw-item-body">
+              <span class="esw-item-title">{{ event.title }}</span>
+              <span class="esw-item-date">{{ eventContext.formatEventDate(event.startDate) }}</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- Divider between switcher and profile -->
+    <div class="header-divider" *ngIf="authService.isAuthenticated() && currentUser"></div>
+
+    <!-- ── Profile Dropdown ───────────────────────────────────────────────── -->
+    <div class="profile-wrap" *ngIf="authService.isAuthenticated() && currentUser">
+      <div class="profile-backdrop" *ngIf="profileOpen" (click)="closeProfile()"></div>
+
+      <button class="profile-trigger" (click)="toggleProfile($event)"
+        [class.profile-open]="profileOpen">
+        <div class="pd-avatar-sm">{{ getAvatarInitials() }}</div>
+        <div class="profile-info">
+          <span class="profile-name">{{ getDisplayName() }}</span>
+          <span class="profile-role">{{ getPrimaryRole() }}</span>
+        </div>
+        <mat-icon class="profile-chevron" [class.rotated]="profileOpen">keyboard_arrow_down</mat-icon>
+      </button>
+
+      <div class="profile-dropdown" *ngIf="profileOpen">
+        <div class="pd-header">
+          <div class="pd-avatar-lg">{{ getAvatarInitials() }}</div>
+          <div class="pd-details">
+            <strong class="pd-name">{{ getDisplayName() }}</strong>
+            <span class="pd-email">{{ currentUser.email }}</span>
+            <span class="pd-badge">{{ getPrimaryRole() }}</span>
+          </div>
+        </div>
+        <div class="pd-divider"></div>
+
+        <a class="pd-item" routerLink="/admin/profile" (click)="closeProfile()">
+          <mat-icon>person_outline</mat-icon>
+          <span>My Profile</span>
+        </a>
+        <a class="pd-item" routerLink="/admin/settings" (click)="closeProfile()">
+          <mat-icon>settings</mat-icon>
+          <span>Account Settings</span>
+        </a>
+
+        <div class="pd-divider"></div>
+
+        <button class="pd-item pd-logout" (click)="logoutAndClose()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign Out</span>
+        </button>
+      </div>
     </div>
-    <div class="user-info">
-      <span class="user-name">{{ currentUser.firstName + ' ' +  currentUser.lastName}}</span>
-      <span class="user-role">{{ currentUser.roles }}</span>
-    </div>
-    
-    <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
-  </div>
-  
-</button>
-  </ng-container>
- <!-- Login/Register (When not authenticated) -->
-  <ng-container *ngIf="!authService.isAuthenticated()">
-    <button mat-button routerLink="/auth/login">
-      <mat-icon>login</mat-icon>
-      <span>Sign In</span>
-    </button>
-    
-    <button mat-raised-button color="accent" routerLink="/auth/register">
-      <mat-icon>person_add</mat-icon>
-      <span>Get Started</span>
-    </button>
-  </ng-container>
+
+    <!-- Login / Register (unauthenticated) -->
+    <ng-container *ngIf="!authService.isAuthenticated()">
+      <button mat-button routerLink="/auth/login">
+        <mat-icon>login</mat-icon><span>Sign In</span>
+      </button>
+      <button mat-raised-button color="accent" routerLink="/auth/register">
+        <mat-icon>person_add</mat-icon><span>Get Started</span>
+      </button>
+    </ng-container>
+
   </div>
 </mat-toolbar>
-
-
-<!-- User Menu -->
-<mat-menu #userMenu="matMenu" class="user-menu" xPosition="before">
-  <div class="user-menu-header">
-    <div class="user-avatar-large">            
-      {{ getAvatarInitials() }}
-    </div>
-    <div class="user-details">
-      <h4>{{ currentUser?.firstName + ' ' +  currentUser?.lastName}}</h4>
-      <p>{{ currentUser?.email }}</p>
-      <span class="user-role-badge">{{ currentUser?.roles }}</span>
-    </div>
-  </div>
-  
-  <mat-divider></mat-divider>
-  
-  <button mat-menu-item routerLink="/admin/profile">
-    <mat-icon>person</mat-icon>
-    <span>My Profile</span>
-  </button>
-  
-  <button mat-menu-item routerLink="/admin/settings">
-    <mat-icon>settings</mat-icon>
-    <span>Account Settings</span>
-  </button>
-  
-  <mat-divider></mat-divider>
-  
-  <button mat-menu-item (click)="logout()" class="logout-button">
-    <mat-icon>logout</mat-icon>
-    <span>Sign Out</span>
-  </button>
-</mat-menu>

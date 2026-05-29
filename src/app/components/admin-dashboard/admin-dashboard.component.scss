@@ -70,12 +70,20 @@
       color: white;
     }
 
-    &.icon-events {
+    &.icon-seats {
       background: linear-gradient(135deg, #3366ff 0%, #764ba2 100%);
     }
 
     &.icon-orders {
       background: linear-gradient(135deg, #ffaa00 0%, #ff3d71 100%);
+    }
+
+    &.icon-coupons {
+      background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+    }
+
+    &.icon-discounts {
+      background: linear-gradient(135deg, #7b1fa2 0%, #e040fb 100%);
     }
   }
 
@@ -104,6 +112,19 @@
     color: var(--text-secondary);
     flex-shrink: 0;
     transition: color 0.2s ease, transform 0.2s ease;
+  }
+}
+
+// Disabled card (no event selected)
+.card-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+
+  &:hover {
+    transform: none;
+    box-shadow: var(--shadow-1);
+    border-color: var(--border-color);
   }
 }
 

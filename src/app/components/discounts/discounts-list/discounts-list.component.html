@@ -1,0 +1,436 @@
+<div class="discounts-page">
+
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-title-row">
+        <mat-icon class="header-icon">sell</mat-icon>
+        <div>
+          <h1>Bulk Discounts</h1>
+          <p>Automatic percentage discounts applied at checkout based on ticket quantity rules</p>
+        </div>
+      </div>
+    </div>
+    <button mat-raised-button color="primary" class="create-btn" (click)="openDiscountDialog()">
+      <mat-icon>add</mat-icon>
+      Add Rule
+    </button>
+  </div>
+
+  <!-- ── Stats Cards ───────────────────────────────────────────────────────── -->
+  <div class="stats-row" *ngIf="stats">
+    <div class="stat-card stat-total">
+      <div class="stat-icon-wrap"><mat-icon>rule</mat-icon></div>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats.total }}</span>
+        <span class="stat-label">Total Rules</span>
+      </div>
+    </div>
+    <div class="stat-card stat-active">
+      <div class="stat-icon-wrap"><mat-icon>check_circle</mat-icon></div>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats.active }}</span>
+        <span class="stat-label">Active</span>
+      </div>
+    </div>
+    <div class="stat-card stat-upcoming">
+      <div class="stat-icon-wrap"><mat-icon>schedule</mat-icon></div>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats.upcoming }}</span>
+        <span class="stat-label">Upcoming</span>
+      </div>
+    </div>
+    <div class="stat-card stat-inactive">
+      <div class="stat-icon-wrap"><mat-icon>pause_circle</mat-icon></div>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats.inactive }}</span>
+        <span class="stat-label">Inactive</span>
+      </div>
+    </div>
+    <div class="stat-card stat-expired">
+      <div class="stat-icon-wrap"><mat-icon>cancel</mat-icon></div>
+      <div class="stat-body">
+        <span class="stat-value">{{ stats.expired }}</span>
+        <span class="stat-label">Expired</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Filters ───────────────────────────────────────────────────────────── -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <mat-form-field appearance="outline" class="filter-search">
+        <mat-label>Search</mat-label>
+        <input matInput [(ngModel)]="searchText" (input)="onFilterChange()" placeholder="Rule name or description...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Status</mat-label>
+        <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()">
+          <mat-option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-stroked-button (click)="clearFilters()" class="clear-btn">
+        <mat-icon>clear</mat-icon>
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Loading ───────────────────────────────────────────────────────────── -->
+  <div *ngIf="isLoading" class="loading-state">
+    <mat-spinner diameter="44"></mat-spinner>
+    <p>Loading discount rules...</p>
+  </div>
+
+  <!-- ── Table Container ───────────────────────────────────────────────────── -->
+  <div class="table-container" *ngIf="!isLoading">
+    <div class="table-toolbar">
+      <span class="result-count">{{ totalItems }} rule{{ totalItems !== 1 ? 's' : '' }} found</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Rule</th>
+            <th>Discount</th>
+            <th>Sections</th>
+            <th>Validity</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of filteredDiscounts">
+            <td>
+              <div class="cell-rule-name">
+                <span class="rule-name">{{ d.name }}</span>
+                <span class="rule-code" matTooltip="Internal code">{{ d.code }}</span>
+                <span class="rule-desc" *ngIf="d.description">{{ d.description }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="cell-discount">
+                <span class="discount-pct">{{ d.discountPercentage }}% OFF</span>
+                <span class="badge badge-min" *ngIf="d.minTickets > 0">Min {{ d.minTickets }} ticket{{ d.minTickets !== 1 ? 's' : '' }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="cell-sections">
+                <span class="section-none" *ngIf="!d.excludedSections?.length">All sections</span>
+                <span class="excluded-chip" *ngFor="let s of d.excludedSections?.slice(0, 2)">
+                  <mat-icon>block</mat-icon>{{ s }}
+                </span>
+                <span class="more-chip"
+                  *ngIf="d.excludedSections && d.excludedSections.length > 2"
+                  [matTooltip]="'Also excluded: ' + d.excludedSections.slice(2).join(', ')">
+                  +{{ d.excludedSections.length - 2 }} more
+                </span>
+                <span class="override-chip" *ngIf="d.allSectionsEvents?.length"
+                  [matTooltip]="'All sections apply for these events'">
+                  <mat-icon>open_in_full</mat-icon>{{ d.allSectionsEvents!.length }} event{{ d.allSectionsEvents!.length !== 1 ? 's' : '' }} override
+                </span>
+              </div>
+            </td>
+            <td>
+              <div class="cell-dates">
+                <span class="date-range">{{ d.validFrom | date:'d MMM y' }} — {{ d.validUntil | date:'d MMM y' }}</span>
+                <span class="date-badge expired"    *ngIf="isExpired(d)">Expired</span>
+                <span class="date-badge upcoming"   *ngIf="isUpcoming(d)">Upcoming</span>
+                <span class="date-badge active-now" *ngIf="isActiveNow(d)">Live</span>
+              </div>
+            </td>
+            <td>
+              <div class="cell-status">
+                <span class="status-pill" [class]="getStatusClass(d.status)">
+                  <mat-icon>{{ getStatusIcon(d.status) }}</mat-icon>
+                  {{ d.status | titlecase }}
+                </span>
+                <mat-slide-toggle
+                  [checked]="d.isActive"
+                  (change)="toggleStatus(d)"
+                  [matTooltip]="d.isActive ? 'Click to deactivate' : 'Click to activate'"
+                  class="status-toggle">
+                </mat-slide-toggle>
+              </div>
+            </td>
+            <td>
+              <div class="action-btns">
+                <button mat-icon-button class="btn-edit" matTooltip="Edit" (click)="openDiscountDialog(d)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button class="btn-delete" matTooltip="Delete" (click)="openDeleteDialog(d)">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredDiscounts.length === 0" class="empty-state">
+      <mat-icon>sell</mat-icon>
+      <h3>No bulk discount rules</h3>
+      <p>Create a rule to automatically apply percentage discounts at checkout.</p>
+      <button mat-raised-button color="primary" (click)="openDiscountDialog()">
+        <mat-icon>add</mat-icon> Add Rule
+      </button>
+    </div>
+
+    <mat-paginator
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       DIALOG: Create / Edit Bulk Discount Rule
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <ng-template #discountDialog>
+    <div class="cd-header">
+      <div class="cd-title">
+        <div class="cd-title-icon">
+          <mat-icon>{{ isEditMode ? 'edit' : 'sell' }}</mat-icon>
+        </div>
+        <div>
+          <h2 mat-dialog-title>{{ isEditMode ? 'Edit Bulk Discount Rule' : 'New Bulk Discount Rule' }}</h2>
+          <p *ngIf="isEditMode && selectedDiscount" class="cd-subtitle">{{ selectedDiscount.name }}</p>
+          <p *ngIf="!isEditMode" class="cd-subtitle">Automatically applied at checkout — no coupon code needed</p>
+        </div>
+      </div>
+      <button mat-icon-button mat-dialog-close class="cd-close"><mat-icon>close</mat-icon></button>
+    </div>
+
+    <mat-dialog-content class="cd-content">
+      <form [formGroup]="discountForm" class="discount-form">
+
+        <!-- ── 1. Identity ────────────────────────────────────────────────── -->
+        <div class="fsb">
+          <div class="fsb-heading">
+            <mat-icon>label</mat-icon>
+            <span>Rule Identity</span>
+          </div>
+
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>Rule Name *</mat-label>
+            <input matInput formControlName="name" required placeholder="e.g. 3+ Tickets Discount">
+            <mat-hint>Internal label — not shown to customers at checkout</mat-hint>
+            <mat-error>Name is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" rows="2"
+              placeholder="e.g. 10% off when buying 3 or more tickets"></textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- ── 2. Discount ───────────────────────────────────────────────── -->
+        <div class="fsb">
+          <div class="fsb-heading">
+            <mat-icon>percent</mat-icon>
+            <span>Discount</span>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Discount % *</mat-label>
+              <input matInput type="number" formControlName="discountPercentage" min="1" max="100" required>
+              <span matSuffix>%</span>
+              <mat-hint>Whole number, e.g. 10 means 10% off</mat-hint>
+              <mat-error>Must be between 1 and 100</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Minimum Tickets *</mat-label>
+              <input matInput type="number" formControlName="minTickets" min="0" required>
+              <mat-hint>Cart must have at least this many tickets. 0 = no minimum.</mat-hint>
+              <mat-error>Required</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- ── 3. Section Rules ──────────────────────────────────────────── -->
+        <div class="fsb">
+          <div class="fsb-heading">
+            <mat-icon>event_seat</mat-icon>
+            <span>Section Rules <span class="fsb-optional">optional</span></span>
+          </div>
+          <p class="fsb-desc">Exclude specific sections from this discount (e.g. premium sections). You can then override this per-event below.</p>
+
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>Excluded Sections</mat-label>
+            <mat-chip-grid #sectionsGrid aria-label="Excluded sections">
+              <mat-chip-row
+                *ngFor="let section of excludedSectionsList"
+                (removed)="removeExcludedSection(section)">
+                {{ section }}
+                <button matChipRemove [attr.aria-label]="'Remove ' + section">
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip-row>
+              <input
+                placeholder="Type section name and press Enter..."
+                [matChipInputFor]="sectionsGrid"
+                [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                (matChipInputTokenEnd)="addExcludedSection($event)">
+            </mat-chip-grid>
+            <mat-hint>e.g. Silver, Standing, TIERED SECTION — press Enter or comma to add</mat-hint>
+          </mat-form-field>
+
+        </div>
+
+        <!-- ── 4. Validity ───────────────────────────────────────────────── -->
+        <div class="fsb fsb-last">
+          <div class="fsb-heading">
+            <mat-icon>date_range</mat-icon>
+            <span>Validity Period</span>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Start Date *</mat-label>
+              <input matInput [matDatepicker]="picker1" formControlName="validFrom" required>
+              <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+              <mat-datepicker #picker1></mat-datepicker>
+              <mat-error>Required</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Expiry Date *</mat-label>
+              <input matInput [matDatepicker]="picker2" formControlName="validUntil" required>
+              <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+              <mat-datepicker #picker2></mat-datepicker>
+              <mat-error>Required</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="toggle-card">
+            <div class="toggle-card-body">
+              <div class="tc-icon-wrap"><mat-icon>power_settings_new</mat-icon></div>
+              <div class="tc-text">
+                <strong>Active</strong>
+                <p>When turned off this rule will not be applied at checkout even within the validity window</p>
+              </div>
+            </div>
+            <mat-slide-toggle formControlName="isActive"></mat-slide-toggle>
+          </div>
+
+          <div class="cd-stats-row" *ngIf="isEditMode && selectedDiscount">
+            <div class="cd-stat">
+              <mat-icon>calendar_today</mat-icon>
+              <div>
+                <span class="cd-stat-label">Created</span>
+                <strong>{{ selectedDiscount.createdAt | date:'d MMM y' }}</strong>
+              </div>
+            </div>
+            <div class="cd-stat">
+              <mat-icon>person_outline</mat-icon>
+              <div>
+                <span class="cd-stat-label">Created By</span>
+                <strong>{{ selectedDiscount.createdBy }}</strong>
+              </div>
+            </div>
+            <div class="cd-stat">
+              <mat-icon>update</mat-icon>
+              <div>
+                <span class="cd-stat-label">Last Updated</span>
+                <strong>{{ selectedDiscount.updatedAt ? (selectedDiscount.updatedAt | date:'d MMM y') : '—' }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-raised-button color="primary" (click)="onSubmit()"
+        [disabled]="discountForm.invalid || isLoading">
+        <mat-spinner *ngIf="isLoading" diameter="18" class="btn-spinner"></mat-spinner>
+        {{ isEditMode ? 'Update Rule' : 'Create Rule' }}
+      </button>
+    </mat-dialog-actions>
+  </ng-template>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       DIALOG: Delete
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <ng-template #deleteDialog>
+    <div class="dialog-header">
+      <h2 mat-dialog-title>Delete Rule</h2>
+      <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
+    </div>
+    <mat-dialog-content>
+      <div class="confirm-dialog-body" *ngIf="selectedDiscount">
+        <div class="confirm-icon warn"><mat-icon>delete_forever</mat-icon></div>
+        <p>Delete rule <strong>{{ selectedDiscount.name }}</strong>?</p>
+        <p class="sub">This action cannot be undone. The discount will stop applying at checkout immediately.</p>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-raised-button color="warn" [mat-dialog-close]="true" [disabled]="isLoading">
+        <mat-spinner *ngIf="isLoading" diameter="18" class="btn-spinner"></mat-spinner>
+        Delete
+      </button>
+    </mat-dialog-actions>
+  </ng-template>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       DIALOG: Extend Validity
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <ng-template #extendDialog>
+    <div class="dialog-header">
+      <h2 mat-dialog-title>Extend Validity</h2>
+      <button mat-icon-button mat-dialog-close><mat-icon>close</mat-icon></button>
+    </div>
+    <mat-dialog-content>
+      <p class="dialog-desc" *ngIf="selectedDiscount">
+        Extend validity for <strong>{{ selectedDiscount.name }}</strong>.
+        Currently valid until <strong>{{ selectedDiscount.validUntil | date:'d MMM y' }}</strong>.
+      </p>
+      <form [formGroup]="extendForm" class="discount-form">
+        <div class="form-section">
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>New Start Date (optional)</mat-label>
+            <input matInput [matDatepicker]="extendP1" formControlName="newValidFrom">
+            <mat-datepicker-toggle matSuffix [for]="extendP1"></mat-datepicker-toggle>
+            <mat-datepicker #extendP1></mat-datepicker>
+            <mat-hint>Leave empty to keep current start date</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>New Expiry Date *</mat-label>
+            <input matInput [matDatepicker]="extendP2" formControlName="newValidUntil" required>
+            <mat-datepicker-toggle matSuffix [for]="extendP2"></mat-datepicker-toggle>
+            <mat-datepicker #extendP2></mat-datepicker>
+            <mat-error>Required</mat-error>
+          </mat-form-field>
+        </div>
+      </form>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-raised-button color="primary" (click)="confirmExtend()"
+        [disabled]="extendForm.invalid || isLoading">
+        <mat-spinner *ngIf="isLoading" diameter="18" class="btn-spinner"></mat-spinner>
+        Extend
+      </button>
+    </mat-dialog-actions>
+  </ng-template>
+
+</div>

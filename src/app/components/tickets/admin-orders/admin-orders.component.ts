@@ -1,11 +1,11 @@
-import { Component, OnInit, ViewChild, AfterViewInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,9 +17,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
-import { EventDto } from '../../../core/models/DTOs/event.DTO.model';
 import { MatDividerModule } from '@angular/material/divider';
-import { EventService } from '../../../core/services/event.service';
+import { EventContextService } from '../../../core/services/event-context.service';
 import { CheckinResponse, OrderDto, OrderSeatDto } from '../../../core/models/DTOs/order.DTO.model';
 import { OrderStatus, PaymentStatus, SeatType } from '../../../core/models/Enums/order.enum';
 import { OrderService } from '../../../core/services/order.service';
@@ -57,10 +56,18 @@ export class AdminOrdersComponent implements OnInit {
   private orderService = inject(OrderService);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
-  private eventService = inject(EventService);
   private authService = inject(AuthService);
   private dialog = inject(MatDialog);
-  
+  readonly eventContext = inject(EventContextService);
+
+  // Reload orders whenever the global event selection changes
+  private _eventEffect = effect(() => {
+    const eventId = this.eventContext.selectedEventId();
+    if (eventId) {
+      untracked(() => this.loadData());
+    }
+  }, { allowSignalWrites: true });
+
   readonly loading = signal(false);
   readonly hasAllEventAccess = signal(false);
 
@@ -85,7 +92,7 @@ readonly ordersWithCheckinData = computed(() => {
 readonly filteredOrders = computed(() => {
   const orders = this.ordersWithCheckinData(); // Use enriched data
   const search = this.searchTerm().toLowerCase().trim();
-  const eventFilter = this.selectedEvent();
+  const eventFilter = this.eventContext.selectedEventId();
   const searchField = this.searchField();
 
   let filtered = orders;
@@ -160,7 +167,6 @@ readonly displayedOrders = computed(() => {
 
   // Search and filter signals
   readonly searchTerm = signal('');
-  readonly selectedEvent = signal('');
   readonly searchField = signal<'all' | 'orderNumber' | 'customerName' | 'customerEmail' | 'eventName' | 'customerPhone' | 'customerPostcode' | 'seatNumber'>('all');
 // Pre-compute stats with all values
 readonly stats = computed(() => {
@@ -214,14 +220,9 @@ readonly stats = computed(() => {
 // Pre-compute event names map for quick lookup
 readonly eventNameMap = computed(() => {
   const map = new Map<string, string>();
-  this.events.forEach(event => map.set(event.id, event.title));
+  this.eventContext.events().forEach(event => map.set(event.id, event.title));
   return map;
 });
-
-  events: EventDto[] = [];
-  eventOptions = [
-    { value: '', label: 'All Events' }
-  ];
 
   orderStatusOptions = [
     { value: '', label: 'All Statuses' },
@@ -248,55 +249,23 @@ readonly eventNameMap = computed(() => {
   readonly checkinResults = signal<Record<string, any>>({});
 
   ngOnInit(): void {
-    this.loadEvents();
+    // Data loading is driven by the effect that watches eventContext.selectedEventId
   }
 
-
-
-  loadEvents(): void {
-    this.eventService.getEvents().subscribe({
-      next: (events) => {
-        this.events = events;
-        this.events = this.events.sort((a, b) => 
-          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-        );
-        
-        this.eventOptions = [
-          ...this.events.map(event => ({
-            value: event.id,
-            label: `${event.title} (${this.formatEventDate(event.startDate)})`
-          }))
-        ];
-        
-        if (this.events.length >= 1) {
-          this.selectedEvent.set(this.events[0].id);
-          this.loadData();
-        }
+  loadData(): void {
+    this.loading.set(true);
+    this.orderService.getOrders(this.eventContext.selectedEventId()).subscribe({
+      next: (response) => {
+        this.allOrders.set(response.orders);
+        this.loading.set(false);
+        this.pageIndex.set(0);
       },
-      error: (error) => {
-        console.error('Error loading events:', error);
-        this.showError('Failed to load events');
+      error: () => {
+        this.loading.set(false);
+        this.showError('Failed to load orders');
       }
     });
   }
-
-loadData(): void {
-  this.loading.set(true);
-  
-  this.orderService.getOrders(this.selectedEvent()).subscribe({
-    next: (response) => {
-      const ordersWithDetails: OrderDto[] = response.orders;
-      this.allOrders.set(ordersWithDetails); // This will trigger all computed signals
-      this.loading.set(false);
-      this.pageIndex.set(0);
-    },
-    error: (error) => {
-      console.error('Error loading orders:', error);
-      this.loading.set(false);
-      this.showError('Failed to load orders');
-    }
-  });
-}
 
   // Pagination handlers
   onPageChange(event: PageEvent): void {
@@ -304,21 +273,14 @@ loadData(): void {
     this.pageSize.set(event.pageSize);
   }
 
-  // Filter handlers
-  onEventChange(eventId: string): void {
-    this.selectedEvent.set(eventId);
-    this.loadData();
-  }
-
   onSearchChange(): void {
-    this.pageIndex.set(0); // Reset to first page when search changes
+    this.pageIndex.set(0);
   }
 
   clearFilters(): void {
-  this.searchTerm.set('');
-  this.searchField.set('all');
-  this.selectedEvent.set('');
-  this.pageIndex.set(0);
+    this.searchTerm.set('');
+    this.searchField.set('all');
+    this.pageIndex.set(0);
   }
 
 
@@ -721,7 +683,7 @@ private performCheckIn(order: OrderDto, options: any, staffInfo: any): void {
   }
 
   exportOrders(): void {
-    const eventId = this.selectedEvent() || undefined;
+    const eventId = this.eventContext.selectedEventId() || undefined;
     this.orderService.exportOrders('csv', eventId).subscribe({
       next: (blob) => {
         this.downloadFile(blob, `orders-export-${new Date().toISOString().split('T')[0]}.csv`);

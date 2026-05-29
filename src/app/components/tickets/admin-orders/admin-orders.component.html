@@ -4,33 +4,26 @@
 <div class="header-content">
       <div class="title-section">
         <h1>Orders</h1>
-        <p>Manage seat orders and customer information</p>
+        <p *ngIf="eventContext.selectedEvent()">{{ eventContext.selectedEvent()!.title }}</p>
+        <p *ngIf="!eventContext.selectedEvent()" class="no-event-hint">
+          Select an event from the top bar
+        </p>
       </div>
       
       <div class="event-filter-section">
-        <mat-form-field appearance="outline" class="event-selector">
-          <mat-label>Select Event</mat-label>
-          <mat-select [(ngModel)]="selectedEvent" (selectionChange)="onEventChange($event.value)">
-            <mat-option *ngFor="let eventOption of eventOptions" [value]="eventOption.value">
-              {{ eventOption.label }}
-            </mat-option>
-          </mat-select>
-          <mat-icon matSuffix>event</mat-icon>
-        </mat-form-field>
-        
         <div class="header-actions">
-          <button mat-raised-button 
-                  color="primary" 
-                  (click)="exportOrders()" 
+          <button mat-raised-button
+                  color="primary"
+                  (click)="exportOrders()"
                   [disabled]="loading()"
                   class="export-btn">
             <mat-icon>download</mat-icon>
             Export
           </button>
-          
-          <button mat-icon-button 
-                  (click)="loadData()" 
-                  [disabled]="loading()" 
+
+          <button mat-icon-button
+                  (click)="loadData()"
+                  [disabled]="loading()"
                   matTooltip="Refresh orders">
             <mat-icon>refresh</mat-icon>
           </button>
@@ -180,7 +173,7 @@
         </mat-select>
       </mat-form-field>
 
-      <div class="search-actions" *ngIf="searchTerm() || selectedEvent()">
+      <div class="search-actions" *ngIf="searchTerm()">
         <button mat-button color="primary" (click)="clearFilters()">
           <mat-icon>clear_all</mat-icon>
           Clear All Filters
@@ -198,8 +191,8 @@
       <div class="table-info">
         <div class="results-count">
           {{ displayedOrders().length }} orders
-          <span *ngIf="selectedEvent() && getEventName(selectedEvent())">
-            for {{ getEventName(selectedEvent()) }}
+          <span *ngIf="eventContext.selectedEvent()">
+            for {{ eventContext.selectedEvent()!.title }}
           </span>
           <span *ngIf="filteredOrders().length !== allOrders().length">
             (filtered from {{ allOrders().length }} total)
@@ -224,7 +217,7 @@
       <p *ngIf="allOrders().length > 0 && filteredOrders().length === 0">
         No orders match your current filters.
       </p>
-      <button mat-button color="primary" (click)="clearFilters()" *ngIf="selectedEvent() || searchTerm()">
+      <button mat-button color="primary" (click)="clearFilters()" *ngIf="searchTerm()">
         <mat-icon>clear_all</mat-icon>
         Clear Filters
       </button>

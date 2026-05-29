@@ -1,8 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
-// Angular Material
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,12 +10,14 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 
+import { EventContextService } from '../../../core/services/event-context.service';
+
 interface NavigationItem {
   path: string;
   icon: string;
   label: string;
   badge?: number;
-  isActive?: boolean;
+  seatsLink?: boolean; // dynamic link that targets the selected event's seatmap
 }
 
 @Component({
@@ -39,24 +40,47 @@ interface NavigationItem {
 export class SidebarComponent {
   @Input() isOpen = true;
   @Input() isMobile = false;
-  currentYear: number;
 
-  constructor() {
-    this.currentYear = new Date().getFullYear();
-  }
+  readonly eventContext = inject(EventContextService);
+  private router = inject(Router);
+  readonly currentYear = new Date().getFullYear();
 
-  navigationItems: NavigationItem[] = [
-    { path: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard', isActive: true },
-    { path: '/admin/events', icon: 'event', label: 'Events' }, //, badge: 3
-    { path: '/admin/orders', icon: 'confirmation_number', label: 'Ticket Sales' }, //, badge: 12
-    // { path: '/admin/venues', icon: 'location_on', label: 'Venues' }, //, badge: 3
-    //{ path: '/admin/users', icon: 'people', label: 'Users' }, //badge: 5
-    //{ path: '/admin/coupons', icon: 'local_offer', label: 'Coupons' },
-    // { path: '/admin/reports', icon: 'assessment', label: 'Reports' },
-    //{ path: '/admin/settings', icon: 'settings', label: 'Settings' }
+  readonly navigationItems: NavigationItem[] = [
+    { path: '/admin/dashboard',         icon: 'dashboard',           label: 'Dashboard' },
+    { path: '',                          icon: 'event_seat',          label: 'Seats', seatsLink: true },
+    { path: '/admin/orders',            icon: 'confirmation_number', label: 'Ticket Sales' },
+    { path: '/admin/coupons',           icon: 'local_offer',         label: 'Coupons' },
+    { path: '/admin/discounts',         icon: 'sell',                label: 'Bulk Discounts' },
+    // { path: '/admin/users',          icon: 'people',              label: 'Users' },
+    // { path: '/admin/reports',        icon: 'assessment',          label: 'Reports' },
+    // { path: '/admin/settings',       icon: 'settings',            label: 'Settings' }
   ];
 
-  getNavItemClass(item: NavigationItem): string {
-    return item.isActive ? 'nav-item active' : 'nav-item';
+  /** Returns the router link for a nav item.
+   *  Seats: points to the seatmap of the currently selected event.
+   *  Returns null when no event is selected (disables the anchor). */
+  getNavLink(item: NavigationItem): string[] | null {
+    if (item.seatsLink) {
+      const eventId = this.eventContext.selectedEventId();
+      return eventId ? ['/admin/events/seatmap', eventId] : null;
+    }
+    return [item.path];
+  }
+
+  /** Custom active-state check so Seats is highlighted on any seatmap URL,
+   *  not just the exact seatmap URL of the currently selected event. */
+  isNavActive(item: NavigationItem): boolean {
+    const url = this.router.url;
+    if (item.seatsLink) return url.includes('/seatmap');
+    if (item.path === '/admin/dashboard') return url === '/admin/dashboard' || url.startsWith('/admin/dashboard?');
+    return url.startsWith(item.path);
+  }
+
+  /** Tooltip shown when the link is disabled (no event selected yet). */
+  getNavTooltip(item: NavigationItem): string {
+    if (item.seatsLink && !this.eventContext.selectedEventId()) {
+      return 'Select an event from the top bar first';
+    }
+    return !this.isOpen ? item.label : '';
   }
 }
