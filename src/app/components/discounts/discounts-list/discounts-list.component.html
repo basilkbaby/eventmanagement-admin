@@ -7,7 +7,7 @@
         <mat-icon class="header-icon">sell</mat-icon>
         <div>
           <h1>Bulk Discounts</h1>
-          <p>Automatic percentage discounts applied at checkout based on ticket quantity rules</p>
+          <p>Automatic discounts (percentage or fixed amount) applied at checkout based on ticket quantity rules</p>
         </div>
       </div>
     </div>
@@ -114,7 +114,7 @@
             </td>
             <td>
               <div class="cell-discount">
-                <span class="discount-pct">{{ d.discountPercentage }}% OFF</span>
+                <span class="discount-pct">{{ getDiscountLabel(d) }}</span>
                 <span class="badge badge-min" *ngIf="d.minTickets > 0">Min {{ d.minTickets }} ticket{{ d.minTickets !== 1 ? 's' : '' }}</span>
               </div>
             </td>
@@ -176,7 +176,7 @@
     <div *ngIf="filteredDiscounts.length === 0" class="empty-state">
       <mat-icon>sell</mat-icon>
       <h3>No bulk discount rules</h3>
-      <p>Create a rule to automatically apply percentage discounts at checkout.</p>
+      <p>Create a rule to automatically apply a percentage or fixed amount discount at checkout.</p>
       <button mat-raised-button color="primary" (click)="openDiscountDialog()">
         <mat-icon>add</mat-icon> Add Rule
       </button>
@@ -242,13 +242,32 @@
             <span>Discount</span>
           </div>
 
+          <!-- Type toggle -->
+          <mat-form-field appearance="outline" class="form-field full-width">
+            <mat-label>Discount Type *</mat-label>
+            <mat-select formControlName="discountType">
+              <mat-option [value]="1">Percentage (% off)</mat-option>
+              <mat-option [value]="2">Fixed Amount (£ off)</mat-option>
+            </mat-select>
+          </mat-form-field>
+
           <div class="form-row">
-            <mat-form-field appearance="outline" class="form-field">
+            <!-- Percentage input -->
+            <mat-form-field appearance="outline" class="form-field" *ngIf="!isFixedAmount">
               <mat-label>Discount % *</mat-label>
-              <input matInput type="number" formControlName="discountPercentage" min="1" max="100" required>
+              <input matInput type="number" formControlName="discountPercentage" min="1" max="100">
               <span matSuffix>%</span>
               <mat-hint>Whole number, e.g. 10 means 10% off</mat-hint>
               <mat-error>Must be between 1 and 100</mat-error>
+            </mat-form-field>
+
+            <!-- Fixed amount input -->
+            <mat-form-field appearance="outline" class="form-field" *ngIf="isFixedAmount">
+              <mat-label>Discount Amount *</mat-label>
+              <input matInput type="number" formControlName="discountAmount" min="0.01" step="0.01">
+              <span matPrefix>£&nbsp;</span>
+              <mat-hint>Fixed amount deducted from the cart total</mat-hint>
+              <mat-error>Must be greater than 0</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-field">

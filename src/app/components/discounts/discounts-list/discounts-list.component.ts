@@ -112,11 +112,18 @@ export class DiscountsListComponent implements OnInit {
     this.discountForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
       description: ['', Validators.maxLength(500)],
+      discountType: [DiscountType.PERCENTAGE, Validators.required],
       discountPercentage: [10, [Validators.required, Validators.min(1), Validators.max(100)]],
+      discountAmount: [0, [Validators.min(0.01)]],
       minTickets: [1, [Validators.required, Validators.min(0)]],
       validFrom: [new Date(), Validators.required],
       validUntil: [new Date(new Date().setFullYear(new Date().getFullYear() + 1)), Validators.required],
       isActive: [true]
+    });
+
+    // Swap validators when discount type changes
+    this.discountForm.get('discountType')!.valueChanges.subscribe(type => {
+      this.updateDiscountValidators(type);
     });
 
     this.extendForm = this.fb.group({
@@ -220,23 +227,29 @@ export class DiscountsListComponent implements OnInit {
       this.discountForm.patchValue({
         name: discount.name,
         description: discount.description,
+        discountType: discount.discountType ?? DiscountType.PERCENTAGE,
         discountPercentage: discount.discountPercentage,
+        discountAmount: discount.discountAmount ?? 0,
         minTickets: discount.minTickets,
         validFrom: new Date(discount.validFrom),
         validUntil: new Date(discount.validUntil),
         isActive: discount.isActive
       });
+      this.updateDiscountValidators(discount.discountType ?? DiscountType.PERCENTAGE);
     } else {
       this.excludedSectionsList = [];
       this.discountForm.reset({
         name: '',
         description: '',
+        discountType: DiscountType.PERCENTAGE,
         discountPercentage: 10,
+        discountAmount: 0,
         minTickets: 1,
         validFrom: new Date(),
         validUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
         isActive: true
       });
+      this.updateDiscountValidators(DiscountType.PERCENTAGE);
     }
 
     const dialogRef = this.dialog.open(this.discountDialog, {
@@ -260,14 +273,16 @@ export class DiscountsListComponent implements OnInit {
     const fv = this.discountForm.value;
     const autoCode = 'BULK_' + (fv.name as string).toUpperCase().replace(/[^A-Z0-9]/g, '_');
 
+    const isFixed = fv.discountType === DiscountType.FIXEDAMOUNT;
+
     const payload: CouponDto = {
       id: this.isEditMode && this.selectedDiscount ? this.selectedDiscount.id : undefined,
       code: this.isEditMode && this.selectedDiscount ? this.selectedDiscount.code : autoCode,
       name: fv.name,
       description: fv.description || '',
-      discountType: DiscountType.PERCENTAGE,
-      discountAmount: 0,
-      discountPercentage: fv.discountPercentage,
+      discountType: fv.discountType,
+      discountAmount: isFixed ? fv.discountAmount : 0,
+      discountPercentage: isFixed ? 0 : fv.discountPercentage,
       minimumPurchaseAmount: 0,
       maxUses: 0,
       currentUses: this.isEditMode && this.selectedDiscount ? this.selectedDiscount.currentUses : 0,
@@ -431,6 +446,30 @@ export class DiscountsListComponent implements OnInit {
       case 'upcoming': return 'schedule';
       default:         return 'help';
     }
+  }
+
+  get isFixedAmount(): boolean {
+    return this.discountForm.get('discountType')?.value === DiscountType.FIXEDAMOUNT;
+  }
+
+  private updateDiscountValidators(type: DiscountType): void {
+    const pctCtrl = this.discountForm.get('discountPercentage')!;
+    const amtCtrl = this.discountForm.get('discountAmount')!;
+    if (type === DiscountType.FIXEDAMOUNT) {
+      pctCtrl.clearValidators();
+      amtCtrl.setValidators([Validators.required, Validators.min(0.01)]);
+    } else {
+      pctCtrl.setValidators([Validators.required, Validators.min(1), Validators.max(100)]);
+      amtCtrl.clearValidators();
+    }
+    pctCtrl.updateValueAndValidity();
+    amtCtrl.updateValueAndValidity();
+  }
+
+  getDiscountLabel(d: CouponDto): string {
+    return d.discountType === DiscountType.FIXEDAMOUNT
+      ? `£${(d.discountAmount ?? 0).toFixed(2)} OFF`
+      : `${d.discountPercentage}% OFF`;
   }
 
   isExpired(d: CouponDto): boolean { return new Date() > new Date(d.validUntil); }
