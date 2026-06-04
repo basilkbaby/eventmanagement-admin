@@ -305,7 +305,7 @@ export class DiscountsListComponent implements OnInit {
       // auto-wire to the currently selected event; preserve existing on edit
       allSectionsEvents: this.isEditMode && this.selectedDiscount
         ? (this.selectedDiscount.allSectionsEvents || [])
-        : (this.eventContext.selectedEventId() ? [this.eventContext.selectedEventId()!] : []),
+        : [],
       isAutomatic: true,
       canApplyWithCoupon: false
     };
