@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef, inject, DestroyRef } from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { skip } from 'rxjs';
+import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -187,10 +187,13 @@ export class CouponsListComponent implements OnInit {
       cartTotal: [0, [Validators.required, Validators.min(0)]]
     });
 
-    // Reload + refilter whenever the global event changes
+    // Reload + refilter whenever the global event changes (or first valid event is set on refresh)
     const destroyRef = inject(DestroyRef);
     toObservable(this.eventContext.selectedEventId)
-      .pipe(skip(1), takeUntilDestroyed(destroyRef))
+      .pipe(
+        filter(id => !!id),   // ignore the initial '' — fires on first valid ID and every change
+        takeUntilDestroyed(destroyRef)
+      )
       .subscribe(() => {
         this.pageIndex = 0;
         this.loadCoupons();
@@ -198,8 +201,8 @@ export class CouponsListComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadCoupons();
     this.loadEvents();
+    // loadCoupons() is driven entirely by the selectedEventId subscription above
   }
 
   loadCoupons() {

@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef, inject, DestroyRef } from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { skip } from 'rxjs';
+import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -133,7 +133,10 @@ export class DiscountsListComponent implements OnInit {
 
     const destroyRef = inject(DestroyRef);
     toObservable(this.eventContext.selectedEventId)
-      .pipe(skip(1), takeUntilDestroyed(destroyRef))
+      .pipe(
+        filter(id => !!id),   // ignore the initial '' and any other empty value
+        takeUntilDestroyed(destroyRef)
+      )
       .subscribe(() => {
         this.pageIndex = 0;
         this.loadDiscounts();
@@ -141,8 +144,10 @@ export class DiscountsListComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadDiscounts();
     this.loadEvents();
+    // loadDiscounts() is driven entirely by the selectedEventId subscription in the
+    // constructor — this covers both direct page load (fires when events finish loading)
+    // and sidebar navigation (fires immediately since event is already selected)
   }
 
   loadDiscounts() {
