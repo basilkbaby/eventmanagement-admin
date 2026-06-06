@@ -454,7 +454,8 @@ export class DiscountsListComponent implements OnInit {
   }
 
   get isFixedAmount(): boolean {
-    return this.discountForm.get('discountType')?.value === DiscountType.FIXEDAMOUNT;
+    const t = this.discountForm.get('discountType')?.value;
+    return t === DiscountType.FIXEDAMOUNT || t === DiscountType.FIXEDPERTICKET;
   }
 
   private updateDiscountValidators(type: DiscountType): void {
@@ -472,9 +473,11 @@ export class DiscountsListComponent implements OnInit {
   }
 
   getDiscountLabel(d: CouponDto): string {
-    return d.discountType === DiscountType.FIXEDAMOUNT
-      ? `£${(d.discountAmount ?? 0).toFixed(2)} OFF`
-      : `${d.discountPercentage}% OFF`;
+    switch (d.discountType) {
+      case DiscountType.FIXEDAMOUNT:    return `£${(d.discountAmount ?? 0).toFixed(2)} OFF`;
+      case DiscountType.FIXEDPERTICKET: return `£${(d.discountAmount ?? 0).toFixed(2)} per ticket`;
+      default:                          return `${d.discountPercentage}% OFF`;
+    }
   }
 
   isExpired(d: CouponDto): boolean { return new Date() > new Date(d.validUntil); }

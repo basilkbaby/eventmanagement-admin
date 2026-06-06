@@ -121,7 +121,8 @@ export class CouponsListComponent implements OnInit {
     { value: '', label: 'All Types' },
     { value: '1', label: 'Percentage' },
     { value: '2', label: 'Fixed Amount' },
-    { value: '3', label: 'Both' }
+    { value: '3', label: 'Both' },
+    { value: '4', label: 'Fixed Per Ticket' }
   ];
 
   // Forms
@@ -619,19 +620,21 @@ export class CouponsListComponent implements OnInit {
 
   getDiscountDisplay(coupon: CouponDto): string {
     switch (coupon.discountType) {
-      case DiscountType.PERCENTAGE:  return `${coupon.discountPercentage}% OFF`;
-      case DiscountType.FIXEDAMOUNT: return `£${coupon.discountAmount} OFF`;
-      case DiscountType.BOTH:        return `${coupon.discountPercentage}% + £${coupon.discountAmount} OFF`;
-      default:                       return `${coupon.discountPercentage}% OFF`;
+      case DiscountType.PERCENTAGE:    return `${coupon.discountPercentage}% OFF`;
+      case DiscountType.FIXEDAMOUNT:   return `£${coupon.discountAmount} OFF`;
+      case DiscountType.BOTH:          return `${coupon.discountPercentage}% + £${coupon.discountAmount} OFF`;
+      case DiscountType.FIXEDPERTICKET:return `£${coupon.discountAmount} per ticket`;
+      default:                         return `${coupon.discountPercentage}% OFF`;
     }
   }
 
   getDiscountTypeLabel(type: DiscountType): string {
     switch (type) {
-      case DiscountType.PERCENTAGE:  return 'Percentage';
-      case DiscountType.FIXEDAMOUNT: return 'Fixed';
-      case DiscountType.BOTH:        return 'Both';
-      default:                       return '';
+      case DiscountType.PERCENTAGE:    return 'Percentage';
+      case DiscountType.FIXEDAMOUNT:   return 'Fixed';
+      case DiscountType.BOTH:          return 'Both';
+      case DiscountType.FIXEDPERTICKET:return 'Per Ticket';
+      default:                         return '';
     }
   }
 
