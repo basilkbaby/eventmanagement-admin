@@ -278,7 +278,7 @@ export class DiscountsListComponent implements OnInit {
     const fv = this.discountForm.value;
     const autoCode = 'BULK_' + (fv.name as string).toUpperCase().replace(/[^A-Z0-9]/g, '_');
 
-    const isFixed = fv.discountType === DiscountType.FIXEDAMOUNT;
+    const isFixed = fv.discountType === DiscountType.FIXEDAMOUNT || fv.discountType === DiscountType.FIXEDPERTICKET;
 
     const payload: CouponDto = {
       id: this.isEditMode && this.selectedDiscount ? this.selectedDiscount.id : undefined,
@@ -461,7 +461,7 @@ export class DiscountsListComponent implements OnInit {
   private updateDiscountValidators(type: DiscountType): void {
     const pctCtrl = this.discountForm.get('discountPercentage')!;
     const amtCtrl = this.discountForm.get('discountAmount')!;
-    if (type === DiscountType.FIXEDAMOUNT) {
+    if (type === DiscountType.FIXEDAMOUNT || type === DiscountType.FIXEDPERTICKET) {
       pctCtrl.clearValidators();
       amtCtrl.setValidators([Validators.required, Validators.min(0.01)]);
     } else {
