@@ -38,58 +38,15 @@ export const ADMIN_ROUTES: Routes = [
     ]
   },
   {
+    path: 'sections',
+    loadComponent: () => import('../../components/seat-section-manager/seat-section-manager.component').then(m => m.SeatSectionManagerComponent)
+  },
+  {
     path: 'orders',
     children: [
       {
         path: '',
         loadComponent: () => import('../../components/tickets/admin-orders/admin-orders.component').then(m => m.AdminOrdersComponent)
-      },
-      {
-        path: 'scan',
-        loadComponent: () => import('../../components/tickets/ticket-scan/ticket-scan.component').then(m => m.TicketScanComponent)
-      },
-      {
-        path: ':id',
-        loadComponent: () => import('../../components/tickets/ticket-details/ticket-details.component').then(m => m.TicketDetailsComponent)
-      }
-    ]
-  },
-  
-  // Event-specific tickets
-  {
-    path: 'events/:eventId/tickets',
-    loadComponent: () => import('../../components/tickets/ticket-list/ticket-list.component').then(m => m.TicketListComponent)
-  },
-  {
-    path: 'venues',
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('../../components/venue/venues-list/venues-list.component').then(m => m.VenuesListComponent)
-      },
-      {
-        path: 'create',
-        loadComponent: () => import('../../components/venue/venue-form/venue-form.component').then(m => m.VenueFormComponent)
-      },
-      {
-        path: 'edit/:id',
-        loadComponent: () => import('../../components/venue/venue-form/venue-form.component').then(m => m.VenueFormComponent)
-      },
-      {
-        path: 'seating/:id',
-        loadComponent: () => import('../../components/venue/seating-plan/seating-plan.component').then(m => m.SeatingPlanComponent)
-      },
-      {
-        path: 'sectioneditor',
-        loadComponent: () => import('../../components/events/seats/seat-section-editor/seat-section-editor.component').then(m => m.SeatSectionEditorComponent)
-      },      
-      {
-        path: 'sectionview',
-        loadComponent: () => import('../../components/events/seats/seat-section-view/seat-section-view.component').then(m => m.SeatSectionViewComponent)
-      },
-      {
-        path: 'seateditor/:sectionId',
-        loadComponent: () => import('../../components/events/seats/seat-editor/seat-editor.component').then(m => m.SeatEditorComponent)
       }
     ]
   },
@@ -104,10 +61,6 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'discounts',
     loadChildren: () => import('./discounts.routes').then(m => m.DISCOUNTS_ROUTES)
-  },
-  {
-    path: 'reports',
-    loadChildren: () => import('./reports.routes').then(m => m.REPORTS_ROUTES)
   },
   {
     path: 'settings',

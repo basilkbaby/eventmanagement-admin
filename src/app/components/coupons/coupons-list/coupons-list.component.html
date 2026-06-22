@@ -314,7 +314,8 @@
               <mat-label>Discount Type *</mat-label>
               <mat-select formControlName="discountType" required>
                 <mat-option [value]="DiscountType.PERCENTAGE">Percentage — e.g. 20% off</mat-option>
-                <mat-option [value]="DiscountType.FIXEDAMOUNT">Fixed Amount — e.g. £10 off</mat-option>
+                <mat-option [value]="DiscountType.FIXEDAMOUNT">Fixed Amount — e.g. £10 off total</mat-option>
+                <mat-option [value]="DiscountType.FIXEDPERTICKET">Fixed Per Ticket — e.g. £5 off each ticket</mat-option>
                 <mat-option [value]="DiscountType.BOTH">Both — percentage + fixed amount</mat-option>
               </mat-select>
             </mat-form-field>
@@ -329,11 +330,19 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-field"
-              *ngIf="couponForm.get('discountType')?.value === DiscountType.FIXEDAMOUNT || couponForm.get('discountType')?.value === DiscountType.BOTH">
-              <mat-label>Fixed Amount Off *</mat-label>
-              <input matInput type="number" formControlName="discountAmount" min="0">
+              *ngIf="couponForm.get('discountType')?.value === DiscountType.FIXEDAMOUNT
+                  || couponForm.get('discountType')?.value === DiscountType.FIXEDPERTICKET
+                  || couponForm.get('discountType')?.value === DiscountType.BOTH">
+              <mat-label>
+                {{ couponForm.get('discountType')?.value === DiscountType.FIXEDPERTICKET ? 'Amount Per Ticket *' : 'Fixed Amount Off *' }}
+              </mat-label>
+              <input matInput type="number" formControlName="discountAmount" min="0.01">
               <span matPrefix>£&nbsp;</span>
-              <mat-hint>Amount deducted from the cart total</mat-hint>
+              <mat-hint>
+                {{ couponForm.get('discountType')?.value === DiscountType.FIXEDPERTICKET
+                    ? 'Deducted from each ticket in the cart'
+                    : 'Amount deducted from the cart total' }}
+              </mat-hint>
               <mat-error>Required</mat-error>
             </mat-form-field>
           </div>

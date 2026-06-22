@@ -1,0 +1,636 @@
+<div class="section-manager">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <mat-icon>event_seat</mat-icon>
+      <h1>Seat Sections</h1>
+    </div>
+    <button mat-raised-button color="primary"
+            (click)="openSectionDialog()"
+            [disabled]="!eventContext.selectedEventId() || isLoading">
+      <mat-icon>add</mat-icon> Add Section
+    </button>
+  </div>
+
+  <!-- States -->
+  <div class="empty-state" *ngIf="!eventContext.selectedEventId() && !isLoading">
+    <mat-icon>event</mat-icon>
+    <p>Select an event from the top bar to manage its seat sections.</p>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading sections…</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!isLoading && eventContext.selectedEventId() && sections.length === 0">
+    <mat-icon>grid_off</mat-icon>
+    <p>No sections yet for this event.</p>
+    <button mat-raised-button color="primary" (click)="openSectionDialog()">
+      <mat-icon>add</mat-icon> Add First Section
+    </button>
+  </div>
+
+  <!-- ── Two-column workspace ──────────────────────────────────────────────── -->
+  <div class="workspace" *ngIf="!isLoading && sections.length > 0">
+
+    <!-- LEFT: compact section list ────────────────────────────────────────── -->
+    <div class="section-list">
+
+      <div class="section-card"
+           *ngFor="let section of sections"
+           [class.sc-active]="activeSectionId === section.id"
+           (click)="selectSection(section)">
+
+        <!-- Card header -->
+        <div class="sc-header">
+          <div class="sc-title">
+            <span class="section-name">{{ section.name }}</span>
+            <span class="type-badge type-{{ section.seatSectionType }}">
+              {{ getSectionTypeLabel(section.seatSectionType) }}
+            </span>
+          </div>
+          <div class="sc-actions" (click)="$event.stopPropagation()">
+            <button mat-icon-button (click)="openSectionDialog(section)" matTooltip="Edit section">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="openDeleteSectionDialog(section)" matTooltip="Delete section">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Stat chips -->
+        <div class="sc-stats">
+          <div class="stat-chip">
+            <mat-icon>table_rows</mat-icon>
+            <span class="stat-val">{{ section.rows }}</span>
+            <span class="stat-lbl">rows</span>
+          </div>
+          <div class="stat-chip">
+            <mat-icon>view_column</mat-icon>
+            <span class="stat-val">{{ section.seatsPerRow }}</span>
+            <span class="stat-lbl">/ row</span>
+          </div>
+          <div class="stat-chip stat-chip--seats">
+            <mat-icon>chair</mat-icon>
+            <span class="stat-val">{{ getTotalSeats(section) }}</span>
+            <span class="stat-lbl">seats</span>
+          </div>
+          <div class="stat-chip stat-chip--tiers" *ngIf="section.rowConfigs.length">
+            <mat-icon>palette</mat-icon>
+            <span class="stat-val">{{ section.rowConfigs.length }}</span>
+            <span class="stat-lbl">tier{{ section.rowConfigs.length !== 1 ? 's' : '' }}</span>
+          </div>
+        </div>
+
+        <!-- Config color bar -->
+        <div class="sc-color-bar" *ngIf="section.rowConfigs.length">
+          <div class="cb-segment"
+               *ngFor="let rc of section.rowConfigs"
+               [style.background-color]="rc.color"
+               [style.flex]="rc.toRow - rc.fromRow + 1"
+               [matTooltip]="rc.type + ' · £' + (rc.customPrice | number:'1.2-2') + ' (rows ' + rc.fromRow + '–' + rc.toRow + ')'">
+          </div>
+        </div>
+        <div class="sc-no-config" *ngIf="!section.rowConfigs.length">
+          <mat-icon>palette</mat-icon> No price tiers —
+          <span class="sc-add-link" (click)="openRowConfigDialog(section); $event.stopPropagation()">add one</span>
+        </div>
+
+        <!-- Expanded section when active -->
+        <div class="sc-details" *ngIf="activeSectionId === section.id" (click)="$event.stopPropagation()">
+
+          <div class="sc-info-row">
+            <span class="sc-info-label">Position</span>
+            <span class="sc-info-val">X: {{ section.x }}, Y: {{ section.y }}</span>
+          </div>
+          <div class="sc-info-row" *ngIf="section.rowOffset">
+            <span class="sc-info-label">Row offset</span>
+            <span class="sc-info-val">{{ section.rowOffset }}</span>
+          </div>
+          <div class="sc-info-row" *ngIf="section.skipRowLetters?.length">
+            <span class="sc-info-label">Skip letters</span>
+            <span class="sc-info-val">{{ section.skipRowLetters?.join(', ') }}</span>
+          </div>
+
+          <div class="sc-configs-header">
+            <span class="sc-configs-title">Row Configurations</span>
+            <button mat-stroked-button color="primary" class="sc-add-config-btn" (click)="openRowConfigDialog(section)">
+              <mat-icon>add</mat-icon> Add Config
+            </button>
+          </div>
+
+          <div class="no-configs" *ngIf="!section.rowConfigs.length">
+            No configs — add one to define seat types, prices and colors.
+          </div>
+
+          <div class="configs-table" *ngIf="section.rowConfigs.length">
+            <div class="config-head">
+              <span>Type</span><span>Rows</span><span>Cols</span>
+              <span>Price</span><span>Color</span><span></span>
+            </div>
+            <div class="config-row" *ngFor="let rc of section.rowConfigs">
+              <span class="rc-type">{{ rc.type }}</span>
+              <span>{{ rc.fromRow }}–{{ rc.toRow }}</span>
+              <span>{{ rc.fromColumn }}–{{ rc.toColumn }}</span>
+              <span>£{{ rc.customPrice | number:'1.2-2' }}</span>
+              <div class="color-dot" [style.background-color]="rc.color" [matTooltip]="rc.color"></div>
+              <span class="rc-actions">
+                <button mat-icon-button color="primary" (click)="openRowConfigDialog(section, rc)" matTooltip="Edit">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="openDeleteRowConfigDialog(section, rc)" matTooltip="Delete">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <div class="sc-detail-footer">
+            <button mat-button color="primary" (click)="openFullPreview(section)">
+              <mat-icon>fullscreen</mat-icon> Full Layout Preview
+            </button>
+          </div>
+
+        </div><!-- /sc-details -->
+      </div><!-- /section-card -->
+    </div><!-- /section-list -->
+
+    <!-- RIGHT: combined venue canvas ──────────────────────────────────────── -->
+    <div class="venue-panel">
+      <div class="vc-header">
+        <mat-icon>map</mat-icon>
+        Venue Layout
+        <span class="vc-count">{{ sections.length }} section{{ sections.length !== 1 ? 's' : '' }}</span>
+      </div>
+
+      <div class="venue-canvas">
+        <div class="vc-section-block"
+             *ngFor="let s of sections"
+             [ngStyle]="getSectionCanvasStyle(s)"
+             [class.vc-active]="activeSectionId === s.id"
+             [matTooltip]="s.name + ' · ' + s.rows + ' rows × ' + s.seatsPerRow + ' seats'"
+             (click)="selectSection(s)">
+
+          <!-- No configs: solid color fill -->
+          <ng-container *ngIf="!s.rowConfigs.length">
+            <div class="vc-solid-fill" [style.background]="getSectionBg(s)">
+              <span class="vc-label">{{ s.sectionLabel || s.name }}</span>
+              <span class="vc-dims">{{ s.rows }}×{{ s.seatsPerRow }}</span>
+            </div>
+          </ng-container>
+
+          <!-- With configs: stacked tier bands -->
+          <ng-container *ngIf="s.rowConfigs.length">
+            <div class="vc-tier-fill">
+              <div class="vc-tier-band"
+                   *ngFor="let band of getSectionTierBands(s)"
+                   [style.flex]="band.flex.toString()"
+                   [style.background-color]="band.color">
+                <span class="vc-tier-label" *ngIf="band.label">{{ band.label }}</span>
+              </div>
+            </div>
+            <div class="vc-section-name-tag">{{ s.sectionLabel || s.name }}</div>
+          </ng-container>
+
+        </div>
+      </div>
+
+      <div class="vc-legend">
+        <div class="vc-legend-section" *ngFor="let s of sections">
+          <span class="vc-legend-name">{{ s.sectionLabel || s.name }}</span>
+          <div class="vc-legend-tiers" *ngIf="s.rowConfigs.length">
+            <div class="vc-legend-tier" *ngFor="let rc of s.rowConfigs">
+              <div class="vc-legend-swatch" [style.background-color]="rc.color"></div>
+              <span>{{ rc.type }} · £{{ rc.customPrice | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="vc-legend-tier" *ngIf="!s.rowConfigs.length">
+            <div class="vc-legend-swatch" [style.background]="getSectionBg(s)"></div>
+            <span class="vc-legend-no-config">No price tiers</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /workspace -->
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FULL LAYOUT PREVIEW DIALOG
+════════════════════════════════════════════════════════════════════════════ -->
+<ng-template #previewDialog>
+  <div class="preview-dialog-header">
+    <div class="preview-dialog-title">
+      <mat-icon>event_seat</mat-icon>
+      <span>{{ previewSection?.name }}</span>
+      <span class="type-badge type-{{ previewSection.seatSectionType }}" *ngIf="previewSection">
+        {{ getSectionTypeLabel(previewSection.seatSectionType) }}
+      </span>
+    </div>
+    <div class="preview-dialog-stats" *ngIf="previewSection">
+      <span><mat-icon inline>grid_on</mat-icon> {{ previewSection.rows }} rows × {{ previewSection.seatsPerRow }} seats</span>
+      <span><mat-icon inline>chair</mat-icon> {{ getTotalSeats(previewSection) }} total seats</span>
+      <span><mat-icon inline>palette</mat-icon> {{ previewSection.rowConfigs.length }} price tiers</span>
+    </div>
+    <button mat-icon-button mat-dialog-close class="close-btn"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <mat-dialog-content class="preview-content">
+    <!-- Stage bar -->
+    <div class="stage-bar" *ngIf="previewSection?.seatSectionType === SeatSectionType.SEAT">
+      <mat-icon>music_note</mat-icon> STAGE / FRONT
+    </div>
+
+    <!-- Grid -->
+    <div class="full-grid-wrap" *ngIf="previewSection && previewRows.length > 0">
+      <!-- Column numbers header -->
+      <div class="col-numbers-row">
+        <div class="row-label-spacer"></div>
+        <div class="col-number" *ngFor="let n of getColLabels(previewSection.seatsPerRow)">
+          {{ n !== null ? n : '' }}
+        </div>
+      </div>
+      <!-- Seat rows -->
+      <div class="seat-row" *ngFor="let row of previewRows">
+        <div class="row-label">{{ row.label }}</div>
+        <div class="seat-cell"
+             *ngFor="let cell of row.cells; let ci = index"
+             [style.background-color]="cell.color"
+             [title]="row.label + (ci + 1) + (cell.type ? ' · ' + cell.type : '') + (cell.price != null ? ' · £' + cell.price : '')">
+        </div>
+      </div>
+    </div>
+
+    <!-- No configs notice -->
+    <div class="preview-no-config" *ngIf="previewSection && previewSection.rowConfigs.length === 0">
+      <mat-icon>palette</mat-icon>
+      <p>No row configs — all {{ getTotalSeats(previewSection) }} seats are unassigned.</p>
+      <div class="full-grid-wrap">
+        <div class="col-numbers-row">
+          <div class="row-label-spacer"></div>
+          <div class="col-number" *ngFor="let n of getColLabels(previewSection.seatsPerRow)">
+            {{ n !== null ? n : '' }}
+          </div>
+        </div>
+        <div class="seat-row" *ngFor="let row of previewRows">
+          <div class="row-label">{{ row.label }}</div>
+          <div class="seat-cell" *ngFor="let cell of row.cells" [style.background-color]="cell.color"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="preview-legend" *ngIf="previewSection?.rowConfigs?.length">
+      <div class="legend-entry" *ngFor="let rc of previewSection!.rowConfigs">
+        <div class="legend-swatch" [style.background-color]="rc.color"></div>
+        <div class="legend-info">
+          <strong>{{ rc.type }}</strong>
+          <span>Rows {{ rc.fromRow }}–{{ rc.toRow }}, Cols {{ rc.fromColumn }}–{{ rc.toColumn }}</span>
+          <span>£{{ rc.customPrice | number:'1.2-2' }}</span>
+          <span *ngIf="rc.blockLetter">Block: {{ rc.blockLetter }}</span>
+        </div>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-raised-button mat-dialog-close>Close</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION FORM DIALOG  (two-column: form left, live preview right)
+════════════════════════════════════════════════════════════════════════════ -->
+<ng-template #sectionDialog>
+  <h2 mat-dialog-title>{{ isEditSectionMode ? 'Edit Section' : 'New Section' }}</h2>
+
+  <mat-dialog-content class="section-dialog-content">
+    <div class="dialog-two-col">
+
+      <!-- LEFT: form fields -->
+      <div class="dialog-form-col">
+        <form [formGroup]="sectionForm">
+
+          <div class="form-row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Section Name *</mat-label>
+              <input matInput formControlName="name" placeholder="e.g. Main Floor">
+              <mat-error *ngIf="sectionForm.get('name')?.hasError('required')">Required</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Display Label</mat-label>
+              <input matInput formControlName="sectionLabel" placeholder="Label on the map">
+              <mat-hint>Defaults to Name if blank</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row-3">
+            <mat-form-field appearance="outline" *ngIf="!isEditSectionMode">
+              <mat-label>Section Type *</mat-label>
+              <mat-select formControlName="seatSectionType">
+                <mat-option *ngFor="let t of sectionTypes" [value]="t.value">{{ t.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Rows *</mat-label>
+              <input matInput type="number" formControlName="rows" min="1">
+              <mat-error *ngIf="sectionForm.get('rows')?.hasError('required')">Required</mat-error>
+              <mat-error *ngIf="sectionForm.get('rows')?.hasError('min')">Min 1</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Seats Per Row *</mat-label>
+              <input matInput type="number" formControlName="seatsPerRow" min="1">
+              <mat-error *ngIf="sectionForm.get('seatsPerRow')?.hasError('required')">Required</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Row Offset</mat-label>
+              <input matInput type="number" formControlName="rowOffset">
+              <mat-hint>Shifts row letter start</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-section-title">Canvas Position (top-left corner)</div>
+          <div class="form-row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>X</mat-label>
+              <input matInput type="number" formControlName="x">
+              <mat-hint>Left edge in pixels</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Y</mat-label>
+              <input matInput type="number" formControlName="y">
+              <mat-hint>Top edge in pixels</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <!-- Create-only: numbering + gap -->
+          <ng-container *ngIf="!isEditSectionMode">
+            <div class="form-section-title">Numbering</div>
+            <div class="form-row-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Direction</mat-label>
+                <mat-select formControlName="numberingDirection">
+                  <mat-option *ngFor="let d of numberingDirections" [value]="d.value">{{ d.label }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Row Numbering</mat-label>
+                <mat-select formControlName="rowNumberingType">
+                  <mat-option *ngFor="let t of rowNumberingTypes" [value]="t.value">{{ t.label }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="form-row-1">
+              <mat-form-field appearance="outline">
+                <mat-label>Skip Row Letters</mat-label>
+                <input matInput formControlName="skipRowLetters" placeholder="e.g. I,O,Q">
+                <mat-hint>Comma-separated letters to omit from row labels (reflected in preview)</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="form-section-title">Column Gap</div>
+            <mat-slide-toggle formControlName="hasColumnGap" class="gap-toggle">Has Column Gap</mat-slide-toggle>
+            <div class="form-row-3 gap-fields" *ngIf="sectionHasColumnGap">
+              <mat-form-field appearance="outline">
+                <mat-label>Gap After Column</mat-label>
+                <input matInput type="number" formControlName="gapAfterColumn" min="1">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Gap Size</mat-label>
+                <input matInput type="number" formControlName="gapSize" min="1">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Gap Columns</mat-label>
+                <input matInput formControlName="gapColumns" placeholder="e.g. 5,10">
+              </mat-form-field>
+            </div>
+          </ng-container>
+
+          <p class="edit-note" *ngIf="isEditSectionMode">
+            <mat-icon inline>info</mat-icon>
+            Section type, numbering and gap settings are set at creation and cannot be changed here.
+          </p>
+
+        </form>
+      </div>
+
+      <!-- RIGHT: live preview -->
+      <div class="dialog-preview-col">
+        <div class="live-preview-panel">
+          <div class="live-preview-title">
+            <mat-icon>preview</mat-icon>
+            Live Preview
+            <span class="live-preview-dims">
+              {{ sectionForm.get('rows')?.value }} rows × {{ sectionForm.get('seatsPerRow')?.value }} seats
+            </span>
+          </div>
+
+          <!-- Stage indicator -->
+          <div class="stage-bar-sm" *ngIf="sectionForm.get('seatSectionType')?.value === SeatSectionType.SEAT || (isEditSectionMode && selectedSection?.seatSectionType === SeatSectionType.SEAT)">
+            <mat-icon>music_note</mat-icon> STAGE
+          </div>
+
+          <div class="live-grid-scroll">
+            <!-- Col headers (every 5th) -->
+            <div class="live-col-header" *ngIf="livePreviewRows.length">
+              <div class="live-row-label-spacer"></div>
+              <div class="live-col-num"
+                   *ngFor="let n of getColLabels(sectionForm.get('seatsPerRow')?.value || 1)">
+                {{ n !== null ? n : '' }}
+              </div>
+            </div>
+            <!-- Rows -->
+            <div class="live-row" *ngFor="let row of livePreviewRows">
+              <div class="live-row-label">{{ row.label }}</div>
+              <div class="live-seat"
+                   *ngFor="let cell of row.cells"
+                   [style.background-color]="cell.color"
+                   [title]="cell.type">
+              </div>
+            </div>
+          </div>
+
+          <div class="live-preview-hint" *ngIf="!isEditSectionMode && (!selectedSection || !selectedSection.rowConfigs.length)">
+            <mat-icon>info</mat-icon>
+            Row configs define seat colors — add them after creating the section.
+          </div>
+
+          <!-- Legend for edit mode where configs already exist -->
+          <div class="live-legend" *ngIf="isEditSectionMode && selectedSection?.rowConfigs?.length">
+            <div class="legend-item" *ngFor="let rc of selectedSection!.rowConfigs">
+              <div class="legend-swatch" [style.background-color]="rc.color"></div>
+              <span>{{ rc.type }} · rows {{ rc.fromRow }}–{{ rc.toRow }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSectionSubmit()" [disabled]="isSaving">
+      <mat-icon *ngIf="isSaving">hourglass_empty</mat-icon>
+      {{ isEditSectionMode ? 'Save Changes' : 'Create Section' }}
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ROW CONFIG DIALOG
+════════════════════════════════════════════════════════════════════════════ -->
+<ng-template #rowConfigDialog>
+  <h2 mat-dialog-title>
+    {{ isEditRowConfigMode ? 'Edit Row Config' : 'Add Row Config' }}
+    <span class="dialog-sub" *ngIf="selectedSection"> — {{ selectedSection.name }}</span>
+  </h2>
+  <mat-dialog-content>
+    <form [formGroup]="rowConfigForm">
+
+      <div class="form-row-2">
+        <mat-form-field appearance="outline">
+          <mat-label>Seat Type *</mat-label>
+          <input matInput formControlName="type" placeholder="e.g. STANDARD, VIP, PREMIUM">
+          <mat-error *ngIf="rowConfigForm.get('type')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Custom Price (£) *</mat-label>
+          <input matInput type="number" formControlName="customPrice" min="0" step="0.01">
+          <mat-error *ngIf="rowConfigForm.get('customPrice')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-section-title">Row Range</div>
+      <div class="form-row-2">
+        <mat-form-field appearance="outline">
+          <mat-label>From Row *</mat-label>
+          <input matInput type="number" formControlName="fromRow" min="1">
+          <mat-hint *ngIf="selectedSection">Section has {{ selectedSection.rows }} rows</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>To Row *</mat-label>
+          <input matInput type="number" formControlName="toRow" min="1">
+        </mat-form-field>
+      </div>
+
+      <div class="form-section-title">Column Range</div>
+      <div class="form-row-2">
+        <mat-form-field appearance="outline">
+          <mat-label>From Column *</mat-label>
+          <input matInput type="number" formControlName="fromColumn" min="1">
+          <mat-hint *ngIf="selectedSection">Section has {{ selectedSection.seatsPerRow }} seats per row</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>To Column *</mat-label>
+          <input matInput type="number" formControlName="toColumn" min="1">
+        </mat-form-field>
+      </div>
+
+      <div class="form-section-title">Display</div>
+      <div class="form-row-2">
+        <div class="color-field">
+          <label class="color-label">Color</label>
+          <div class="color-picker-wrap">
+            <input type="color" formControlName="color" class="color-input">
+            <span class="color-hex">{{ rowConfigForm.get('color')?.value }}</span>
+            <div class="color-preview-chip" [style.background-color]="rowConfigForm.get('color')?.value">
+              {{ rowConfigForm.get('type')?.value || 'Type' }}
+            </div>
+          </div>
+        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Block Letter</mat-label>
+          <input matInput formControlName="blockLetter" placeholder="e.g. A, VIP">
+          <mat-hint>Prefix for block-style seat IDs</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <ng-container *ngIf="!isEditRowConfigMode">
+        <div class="form-section-title">Advanced</div>
+        <div class="form-row-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Numbering Direction</mat-label>
+            <mat-select formControlName="numberingDirection">
+              <mat-option *ngFor="let d of numberingDirections" [value]="d.value">{{ d.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Row Numbering Type</mat-label>
+            <mat-select formControlName="rowNumberingType">
+              <mat-option *ngFor="let t of rowNumberingTypes" [value]="t.value">{{ t.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="form-row-1">
+          <mat-form-field appearance="outline">
+            <mat-label>Skip Row Letters</mat-label>
+            <input matInput formControlName="skipRowLetters" placeholder="e.g. I,O">
+            <mat-hint>Comma-separated</mat-hint>
+          </mat-form-field>
+        </div>
+        <mat-slide-toggle formControlName="hasColumnGap" class="gap-toggle">Has Column Gap</mat-slide-toggle>
+        <div class="form-row-3 gap-fields" *ngIf="rowConfigHasGap">
+          <mat-form-field appearance="outline">
+            <mat-label>Gap After Column</mat-label>
+            <input matInput type="number" formControlName="gapAfterColumn" min="1">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Gap Size</mat-label>
+            <input matInput type="number" formControlName="gapSize" min="1">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Gap Columns</mat-label>
+            <input matInput formControlName="gapColumns">
+          </mat-form-field>
+        </div>
+      </ng-container>
+
+      <p class="edit-note" *ngIf="isEditRowConfigMode">
+        <mat-icon inline>info</mat-icon>
+        Advanced settings can only be changed by deleting and re-creating the config.
+      </p>
+
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="onRowConfigSubmit()" [disabled]="isSaving">
+      <mat-icon *ngIf="isSaving">hourglass_empty</mat-icon>
+      {{ isEditRowConfigMode ? 'Save Changes' : 'Add Config' }}
+    </button>
+  </mat-dialog-actions>
+</ng-template>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DELETE DIALOG
+════════════════════════════════════════════════════════════════════════════ -->
+<ng-template #deleteDialog>
+  <h2 mat-dialog-title>
+    <mat-icon color="warn" style="vertical-align:middle;margin-right:6px">warning</mat-icon>
+    Delete {{ deleteTarget === 'section' ? 'Section' : 'Row Config' }}?
+  </h2>
+  <mat-dialog-content>
+    <p *ngIf="deleteTarget === 'section'">
+      Delete section <strong>{{ selectedSection?.name }}</strong>?
+      All its row configurations will also be removed.
+    </p>
+    <p *ngIf="deleteTarget === 'rowconfig'">
+      Delete the <strong>{{ selectedRowConfig?.type }}</strong> config
+      (rows {{ selectedRowConfig?.fromRow }}–{{ selectedRowConfig?.toRow }},
+      cols {{ selectedRowConfig?.fromColumn }}–{{ selectedRowConfig?.toColumn }})?
+    </p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="warn" (click)="confirmDelete()" [disabled]="isSaving">Delete</button>
+  </mat-dialog-actions>
+</ng-template>

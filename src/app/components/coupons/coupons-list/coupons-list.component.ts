@@ -163,19 +163,21 @@ export class CouponsListComponent implements OnInit {
     });
 
     this.couponForm.get('discountType')?.valueChanges.subscribe(type => {
-      if (type === DiscountType.PERCENTAGE) {
-        this.couponForm.get('discountPercentage')?.setValidators([Validators.required, Validators.min(0), Validators.max(100)]);
-        this.couponForm.get('discountAmount')?.clearValidators();
-      } else if (type === DiscountType.FIXEDAMOUNT) {
-        this.couponForm.get('discountAmount')?.setValidators([Validators.required, Validators.min(0)]);
-        this.couponForm.get('discountPercentage')?.clearValidators();
+      const pct = this.couponForm.get('discountPercentage')!;
+      const amt = this.couponForm.get('discountAmount')!;
+      if (type === DiscountType.FIXEDAMOUNT || type === DiscountType.FIXEDPERTICKET) {
+        amt.setValidators([Validators.required, Validators.min(0.01)]);
+        pct.clearValidators();
+      } else if (type === DiscountType.PERCENTAGE) {
+        pct.setValidators([Validators.required, Validators.min(1), Validators.max(100)]);
+        amt.clearValidators();
       } else {
         // BOTH
-        this.couponForm.get('discountPercentage')?.setValidators([Validators.required, Validators.min(0), Validators.max(100)]);
-        this.couponForm.get('discountAmount')?.setValidators([Validators.required, Validators.min(0)]);
+        pct.setValidators([Validators.required, Validators.min(0), Validators.max(100)]);
+        amt.setValidators([Validators.required, Validators.min(0)]);
       }
-      this.couponForm.get('discountPercentage')?.updateValueAndValidity();
-      this.couponForm.get('discountAmount')?.updateValueAndValidity();
+      pct.updateValueAndValidity();
+      amt.updateValueAndValidity();
     });
 
     this.extendForm = this.fb.group({
