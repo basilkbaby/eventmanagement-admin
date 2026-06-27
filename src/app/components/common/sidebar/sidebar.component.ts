@@ -18,6 +18,7 @@ interface NavigationItem {
   label: string;
   badge?: number;
   seatsLink?: boolean; // dynamic link that targets the selected event's seatmap
+  detailsLink?: boolean; // dynamic link that targets the selected event's details/edit page
 }
 
 @Component({
@@ -47,11 +48,12 @@ export class SidebarComponent {
 
   readonly navigationItems: NavigationItem[] = [
     { path: '/admin/dashboard',         icon: 'dashboard',           label: 'Dashboard' },
+    { path: '',                          icon: 'info',                label: 'Event Details', detailsLink: true },
     { path: '',                          icon: 'event_seat',          label: 'Seats', seatsLink: true },
     // { path: '/admin/sections',          icon: 'grid_view',           label: 'Seat Sections' },
     { path: '/admin/orders',            icon: 'confirmation_number', label: 'Ticket Sales' },
     { path: '/admin/coupons',           icon: 'local_offer',         label: 'Coupons' },
-    { path: '/admin/discounts',         icon: 'sell',                label: 'Bulk Discounts' },
+    { path: '/admin/discounts',         icon: 'sell',                label: 'Discounts' },
     // { path: '/admin/users',          icon: 'people',              label: 'Users' },
     // { path: '/admin/reports',        icon: 'assessment',          label: 'Reports' },
     // { path: '/admin/settings',       icon: 'settings',            label: 'Settings' }
@@ -65,7 +67,16 @@ export class SidebarComponent {
       const eventId = this.eventContext.selectedEventId();
       return eventId ? ['/admin/events/seatmap', eventId] : null;
     }
+    if (item.detailsLink) {
+      const eventId = this.eventContext.selectedEventId();
+      return eventId ? ['/admin/events', eventId] : null;
+    }
     return [item.path];
+  }
+
+  /** Items that depend on a selected event are disabled until one is chosen. */
+  isNavDisabled(item: NavigationItem): boolean {
+    return !!(item.seatsLink || item.detailsLink) && !this.eventContext.selectedEventId();
   }
 
   /** Custom active-state check so Seats is highlighted on any seatmap URL,
@@ -73,13 +84,17 @@ export class SidebarComponent {
   isNavActive(item: NavigationItem): boolean {
     const url = this.router.url;
     if (item.seatsLink) return url.includes('/seatmap');
+    if (item.detailsLink) {
+      const eventId = this.eventContext.selectedEventId();
+      return !!eventId && url.startsWith(`/admin/events/${eventId}`);
+    }
     if (item.path === '/admin/dashboard') return url === '/admin/dashboard' || url.startsWith('/admin/dashboard?');
     return url.startsWith(item.path);
   }
 
   /** Tooltip shown when the link is disabled (no event selected yet). */
   getNavTooltip(item: NavigationItem): string {
-    if (item.seatsLink && !this.eventContext.selectedEventId()) {
+    if (this.isNavDisabled(item)) {
       return 'Select an event from the top bar first';
     }
     return !this.isOpen ? item.label : '';

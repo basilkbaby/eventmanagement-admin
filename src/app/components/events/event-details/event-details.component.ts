@@ -1,14 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { DatePipe } from '@angular/common';
 
 // Update import to use the correct model
 import { EventService } from '../../../core/services/event.service';
@@ -23,13 +16,6 @@ import { FormatTimePipe } from '../../../core/pipes/time-format.pipe';
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatDividerModule,
-    MatProgressSpinnerModule,
     RouterModule,
     OrganizationFilterPipe,
     FormatDatePipe,
@@ -91,6 +77,21 @@ export class EventDetailsComponent implements OnInit {
     }
   }
 
+  getStatusIcon(status: EventStatus): string {
+    switch (status) {
+      case EventStatus.PUBLISHED:
+        return 'check_circle';
+      case EventStatus.DRAFT:
+        return 'edit_note';
+      case EventStatus.CANCELLED:
+        return 'cancel';
+      case EventStatus.COMPLETED:
+        return 'done_all';
+      default:
+        return 'help';
+    }
+  }
+
   getStatusText(status: EventStatus): string {
     switch (status) {
       case EventStatus.DRAFT:
@@ -128,20 +129,23 @@ export class EventDetailsComponent implements OnInit {
     }
   }
 
-  toggleFeatured() {
+  // Show / hide the event on the public site via its active flag.
+  toggleActive() {
     if (this.event) {
-      const newFeaturedStatus = !this.event.featured;
-      this.eventService.toggleFeatured(this.event.id).subscribe({
-        next: (success) => {
-          if (success && this.event) {
-            this.event.featured = newFeaturedStatus;
-            const message = this.event.featured ? 'Event marked as featured' : 'Event removed from featured';
+      const newActiveStatus = !this.event.isActive;
+      this.eventService.toggleActive(this.event.id).subscribe({
+        next: (response) => {
+          if (response && this.event) {
+            this.event.isActive = newActiveStatus;
+            const message = this.event.isActive
+              ? 'Event is now visible on the site'
+              : 'Event is now hidden from the site';
             this.snackBar.open(message, 'Close', { duration: 3000 });
           }
         },
         error: (error) => {
-          console.error('Error updating featured status:', error);
-          this.snackBar.open('Failed to update featured status', 'Close', { duration: 3000 });
+          console.error('Error updating visibility:', error);
+          this.snackBar.open('Failed to update visibility', 'Close', { duration: 3000 });
         }
       });
     }
@@ -229,8 +233,11 @@ export class EventDetailsComponent implements OnInit {
     return flags;
   }
 
-    handleImageError(event: any) {
-    // event.target.style.display = 'none';
+  handleImageError(event: any) {
+    // Hide broken images so the gradient hero / placeholder shows instead of a broken icon.
+    if (event?.target) {
+      event.target.style.display = 'none';
+    }
   }
 
 }

@@ -152,19 +152,6 @@
 
         <!-- Card Actions -->
         <mat-card-actions class="card-actions">
-          <!-- <button mat-button color="primary" class="action-btn view-btn"
-                  [routerLink]="['/admin/events', event.id]">
-            <mat-icon>visibility</mat-icon>
-            View
-          </button>
-          
-          <button mat-button color="accent" class="action-btn edit-btn"
-                  [routerLink]="['/admin/events', event.id, 'edit']"
-                  [disabled]="!canEditEvent(event)">
-            <mat-icon>edit</mat-icon>
-            Edit
-          </button> -->
-          
           <button mat-stroked-button color="primary" class="action-btn seats-btn"
                   (click)="navigateToSeatSelection(event)"
                   [disabled]="!canSelectSeats(event)">

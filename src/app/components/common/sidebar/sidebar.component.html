@@ -14,7 +14,7 @@
            [routerLink]="getNavLink(item)"
            class="nav-item"
            [class.active]="isNavActive(item)"
-           [class.nav-disabled]="item.seatsLink && !eventContext.selectedEventId()"
+           [class.nav-disabled]="isNavDisabled(item)"
            [matTooltip]="getNavTooltip(item)"
            matTooltipPosition="right">
 

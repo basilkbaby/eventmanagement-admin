@@ -1,504 +1,520 @@
+// event-form.component.scss — modern restyle matching the event-details design.
+// Material is kept; its MDC internals are themed via CSS custom properties + a few
+// targeted overrides so inputs, stepper, checkboxes and buttons adopt the brand look.
+
+:host {
+  --ef-radius: 16px;
+  --ef-radius-sm: 10px;
+  --ef-shadow: var(--shadow-2, 0 6px 20px -10px rgba(16, 24, 40, .25));
+  display: block;
+}
+
+/* ── Page shell ──────────────────────────────────────────────────────────── */
 .event-form-container {
+  max-width: 1100px;
+  margin: 0 auto;
   padding: 24px;
   background: var(--bg-color);
   min-height: 100vh;
+
+  // Make every Material "primary" element use the brand colour.
+  --mdc-theme-primary: var(--primary-color);
+  --mat-stepper-header-selected-state-icon-background-color: var(--primary-color);
+  --mat-stepper-header-done-state-icon-background-color: var(--primary-color);
+  --mat-stepper-header-edit-state-icon-background-color: var(--primary-color);
+
+  @media (max-width: 768px) { padding: 16px; }
 }
 
+/* ── Header ──────────────────────────────────────────────────────────────── */
 .header-section {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
   margin-bottom: 24px;
 
   .back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 40px;
+    padding: 0 14px;
+    border-radius: var(--ef-radius-sm);
     color: var(--text-secondary);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     white-space: nowrap;
-    
-    .mat-icon {
-      margin-right: 4px;
-    }
+
+    &:hover { background: var(--hover-color); color: var(--text-color); }
+    .mat-icon { margin-right: 2px; }
   }
 
   .header-content {
     flex: 1;
-    
+    min-width: 0;
+
     h1 {
-      font-size: 2rem;
-      font-weight: 700;
+      font-size: 1.9rem;
+      font-weight: 800;
       color: var(--text-color);
-      margin: 0 0 4px 0;
+      margin: 0 0 2px 0;
+      line-height: 1.2;
     }
-    
+
     p {
       color: var(--text-secondary);
       margin: 0;
-      font-size: 1rem;
+      font-size: .95rem;
     }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    .back-button { align-self: flex-start; }
   }
 }
 
-// Stepper Styles
+/* ── Stepper ─────────────────────────────────────────────────────────────── */
 .event-stepper {
   background: transparent;
-  
-  ::ng-deep .mat-stepper-horizontal {
-    background: transparent;
-  }
-  
-  ::ng-deep .mat-step-header {
+
+  ::ng-deep .mat-horizontal-stepper-header-container {
     background: var(--card-bg);
-    border-radius: 8px;
-    margin-bottom: 16px;
-    
-    .mat-step-label {
-      color: var(--text-color);
-      font-weight: 500;
-    }
-    
+    border: 1px solid var(--border-color);
+    border-radius: var(--ef-radius);
+    padding: 6px;
+    margin-bottom: 20px;
+    box-shadow: var(--ef-shadow);
+    flex-wrap: wrap;
+  }
+
+  ::ng-deep .mat-step-header {
+    border-radius: var(--ef-radius-sm);
+    height: auto;
+    padding: 10px 14px;
+
+    &:hover,
     &.cdk-keyboard-focused,
-    &.cdk-program-focused,
-    &:hover {
-      background: var(--bg-color);
+    &.cdk-program-focused { background: var(--hover-color); }
+
+    .mat-step-label {
+      color: var(--text-secondary);
+      font-weight: 600;
+      &.mat-step-label-selected { color: var(--text-color); }
     }
-    
-    &.mat-step-header .mat-step-icon {
-      background-color: var(--primary-color);
-      color: white;
-    }
-  }
-}
 
-// Step Form Styles
-.step-form {
-  padding: 16px 0;
-}
-
-.form-section {
-  margin-bottom: 32px;
-  
-  h3 {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--border-color);
-  }
-}
-
-.form-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-  align-items: flex-start;
-  
-  &.full-width {
-    width: 100%;
-  }
-  
-  &.half-width {
-    width: 100%;
-    
-    > * {
-      flex: 1;
+    .mat-step-icon {
+      background-color: var(--border-color);
+      color: var(--text-secondary);
+      &.mat-step-icon-selected,
+      &.mat-step-icon-state-done,
+      &.mat-step-icon-state-edit {
+        background-color: var(--primary-color);
+        color: #fff;
+      }
     }
   }
-  
-  &.third-width {
-    width: 100%;
-    
-    > * {
-      flex: 1;
-    }
+
+  ::ng-deep .mat-stepper-horizontal-line { border-top-color: var(--border-color); }
+
+  // Each step's body becomes a clean card — one rule covers every step.
+  ::ng-deep .mat-horizontal-stepper-content {
+    .step-form,
+    .review-section,
+    .organizations-step,
+    .step-content { /* spacing handled below */ }
   }
+
+  ::ng-deep .mat-horizontal-content-container { padding: 0; }
 }
 
-// Full width form fields
-.full-width {
-  width: 100%;
-}
-
-.half-width {
-  width: calc(50% - 8px);
-}
-
-.third-width {
-  width: calc(33.333% - 10.666px);
-}
-
-// Ticket Tiers Section
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  
-  h3 {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: var(--text-color);
-    margin: 0;
-  }
-}
-
-.ticket-tiers-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.ticket-tier-card {
+/* Card wrapper applied to whatever each step renders first */
+.step-form,
+.review-section {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  
-  mat-card-header {
-    padding-bottom: 0;
-    
-    mat-card-title {
-      margin: 0;
-      
-      .tier-name-field {
-        width: 200px;
-        
-        .mat-form-field-wrapper {
-          padding-bottom: 0;
-        }
-      }
-    }
-  }
-  
-  mat-card-content {
-    padding-top: 8px;
-  }
-  
-  .tier-form {
-    .form-row {
-      margin-bottom: 12px;
-    }
-    
-    .benefits-list {
-      h4 {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--text-color);
-        margin-bottom: 8px;
-      }
-    }
-  }
+  border-radius: var(--ef-radius);
+  box-shadow: var(--ef-shadow);
+  padding: 24px;
+  display: block;            // override any legacy grid layout
+  margin: 0;
+
+  @media (max-width: 768px) { padding: 18px; }
 }
 
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-secondary);
-  
-  .mat-icon {
-    font-size: 48px;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 16px;
-    opacity: 0.5;
-  }
-  
-  p {
-    margin: 0 0 8px 0;
-  }
-  
-  .hint {
-    font-size: 0.9rem;
-    opacity: 0.7;
-  }
-}
+/* ── Sections & rows ─────────────────────────────────────────────────────── */
+.form-section {
+  margin-bottom: 28px;
+  &:last-child { margin-bottom: 0; }
 
-// Review Section
-.review-section {
-  padding: 16px 0;
-  
   h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.05rem;
+    font-weight: 700;
     color: var(--text-color);
-    margin-bottom: 24px;
-  }
-}
-
-.review-card {
-  background: var(--card-bg);
-  border-radius: 12px;
-  
-  mat-card-header {
+    margin: 0 0 14px;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
-    margin-bottom: 16px;
-    
-    mat-card-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--text-color);
-    }
-    
-    mat-card-subtitle {
-      color: var(--text-secondary);
-    }
-  }
-}
-
-.review-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.review-item {
-  strong {
-    display: block;
-    font-weight: 600;
-    color: var(--text-color);
-    margin-bottom: 8px;
-  }
-  
-  p {
-    color: var(--text-color);
-    margin: 0;
-    line-height: 1.5;
-  }
-  
-  ul {
-    margin: 0;
-    padding-left: 20px;
-    
-    li {
-      color: var(--text-color);
-      margin-bottom: 4px;
-    }
-  }
-}
-
-.ticket-review {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.tier-review {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background: var(--bg-color);
-  border-radius: 6px;
-  
-  .tier-name {
-    font-weight: 600;
-    color: var(--text-color);
-  }
-  
-  .tier-price {
-    color: var(--primary-color);
-    font-weight: 600;
-  }
-  
-  .tier-quantity {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-}
-
-// Step Actions
-.step-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
-  
-  button {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 }
 
-// Form Field Styling
-::ng-deep .mat-form-field {
-  .mat-form-field-outline {
-    color: var(--border-color);
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.full-width  { width: 100%; }
+.half-width  { flex: 1 1 240px; }
+.third-width { flex: 1 1 180px; }
+
+.form-row > mat-form-field,
+.form-row > .mat-mdc-form-field { min-width: 0; }
+.form-row > .full-width { width: 100%; flex-basis: 100%; }
+
+/* ── Custom form controls (native, no Material) ───────────────────────────── */
+.ff-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.ff-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+
+  .req { color: var(--danger-color); margin-left: 2px; }
+}
+
+.ff-control {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-color);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ef-radius-sm);
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+
+  &::placeholder { color: var(--text-secondary); opacity: .6; }
+
+  &:hover:not(:focus):not(:disabled) { border-color: var(--text-secondary); }
+
+  &:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 16%, transparent);
   }
-  
-  .mat-form-field-label {
-    color: var(--text-secondary);
+
+  &:disabled { opacity: .6; cursor: not-allowed; }
+
+  &.is-invalid {
+    border-color: var(--danger-color);
+    &:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-color) 16%, transparent); }
   }
-  
-  .mat-input-element {
+}
+
+textarea.ff-control {
+  height: auto;
+  min-height: 96px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+// Native select with a custom chevron.
+select.ff-control {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+
+  option { color: var(--text-color); background: var(--card-bg); }
+}
+
+input[type="date"].ff-control,
+input[type="time"].ff-control {
+  // Keep the native picker icon visible in both themes.
+  &::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+}
+
+.ff-hint  { font-size: 12px; color: var(--text-secondary); }
+.ff-error { font-size: 12px; font-weight: 500; color: var(--danger-color); }
+
+// Custom checkbox using the native control tinted with the brand colour.
+.ff-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-color);
+  user-select: none;
+  padding: 6px 0;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+  }
+}
+
+// Row of checkboxes that wraps nicely.
+.ff-checks {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+// Custom tags input (replaces mat-chip-grid).
+.ff-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 7px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ef-radius-sm);
+  transition: border-color .15s ease, box-shadow .15s ease;
+
+  &:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 16%, transparent);
+  }
+
+  &__input {
+    flex: 1 1 140px;
+    min-width: 120px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
     color: var(--text-color);
-  }
-  
-  &.mat-focused {
-    .mat-form-field-outline-thick {
-      color: var(--primary-color);
-    }
-    
-    .mat-form-field-label {
-      color: var(--primary-color);
-    }
+    &::placeholder { color: var(--text-secondary); opacity: .6; }
   }
 }
 
-// Responsive Design
-@media (max-width: 768px) {
-  .event-form-container {
-    padding: 16px;
-  }
-  
-  .header-section {
-    flex-direction: column;
-    gap: 12px;
-    
-    .back-button {
-      align-self: flex-start;
-    }
-  }
-  
-  .form-row {
-    flex-direction: column;
-    gap: 12px;
-    
-    &.half-width,
-    &.third-width {
-      > * {
-        width: 100%;
-      }
-    }
-  }
-  
-  .half-width,
-  .third-width {
-    width: 100%;
-  }
-  
-  .section-header {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-  
-  .step-actions {
-    flex-direction: column;
-    gap: 12px;
-    
-    button {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-  
-  ::ng-deep .mat-stepper-horizontal {
-    .mat-stepper-horizontal-line {
-      min-width: 20px;
-    }
-  }
-}
+.ff-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 6px 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  color: var(--primary-color);
 
-// Add these new styles to your existing SCSS file
-
-// Media & Links Section
-.media-preview {
-  margin-top: 8px;
-  
-  .image-preview {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    
-    .preview-item {
-      width: 100px;
-      height: 80px;
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid var(--border-color);
-      
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-      
-      &.placeholder {
-        background: var(--bg-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-secondary);
-        
-        .mat-icon {
-          font-size: 24px;
-          width: 24px;
-          height: 24px;
-        }
-      }
-    }
-  }
-}
-
-// Benefits chips in ticket tiers
-::ng-deep .benefit-chip {
-  background: var(--primary-light) !important;
-  color: var(--primary-color) !important;
-}
-
-// Review section enhancements
-.short-desc {
-  color: var(--text-secondary);
-  font-style: italic;
-  margin-top: 4px;
-}
-
-.tier-benefits {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-
-.tags-review {
-  margin-top: 8px;
-}
-
-// Form section spacing
-.form-section {
-  margin-bottom: 32px;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-// Responsive improvements
-@media (max-width: 768px) {
-  .media-preview .image-preview {
+  &__remove {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-  }
-  
-  .tier-benefits {
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .ticket-tier-card {
-    mat-card-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-    }
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    &:hover { background: color-mix(in srgb, var(--primary-color) 25%, transparent); }
   }
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+
+  h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0;
+  }
+}
+
+/* ── Material form elements (MDC) ─────────────────────────────────────────
+   Themed via concrete MDC classes so every state is covered. Scoped to BOTH
+   the inline page (.event-form-container) AND the organization dialog
+   (.org-dialog-panel), since the dialog renders in a global overlay. ──────── */
+::ng-deep .event-form-container,
+::ng-deep .org-dialog-panel {
+
+  .mat-mdc-form-field { width: 100%; }
+
+  // Outlined field box
+  .mat-mdc-text-field-wrapper {
+    background: var(--card-bg);
+    border-radius: var(--ef-radius-sm);
+  }
+
+  // Outline border (three pieces) + rounded corners
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing { border-color: var(--border-color); }
+  .mdc-notched-outline__leading  { border-radius: var(--ef-radius-sm) 0 0 var(--ef-radius-sm); }
+  .mdc-notched-outline__trailing { border-radius: 0 var(--ef-radius-sm) var(--ef-radius-sm) 0; }
+
+  // Hover (only when not focused / invalid)
+  .mat-mdc-text-field-wrapper:hover
+    .mdc-text-field:not(.mdc-text-field--focused):not(.mdc-text-field--invalid) {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing { border-color: var(--text-secondary); }
+  }
+
+  // Focus = brand colour, thicker
+  .mdc-text-field--focused {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing { border-color: var(--primary-color); border-width: 2px; }
+  }
+
+  // Invalid = danger colour
+  .mdc-text-field--invalid {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing { border-color: var(--danger-color); }
+  }
+
+  // Labels
+  .mdc-floating-label { color: var(--text-secondary); }
+  .mdc-text-field--focused .mdc-floating-label { color: var(--primary-color); }
+  .mdc-text-field--invalid .mdc-floating-label { color: var(--danger-color); }
+
+  // Input + textarea text
+  .mat-mdc-input-element,
+  .mdc-text-field__input {
+    color: var(--text-color);
+    caret-color: var(--primary-color);
+  }
+  .mat-mdc-input-element::placeholder { color: var(--text-secondary); opacity: .6; }
+
+  // Subscript (hint / error)
+  .mat-mdc-form-field-hint { color: var(--text-secondary); }
+  .mat-mdc-form-field-error { color: var(--danger-color); }
+
+  // Select
+  .mat-mdc-select-value,
+  .mat-mdc-select-value-text { color: var(--text-color); }
+  .mat-mdc-select-placeholder { color: var(--text-secondary); }
+  .mat-mdc-select-arrow { color: var(--text-secondary); }
+
+  // Datepicker toggle
+  .mat-datepicker-toggle .mat-mdc-icon-button { color: var(--text-secondary); }
+  .mat-datepicker-toggle-active { color: var(--primary-color); }
+
+  // Checkboxes adopt the brand colour
+  .mat-mdc-checkbox {
+    --mdc-checkbox-selected-icon-color: var(--primary-color);
+    --mdc-checkbox-selected-hover-icon-color: var(--primary-color);
+    --mdc-checkbox-selected-focus-icon-color: var(--primary-color);
+    --mdc-checkbox-selected-pressed-icon-color: var(--primary-color);
+    --mdc-checkbox-unselected-icon-color: var(--text-secondary);
+    --mdc-checkbox-unselected-hover-icon-color: var(--text-color);
+    .mdc-label { color: var(--text-color); }
+  }
+
+  // Chips (tags / keywords)
+  .mat-mdc-chip {
+    --mdc-chip-elevated-container-color: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    --mdc-chip-label-text-color: var(--primary-color);
+    border-radius: 999px;
+  }
+
+  // Plain text buttons read as secondary
+  .mat-mdc-button:not([color]) { color: var(--text-secondary); }
+}
+
+/* Select dropdown options (rendered in the global overlay) */
+::ng-deep .mat-mdc-select-panel {
+  background: var(--card-bg) !important;
+
+  .mat-mdc-option { color: var(--text-color); }
+  .mat-mdc-option:hover:not(.mdc-list-item--disabled),
+  .mat-mdc-option.mat-mdc-option-active { background: var(--hover-color); }
+  .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+    background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+    .mdc-list-item__primary-text { color: var(--primary-color); }
+  }
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    border-radius: var(--ef-radius-sm);
+    font-weight: 600;
+  }
+
+  // Primary action = filled brand button.
+  .mat-mdc-raised-button.mat-primary,
+  button[color="primary"] {
+    --mdc-protected-button-container-color: var(--primary-color);
+    --mdc-text-button-label-text-color: #fff;
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--primary-color) 70%, transparent);
+    &:hover { background: var(--primary-dark, var(--primary-color)); }
+    &[disabled] { opacity: .55; box-shadow: none; }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+    button { width: 100%; justify-content: center; }
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ── Error list ──────────────────────────────────────────────────────────── */
 .error-list {
-  background-color: #ffebee;
-  border: 1px solid #ffcdd2;
-  border-radius: 4px;
-  padding: 16px;
+  background: color-mix(in srgb, var(--danger-color) 8%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--danger-color) 35%, var(--border-color));
+  border-radius: var(--ef-radius-sm);
+  padding: 16px 18px;
   margin-bottom: 20px;
 }
 
@@ -506,298 +522,514 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #c62828;
-  font-weight: 500;
-  margin-bottom: 12px;
-  
-  mat-icon {
-    font-size: 20px;
-    height: 20px;
-    width: 20px;
-  }
+  color: var(--danger-color);
+  font-weight: 700;
+  margin-bottom: 10px;
+
+  mat-icon { font-size: 20px; height: 20px; width: 20px; }
 }
 
-.error-items {
-  margin: 0;
-  padding-left: 20px;
-}
-
+.error-items { margin: 0; padding-left: 22px; }
 .error-item {
-  color: #c62828;
+  color: var(--danger-color);
   margin-bottom: 4px;
   font-size: 14px;
-  
-  &:last-child {
-    margin-bottom: 0;
+  &:last-child { margin-bottom: 0; }
+}
+
+/* ── Organizations step ──────────────────────────────────────────────────── */
+.organizations-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  h3 { margin: 0 auto 0 0; font-size: 1.15rem; font-weight: 700; color: var(--text-color); }
+
+  .add-org-btn {
+    height: 44px;
+    border-radius: var(--ef-radius-sm);
+    font-weight: 600;
+    --mdc-protected-button-container-color: var(--primary-color);
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--primary-color) 70%, transparent);
+    &:hover { background: var(--primary-dark, var(--primary-color)); }
+  }
+
+  // Filter buttons drop to their own full-width row beneath the title/action.
+  + .filter-buttons,
+  .filter-buttons { flex-basis: 100%; }
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  button {
+    position: relative;
+    border-radius: 999px;
+    &.active { background: color-mix(in srgb, var(--primary-color) 12%, transparent); color: var(--primary-color); }
+    .filter-badge { position: absolute; top: -8px; right: -8px; }
   }
 }
 
-// Remove the .organizations-step wrapper and increase specificity by starting with the step content
+// The form now lives inside a dialog, so it has no box of its own.
+.organization-form {
+  .contact-section,
+  .location-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
 
-  .organizations-header {
-    display: flex;
-    justify-content: space-between;
+    h4 { margin: 0 0 14px; color: var(--text-secondary); font-weight: 700; }
+  }
+}
+
+/* ── Add/Edit Organization dialog ────────────────────────────────────────── */
+.org-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: var(--text-color);
+  .mat-icon { color: var(--primary-color); }
+}
+
+.org-dialog-actions {
+  padding: 12px 24px 16px;
+  gap: 10px;
+
+  button {
+    height: 44px;
+    border-radius: var(--ef-radius-sm);
+    font-weight: 600;
+    display: inline-flex;
     align-items: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-
-    h3 {
-      margin: 0;
-    }
+    gap: 6px;
   }
 
-  .filter-buttons {
+  button[color="primary"] {
+    background: var(--primary-color);
+    color: #fff;
+    &:hover { background: var(--primary-dark, var(--primary-color)); }
+    &[disabled] { opacity: .55; }
+  }
+}
+
+// Dialog surface (global panel class — rendered outside the component view).
+::ng-deep .org-dialog-panel {
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-shape: var(--ef-radius);
+    --mdc-dialog-container-color: var(--card-bg);
+    --mdc-dialog-subhead-color: var(--text-color);
+    --mdc-dialog-supporting-text-color: var(--text-color);
+  }
+  .mat-mdc-dialog-surface { background: var(--card-bg); }
+  .mat-mdc-dialog-content { max-height: 65vh; color: var(--text-color); padding-top: 8px; }
+}
+
+/* ── Custom list cards (organizations & additional details) ───────────────── */
+.list-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.list-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--border-color);
+  border-radius: var(--ef-radius-sm);
+  transition: transform .15s ease, box-shadow .18s ease;
+
+  &:hover { transform: translateY(-2px); box-shadow: var(--ef-shadow); }
+
+  // Accent by type
+  &.is-venue     { border-left-color: var(--info-color); }
+  &.is-organizer { border-left-color: var(--success-color); }
+  &.is-sponsor   { border-left-color: var(--warning-color); }
+  &.is-partner   { border-left-color: #9c27b0; }
+  &.is-primary   { background: color-mix(in srgb, var(--warning-color) 6%, var(--card-bg)); }
+
+  &__avatar {
+    flex: 0 0 auto;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
     display: flex;
-    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: #fff;
+    overflow: hidden;
+
+    &.avatar-primary   { background: var(--info-color); }
+    &.avatar-accent    { background: var(--warning-color); }
+    &.avatar-warn      { background: var(--danger-color); }
+    &.avatar-success   { background: var(--success-color); }
+    &.avatar-info      { background: var(--info-color); }
+    &.avatar-secondary { background: var(--text-secondary); }
+    &.avatar-default   { background: var(--text-secondary); }
+
+    // When an actual logo is present, show it in full (not cropped) on a clean
+    // rounded-square tile instead of a small coloured circle.
+    &.has-logo {
+      width: 84px;
+      height: 84px;
+      border-radius: var(--ef-radius-sm);
+      background: #fff;
+      border: 1px solid var(--border-color);
+      padding: 6px;
+    }
+
+    img { width: 100%; height: 100%; object-fit: contain; }
+  }
+
+  &__body { flex: 1 1 auto; min-width: 0; }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  &__name { font-weight: 700; font-size: 15px; color: var(--text-color); }
+
+  &__meta {
+    margin-top: 3px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  &__details {
+    margin-top: 8px;
+    p {
+      margin: 4px 0;
+      line-height: 1.45;
+      font-size: 14px;
+      color: var(--text-color);
+      strong { color: var(--text-secondary); margin-right: 6px; font-weight: 600; }
+      a { color: var(--primary-color); text-decoration: none; &:hover { text-decoration: underline; } }
+    }
+  }
+
+  &__actions {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 4px;
+  }
+}
+
+// Pill badges used inside list cards.
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--hover-color);
+  color: var(--text-secondary);
+
+  &--primary-flag { background: var(--warning-color); color: #fff;
+    mat-icon { font-size: 14px; width: 14px; height: 14px; } }
+
+  &.badge-primary   { background: color-mix(in srgb, var(--info-color) 16%, transparent);    color: var(--info-color); }
+  &.badge-accent    { background: color-mix(in srgb, var(--warning-color) 16%, transparent); color: #b25e00; }
+  &.badge-warn      { background: color-mix(in srgb, var(--danger-color) 16%, transparent);  color: var(--danger-color); }
+  &.badge-success   { background: color-mix(in srgb, var(--success-color) 16%, transparent); color: var(--success-color); }
+  &.badge-info      { background: color-mix(in srgb, var(--info-color) 16%, transparent);    color: var(--info-color); }
+  &.badge-secondary { background: var(--hover-color); color: var(--text-secondary); }
+  &.badge-default   { background: var(--hover-color); color: var(--text-secondary); }
+}
+
+// Square icon buttons for edit/delete on cards.
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--ef-radius-sm);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+
+  mat-icon { font-size: 19px; width: 19px; height: 19px; }
+
+  &:hover { background: var(--hover-color); color: var(--primary-color); border-color: var(--primary-color); }
+  &--danger:hover { color: var(--danger-color); border-color: var(--danger-color); }
+}
+
+/* ── Ticket tiers ────────────────────────────────────────────────────────── */
+.ticket-tiers-list { display: flex; flex-direction: column; gap: 14px; }
+
+.ticket-tier-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ef-radius-sm);
+
+  .tier-form .form-row { margin-bottom: 12px; }
+  .benefits-list h4 { font-size: .9rem; font-weight: 700; color: var(--text-color); margin-bottom: 8px; }
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--bg-color);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--ef-radius-sm);
+  color: var(--text-secondary);
+
+  .mat-icon,
+  .empty-icon {
+    font-size: 56px;
+    width: 56px;
+    height: 56px;
+    color: var(--border-color);
+    margin-bottom: 14px;
+  }
+
+  h4 { margin: 8px 0; color: var(--text-color); }
+  p { margin: 0 0 8px; color: var(--text-secondary); }
+  .hint { font-size: .9rem; opacity: .8; }
+}
+
+/* ── Media preview ───────────────────────────────────────────────────────── */
+.media-preview {
+  margin-top: 8px;
+
+  .image-preview {
+    display: flex;
+    gap: 12px;
     flex-wrap: wrap;
 
-    button {
-      position: relative;
-      
-      &.active {
-        background-color: rgba(0, 0, 0, 0.04);
-      }
+    .preview-item {
+      width: 110px;
+      height: 80px;
+      border-radius: var(--ef-radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
 
-      .filter-badge {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-      }
-    }
-  }
+      img { width: 100%; height: 100%; object-fit: cover; }
 
-  .organization-form {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    background: #f9f9f9;
-    border-radius: 8px;
-
-    .contact-section, .location-section {
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid #e0e0e0;
-
-      h4 {
-        margin-top: 0;
-        margin-bottom: 1rem;
-        color: #666;
-      }
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-  }
-
-  .organizations-list {
-    display: grid;
-    gap: 1rem;
-
-    .organization-card {
-      transition: all 0.3s ease;
-
-      &.primary-card {
-        border-left: 4px solid #ff9800;
-        background-color: #fff8e1;
-      }
-
-      &.venue-card {
-        border-left: 4px solid #2196f3;
-      }
-
-      &.organizer-card {
-        border-left: 4px solid #4caf50;
-      }
-
-      &.sponsor-card {
-        border-left: 4px solid #ff9800;
-      }
-
-      &.partner-card {
-        border-left: 4px solid #9c27b0;
-      }
-
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .organization-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
+      &.placeholder {
+        background: var(--bg-color);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
-        color: white;
-
-        &.avatar-primary { background-color: #2196f3; }
-        &.avatar-accent { background-color: #ff9800; }
-        &.avatar-warn { background-color: #f44336; }
-        &.avatar-success { background-color: #4caf50; }
-        &.avatar-info { background-color: #00bcd4; }
-        &.avatar-secondary { background-color: #9e9e9e; }
-
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          border-radius: 50%;
-        }
-      }
-
-      mat-card-title {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-
-        .primary-badge {
-          background-color: #ff9800;
-          color: white;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-
-          mat-icon {
-            font-size: 14px;
-            width: 14px;
-            height: 14px;
-          }
-        }
-
-        .type-badge {
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-
-          &.badge-primary { background-color: #e3f2fd; color: #1565c0; }
-          &.badge-accent { background-color: #fff3e0; color: #ef6c00; }
-          &.badge-warn { background-color: #ffebee; color: #c62828; }
-          &.badge-success { background-color: #e8f5e9; color: #2e7d32; }
-          &.badge-info { background-color: #e0f7fa; color: #006064; }
-          &.badge-secondary { background-color: #f5f5f5; color: #424242; }
-        }
-      }
-
-      mat-card-subtitle {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-      }
-
-      .organization-details {
-        p {
-          margin: 0.5rem 0;
-          line-height: 1.4;
-
-          strong {
-            color: #666;
-            margin-right: 0.5rem;
-          }
-
-          a {
-            color: #2196f3;
-            text-decoration: none;
-
-            &:hover {
-              text-decoration: underline;
-            }
-          }
-        }
+        color: var(--text-secondary);
+        .mat-icon { font-size: 24px; width: 24px; height: 24px; }
       }
     }
   }
 
-  .empty-state {
-    text-align: center;
-    padding: 3rem 1rem;
-    background: #f9f9f9;
-    border-radius: 8px;
+  @media (max-width: 768px) { .image-preview { justify-content: center; } }
+}
 
-    .empty-icon {
-      font-size: 64px;
-      width: 64px;
-      height: 64px;
-      color: #ccc;
-      margin-bottom: 1rem;
-    }
+::ng-deep .benefit-chip {
+  background: color-mix(in srgb, var(--primary-color) 14%, transparent) !important;
+  color: var(--primary-color) !important;
+}
 
-    h4 {
-      margin: 0.5rem 0;
-      color: #666;
-    }
+/* ── Review step ─────────────────────────────────────────────────────────── */
+.review-section h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 20px;
+}
 
-    p {
-      color: #999;
-      margin-bottom: 1.5rem;
-    }
-  }
+.review-card {
+  background: transparent;
+  box-shadow: none;
+}
 
-// You'll also need to add some general layout styles for the step
-.step-form {
+/* Review hero (banner one side, title & tags separate) */
+.ed-hero {
   display: grid;
-  gap: 2rem;
-  
-  @media (min-width: 1024px) {
-    grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  @media (max-width: 860px) { grid-template-columns: 1fr; }
+
+  &__media {
+    position: relative;
+    border-radius: var(--ef-radius);
+    overflow: hidden;
+    min-height: 240px;
+    box-shadow: var(--shadow-3, 0 10px 30px -12px rgba(0, 0, 0, .35));
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 55%, var(--primary-light) 100%);
   }
-  
-  .form-section {
-    &:first-child {
-      // First column styles
+
+  &__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    min-width: 0;
+    @media (max-width: 860px) { justify-content: flex-start; }
+  }
+
+  &__title {
+    margin: 0;
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--text-color);
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 14px;
+    color: var(--text-secondary);
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      .material-icons { font-size: 18px; opacity: .9; }
     }
-    
-
   }
+
+  &--no-image { grid-template-columns: 1fr; }
 }
 
-// Add form layout styles
-.form-row {
+.ed-badges { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.ed-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+
+  .material-icons { font-size: 16px; }
+  .ed-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+  }
+
+  &.status-published { background: var(--success-color); border-color: transparent; color: #fff; }
+  &.status-draft     { background: var(--warning-color); border-color: transparent; color: #4a3500; }
+  &.status-cancelled { background: var(--danger-color);  border-color: transparent; color: #fff; }
+  &.status-completed { background: var(--info-color);    border-color: transparent; color: #fff; }
+
+  &--on  { color: var(--text-color); .ed-dot { color: var(--success-color); } }
+  &--off { color: var(--text-secondary); .ed-dot { color: var(--text-secondary); } }
+
+  &--featured { background: #ffc107; border-color: transparent; color: #5a4200; }
+}
+
+.review-grid { display: flex; flex-direction: column; gap: 20px; }
+
+.review-item {
+  strong { display: block; font-weight: 700; color: var(--text-color); margin-bottom: 8px; }
+  p { color: var(--text-color); margin: 0; line-height: 1.5; }
+  ul { margin: 0; padding-left: 20px; li { color: var(--text-color); margin-bottom: 4px; } }
+}
+
+.organization-type-review {
+  margin-top: 12px;
+  h4 { margin: 0 0 10px; color: var(--text-color); font-weight: 700; }
+}
+
+.short-desc { color: var(--text-secondary); font-style: italic; margin-top: 4px; }
+.tier-benefits { font-size: .8rem; color: var(--text-secondary); margin-top: 4px; }
+.tags-review { margin-top: 8px; }
+
+.ticket-review { display: flex; flex-direction: column; gap: 8px; }
+.tier-review {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  
-  &.full-width {
-    width: 100%;
-  }
-  
-  &.half-width {
-    flex: 1;
-  }
-  
-  &.third-width {
-    flex: 1;
-  }
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ef-radius-sm);
+
+  .tier-name { font-weight: 700; color: var(--text-color); }
+  .tier-price { color: var(--primary-color); font-weight: 700; }
+  .tier-quantity { color: var(--text-secondary); font-size: .9rem; }
 }
 
-mat-form-field {
-  &.full-width {
-    width: 100%;
-  }
-  
-  &.half-width {
-    flex: 1;
-  }
-  
-  &.third-width {
-    flex: 1;
-  }
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .form-row { flex-direction: column; gap: 12px; }
+  .half-width, .third-width { width: 100%; flex-basis: 100%; }
+  .section-header { flex-direction: column; align-items: flex-start; }
 }
 
-.step-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
+/* ── Mobile ─────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .event-form-container { padding: 12px; }
+
+  .header-section {
+    .header-content h1 { font-size: 1.45rem; }
+    .header-content p { font-size: .85rem; }
+  }
+
+  // Compact stepper: numbered circles only, scroll horizontally if needed.
+  .event-stepper ::ng-deep .mat-horizontal-stepper-header-container {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px;
+  }
+  .event-stepper ::ng-deep .mat-step-header { padding: 8px; flex: 0 0 auto; }
+  .event-stepper ::ng-deep .mat-step-text-label { display: none; }
+  .event-stepper ::ng-deep .mat-stepper-horizontal-line { min-width: 10px; }
+
+  .step-form { padding: 14px; }
+  .form-section h3 { font-size: 1rem; }
+
+  // Org / detail list cards tighten up.
+  .list-card { padding: 12px; gap: 10px; }
+  .list-card__avatar { width: 52px; height: 52px; font-size: 24px; }
+  .list-card__avatar.has-logo { width: 60px; height: 60px; }
+  .list-card__name { font-size: 14px; }
+
+  // List header stacks; Add button + filters go full width.
+  .organizations-header {
+    h3 { margin: 0; flex-basis: 100%; }
+    .add-org-btn { width: 100%; justify-content: center; }
+  }
+  .filter-buttons { width: 100%; }
+
+  // Tag inputs stay comfortable to tap.
+  .ff-tags { min-height: 48px; }
+
+  // Dialog action buttons stack full width.
+  .org-dialog-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    button { width: 100%; justify-content: center; }
+  }
+  .org-dialog-title { font-size: 1.05rem; }
 }

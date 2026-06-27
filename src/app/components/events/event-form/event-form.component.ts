@@ -1,5 +1,6 @@
-import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatStepper, MatStepperModule } from '@angular/material/stepper';
@@ -23,7 +24,7 @@ import { MatSelectChange } from '@angular/material/select';
 // Import your models and enums
 import { EventDto, EventSponsorDto, EventDetailDto , getTypeDisplay, getTypeColor, getTypeIcon } from '../../../core/models/DTOs/event.DTO.model';
 import { EventType, EventStatus, OrganizationType, DetailType} from '../../../core/models/Enums/event.enums';
-import { EventService } from '../../../core/services/event.service';
+import { EventService, EventGroup } from '../../../core/services/event.service';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { OrganizationTypeDisplayPipe } from '../../../core/pipes/organization-type-display.pipe';
 import { getEnumKeysAndValues } from '../../../core/utility/enum-utils';
@@ -52,13 +53,18 @@ import { getEnumKeysAndValues } from '../../../core/utility/enum-utils';
     MatRadioModule,
     MatBadgeModule,
     OrganizationTypeDisplayPipe,
-    MatBadgeModule
+    MatBadgeModule,
+    MatDialogModule
   ],
   templateUrl: './event-form.component.html',
   styleUrls: ['./event-form.component.scss']
 })
 export class EventFormComponent implements OnInit, AfterViewInit {
   @ViewChild('stepper') stepper!: MatStepper;
+  @ViewChild('orgDialogTpl') orgDialogTpl!: TemplateRef<any>;
+  private orgDialogRef?: MatDialogRef<any>;
+  @ViewChild('detailDialogTpl') detailDialogTpl!: TemplateRef<any>;
+  private detailDialogRef?: MatDialogRef<any>;
 
   // Form groups
   basicInfoForm: FormGroup;
@@ -76,6 +82,11 @@ export class EventFormComponent implements OnInit, AfterViewInit {
   tagsArray: string[] = [];
   galleryArray: string[] = [];
   keywordsArray: string[] = [];
+
+  // Grouping (artist/tour). groupSelection: '' = none, '__new__' = create new, else an existing groupId.
+  eventGroups: EventGroup[] = [];
+  groupSelection: string = '';
+  newGroupName: string = '';
   organizations: EventSponsorDto[] = []; // Combined array for all types
   additionalDetails: any[] = [];
   coupons: any[] = [];
@@ -98,7 +109,7 @@ detailType = getEnumKeysAndValues(DetailType)
   isEditMode = false;
   isSubmitting = false;
   currentStep = 0;
-  totalSteps = 6; // Reduced steps
+  totalSteps = 4; // Basic, Organizations, Media & Links, Additional Details
   eventId: string | null = null;
   editingOrganizationIndex: number | null = null;
   editingDetailIndex: number | null = null;
@@ -113,7 +124,8 @@ detailType = getEnumKeysAndValues(DetailType)
     private eventService: EventService,
     private router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {
     this.basicInfoForm = this.createBasicInfoForm();
     this.organizationsForm = this.createOrganizationsForm();
@@ -125,6 +137,12 @@ detailType = getEnumKeysAndValues(DetailType)
   ngOnInit() {
     this.eventId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!this.eventId;
+
+    // Load existing groups for the group picker.
+    this.eventService.getGroups().subscribe({
+      next: (groups) => this.eventGroups = groups || [],
+      error: () => this.eventGroups = []
+    });
 
     if (this.isEditMode && this.eventId) {
       this.loadEventForEditing();
@@ -139,14 +157,54 @@ detailType = getEnumKeysAndValues(DetailType)
     }
   }
 
+  // ── Review hero helpers (mirror the event-details hero) ──────────────────
+  getStatusClass(status: EventStatus): string {
+    switch (status) {
+      case EventStatus.PUBLISHED: return 'status-published';
+      case EventStatus.DRAFT: return 'status-draft';
+      case EventStatus.CANCELLED: return 'status-cancelled';
+      case EventStatus.COMPLETED: return 'status-completed';
+      default: return 'status-draft';
+    }
+  }
+
+  getStatusIcon(status: EventStatus): string {
+    switch (status) {
+      case EventStatus.PUBLISHED: return 'check_circle';
+      case EventStatus.DRAFT: return 'edit_note';
+      case EventStatus.CANCELLED: return 'cancel';
+      case EventStatus.COMPLETED: return 'done_all';
+      default: return 'help';
+    }
+  }
+
+  getStatusText(status: EventStatus): string {
+    switch (status) {
+      case EventStatus.DRAFT: return 'Draft';
+      case EventStatus.PUBLISHED: return 'Published';
+      case EventStatus.COMPLETED: return 'Completed';
+      case EventStatus.CANCELLED: return 'Cancelled';
+      default: return 'Unknown';
+    }
+  }
+
+  handleImageError(event: any): void {
+    // Hide broken images so the gradient fallback shows instead of a broken icon.
+    if (event?.target) {
+      event.target.style.display = 'none';
+    }
+  }
+
   createBasicInfoForm(): FormGroup {
     return this.fb.group({
       title: ['', Validators.required],
       type: ['', Validators.required],
-      status: [EventStatus.DRAFT],
+      // Status, featured and cancellations are no longer editable in the UI —
+      // events are always Published, Featured and allow cancellations.
+      status: [EventStatus.PUBLISHED],
       description: ['', Validators.required],
       shortDescription: [''],
-      featured: [false],
+      featured: [true],
       isActive: [true],
       thumbnailImage: [''],
       bannerImage: [''],
@@ -194,21 +252,22 @@ detailType = getEnumKeysAndValues(DetailType)
   }
 
   createSettingsForm(): FormGroup {
+    // Settings are no longer edited in the UI — keep them all enabled in the background.
     return this.fb.group({
       maxTicketsPerOrder: [10, [Validators.required, Validators.min(1)]],
       allowCancellations: [true],
       cancellationDeadline: [24],
-      requireApproval: [false],
+      requireApproval: [true],
       showRemainingTickets: [true],
       ageMin: [0],
       ageMax: [null],
-      enableWaitlist: [false],
+      enableWaitlist: [true],
       waitlistCapacity: [100],
       sendReminders: [true],
       reminderDaysBefore: [3],
       collectAttendeeInfo: [true],
       allowTicketTransfers: [true],
-      allowResales: [false],
+      allowResales: [true],
       requiredFields: ['FullName,Email'],
       dressCode: [''],
       termsAndConditions: [''],
@@ -261,23 +320,28 @@ detailType = getEnumKeysAndValues(DetailType)
     this.basicInfoForm.patchValue({
       title: eventData.title,
       type: eventData.type,
-      status: eventData.status,
+      // Always Published / Featured / cancellations-allowed (no longer UI-editable).
+      status: EventStatus.PUBLISHED,
       description: eventData.description,
       shortDescription: eventData.shortDescription || '',
-      featured: eventData.featured || false,
+      featured: true,
       isActive: eventData.isActive,
       thumbnailImage: eventData.thumbnailImage || '',
       bannerImage: eventData.bannerImage || '',
       maxTicketsPerOrder: eventData.maxTicketsPerOrder || 10,
-      allowCancellations: eventData.allowCancellations || true,
-      startDate: eventData.startDate,
-      endDate: eventData.endDate,
+      allowCancellations: true,
+      startDate: this.toDateInput(eventData.startDate),
+      endDate: this.toDateInput(eventData.endDate),
       startTime: this.formatTime(eventData.startTime),
       endTime: this.formatTime(eventData.endTime),
       gateOpenTime : this.formatTime(eventData.gateOpenTime),
       timezone: 'Europe/London',
     });
 
+
+    // Preselect the event's group (if any) in the picker.
+    this.groupSelection = (eventData as any).groupId || '';
+    this.newGroupName = '';
 
     // Populate organizations (all types combined)
     this.organizations = response.sponsors || [];
@@ -326,9 +390,26 @@ detailType = getEnumKeysAndValues(DetailType)
     return time.split(':').slice(0, 2).join(':');
   }
 
+  // Format a date value to 'yyyy-MM-dd' for native <input type="date">.
+  toDateInput(value: string | Date | null | undefined): string {
+    if (!value) return '';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  // True when a control is invalid and the user has interacted with it.
+  // Used to toggle the red border / error text on custom form controls.
+  fieldInvalid(form: FormGroup, name: string): boolean {
+    const c = form.get(name);
+    return !!c && c.invalid && (c.touched || c.dirty);
+  }
+
   // Organization Management Methods
   editOrganization(index: number): void {
-    const organization = this.organizations[index];
+    const organization = this.organizations[index] as any;
+    this.organizationsForm.reset(); // clear any stale type-specific values first
     this.organizationsForm.patchValue({
       id: organization.id,
       type: organization.type,
@@ -346,9 +427,42 @@ detailType = getEnumKeysAndValues(DetailType)
       country: organization.country || '',
       postalCode: organization.postalCode || '',
       mapUrl: organization.mapUrl || '',
+      // These were previously dropped on edit, losing the values.
+      capacity: organization.capacity ?? null,
+      registrationNumber: organization.registrationNumber || '',
       isPrimary: organization.isPrimary || false
     });
     this.editingOrganizationIndex = index;
+    this.openOrgDialog();
+  }
+
+  // Open the Add form in a dialog (fresh form).
+  openAddOrganization(type?: OrganizationType): void {
+    this.resetOrganizationForm();
+    if (type != null) {
+      this.organizationsForm.patchValue({ type });
+    }
+    this.openOrgDialog();
+  }
+
+  private openOrgDialog(): void {
+    this.orgDialogRef = this.dialog.open(this.orgDialogTpl, {
+      width: '720px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      restoreFocus: true,
+      panelClass: 'org-dialog-panel'
+    });
+    // Reset edit state if the dialog is dismissed (backdrop / ESC) without saving.
+    this.orgDialogRef.afterClosed().subscribe(() => {
+      this.editingOrganizationIndex = null;
+    });
+  }
+
+  cancelOrgDialog(): void {
+    this.orgDialogRef?.close();
+    this.resetOrganizationForm();
   }
 
   saveOrganization(): void {
@@ -407,8 +521,9 @@ detailType = getEnumKeysAndValues(DetailType)
       this.eventService.addEventOrganization(this.eventId, organizationData).subscribe({
         next: (newOrganization) => {
           this.organizations.push(newOrganization);
-          this.showSuccess(`${organizationData.type} created successfully`);
+          this.showSuccess(`${getTypeDisplay(organizationData.type)} created successfully`);
           this.resetOrganizationForm();
+          this.orgDialogRef?.close();
         },
         error: (error) => {
           this.handleApiError(error);
@@ -429,8 +544,9 @@ detailType = getEnumKeysAndValues(DetailType)
         hasLocation: !!(organizationData.address || organizationData.city || organizationData.country)
       };
       this.organizations.push(newOrganization);
-      this.showSuccess(`${organizationData.type} added locally`);
+      this.showSuccess(`${getTypeDisplay(organizationData.type)} added`);
       this.resetOrganizationForm();
+      this.orgDialogRef?.close();
     }
   }
 
@@ -446,8 +562,9 @@ detailType = getEnumKeysAndValues(DetailType)
             typeColor: getTypeColor(updatedOrganization.type),
             typeIcon: getTypeIcon(updatedOrganization.type)
           };
-          this.showSuccess(`${organizationData.type} updated successfully`);
+          this.showSuccess(`${getTypeDisplay(organizationData.type)} updated successfully`);
           this.resetOrganizationForm();
+          this.orgDialogRef?.close();
         },
         error: (error) => {
           this.handleApiError(error);
@@ -461,8 +578,9 @@ detailType = getEnumKeysAndValues(DetailType)
         typeColor: getTypeColor(organizationData.type),
         typeIcon: getTypeIcon(organizationData.type)
       };
-      this.showSuccess(`${organizationData.type} updated locally`);
+      this.showSuccess(`${getTypeDisplay(organizationData.type)} updated`);
       this.resetOrganizationForm();
+      this.orgDialogRef?.close();
     }
   }
 
@@ -472,7 +590,7 @@ detailType = getEnumKeysAndValues(DetailType)
       this.eventService.deleteEventOrganization(this.eventId, organization.id).subscribe({
         next: () => {
           this.organizations.splice(index, 1);
-          this.showSuccess(`${organization.type} deleted successfully`);
+          this.showSuccess(`${getTypeDisplay(organization.type)} deleted successfully`);
         },
         error: (error) => {
           this.handleApiError(error);
@@ -480,7 +598,7 @@ detailType = getEnumKeysAndValues(DetailType)
       });
     } else {
       this.organizations.splice(index, 1);
-      this.showSuccess(`${organization.type} removed locally`);
+      this.showSuccess(`${getTypeDisplay(organization.type)} removed`);
     }
   }
 
@@ -509,14 +627,18 @@ detailType = getEnumKeysAndValues(DetailType)
     this.editingOrganizationIndex = null;
   }
 
-  // Filter organizations by type
+  // Display name for an organization type (the enum is numeric, so never show the raw value).
+  getOrgTypeName(type: OrganizationType | 'All' | null | undefined): string {
+    if (type === 'All' || type == null) return 'Organization';
+    return getTypeDisplay(type);
+  }
+
+  // Filter organizations by type. Returns a sorted COPY so we never mutate the source array.
   getFilteredOrganizations(): EventSponsorDto[] {
-    if (this.organizationFilter === 'All') {
-      return this.organizations.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-    }
-    return this.organizations
-      .filter(org => org.type === this.organizationFilter)
-      .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    const list = this.organizationFilter === 'All'
+      ? [...this.organizations]
+      : this.organizations.filter(org => org.type === this.organizationFilter);
+    return list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
   }
 
   // Get count by type
@@ -540,6 +662,7 @@ detailType = getEnumKeysAndValues(DetailType)
   // Additional Details Management (keep existing)
   editAdditionalDetail(index: number): void {
     const detail = this.additionalDetails[index];
+    this.additionalDetailsForm.reset();
     this.additionalDetailsForm.patchValue({
       id: detail.id,
       title: detail.title,
@@ -549,6 +672,41 @@ detailType = getEnumKeysAndValues(DetailType)
       isVisible: detail.isVisible
     });
     this.editingDetailIndex = index;
+    this.openDetailDialog();
+  }
+
+  openAddDetail(): void {
+    this.resetAdditionalDetailForm();
+    this.openDetailDialog();
+  }
+
+  private openDetailDialog(): void {
+    this.detailDialogRef = this.dialog.open(this.detailDialogTpl, {
+      width: '640px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      autoFocus: false,
+      restoreFocus: true,
+      panelClass: 'org-dialog-panel'
+    });
+    this.detailDialogRef.afterClosed().subscribe(() => {
+      this.editingDetailIndex = null;
+    });
+  }
+
+  cancelDetailDialog(): void {
+    this.detailDialogRef?.close();
+    this.resetAdditionalDetailForm();
+  }
+
+  // Final step: finish editing and return to the event details (no separate review step).
+  finishEvent(): void {
+    this.showSuccess('Event saved successfully');
+    if (this.isEditMode && this.eventId) {
+      this.router.navigate(['/admin/events', this.eventId]);
+    } else {
+      this.router.navigate(['/admin/events']);
+    }
   }
 
   saveAdditionalDetail(): void {
@@ -581,6 +739,7 @@ detailType = getEnumKeysAndValues(DetailType)
           this.additionalDetails.push(newDetail);
           this.showSuccess('Detail created successfully');
           this.resetAdditionalDetailForm();
+          this.detailDialogRef?.close();
         },
         error: (error) => {
           this.handleApiError(error);
@@ -593,8 +752,9 @@ detailType = getEnumKeysAndValues(DetailType)
         eventId: this.eventId || ''
       };
       this.additionalDetails.push(newDetail);
-      this.showSuccess('Detail added locally');
+      this.showSuccess('Detail added');
       this.resetAdditionalDetailForm();
+      this.detailDialogRef?.close();
     }
   }
 
@@ -606,6 +766,7 @@ detailType = getEnumKeysAndValues(DetailType)
           this.additionalDetails[index] = updatedDetail;
           this.showSuccess('Detail updated successfully');
           this.resetAdditionalDetailForm();
+          this.detailDialogRef?.close();
         },
         error: (error) => {
           this.handleApiError(error);
@@ -613,8 +774,9 @@ detailType = getEnumKeysAndValues(DetailType)
       });
     } else {
       this.additionalDetails[index] = { ...this.additionalDetails[index], ...detailData };
-      this.showSuccess('Detail updated locally');
+      this.showSuccess('Detail updated');
       this.resetAdditionalDetailForm();
+      this.detailDialogRef?.close();
     }
   }
 
@@ -653,12 +815,119 @@ detailType = getEnumKeysAndValues(DetailType)
     const titles = [
       'Basic Information',
       'Organizations', // Combined step
-      'Settings',
       'Media & Links',
-      'Additional Details',
-      'Review & Submit'
+      'Additional Details'
     ];
     return titles[step] || 'Unknown Step';
+  }
+
+  // Back button: return to the event's details in edit mode, otherwise the events list.
+  goBack(): void {
+    if (this.isEditMode && this.eventId) {
+      this.router.navigate(['/admin/events', this.eventId]);
+    } else {
+      this.router.navigate(['/admin/events']);
+    }
+  }
+
+  // Builds the event payload from the basic-info form. Images live here too
+  // (their inputs are rendered in the Media & Links step but bound to basicInfoForm).
+  private buildEventDto(): any {
+    const formData = this.basicInfoForm.value;
+    const group = this.resolveGroup();
+    return {
+      title: formData.title,
+      description: formData.description,
+      shortDescription: formData.shortDescription,
+      type: formData.type,
+      // Always Published / Featured / cancellations-allowed (no longer UI-editable).
+      status: EventStatus.PUBLISHED,
+      isActive: formData.isActive,
+      featured: true,
+      // Send null (not '') for empty URLs: the API's [Url] validation rejects empty strings with a 400.
+      thumbnailImage: formData.thumbnailImage?.trim() || null,
+      bannerImage: formData.bannerImage?.trim() || null,
+      maxTicketsPerOrder: formData.maxTicketsPerOrder,
+      allowCancellations: true,
+      groupId: group.groupId,
+      groupName: group.groupName,
+      startDate: new Date(formData.startDate),
+      endDate: formData.endDate ? new Date(formData.endDate) : new Date(formData.startDate),
+      startTime: this.convertToTimeSpan(formData.startTime),
+      endTime: this.convertToTimeSpan(formData.endTime),
+      gateOpenTime: this.convertToTimeSpan(formData.gateOpenTime)
+    };
+  }
+
+  // Resolve the chosen group into { groupId, groupName }.
+  private resolveGroup(): { groupId: string | null; groupName: string | null } {
+    if (this.groupSelection === '__new__') {
+      const name = (this.newGroupName || '').trim();
+      if (!name) return { groupId: null, groupName: null };
+      // A brand-new group gets a fresh id.
+      const id = (typeof crypto !== 'undefined' && (crypto as any).randomUUID)
+        ? (crypto as any).randomUUID()
+        : this.fallbackUuid();
+      return { groupId: id, groupName: name };
+    }
+    if (this.groupSelection) {
+      const existing = this.eventGroups.find(g => g.groupId === this.groupSelection);
+      return { groupId: this.groupSelection, groupName: existing?.groupName || null };
+    }
+    return { groupId: null, groupName: null };
+  }
+
+  private fallbackUuid(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  // Builds the settings payload. Settings are no longer edited in the UI — they're
+  // kept enabled by default in the background — but Tags (which IS used) ride along here.
+  private buildSettingsDto(): any {
+    const formData = this.settingsForm.value;
+    return {
+      ageMin: formData.ageMin || 0,
+      ageMax: formData.ageMax || null,
+      tags: this.tagsArray.join(','),
+      enableWaitlist: formData.enableWaitlist,
+      waitlistCapacity: formData.waitlistCapacity,
+      sendReminders: formData.sendReminders,
+      reminderDaysBefore: formData.reminderDaysBefore,
+      collectAttendeeInfo: formData.collectAttendeeInfo,
+      requireApproval: formData.requireApproval,
+      allowTicketTransfers: formData.allowTicketTransfers,
+      allowResales: formData.allowResales,
+      requiredFields: formData.requiredFields,
+      cancellationDeadline: formData.cancellationDeadline,
+      showRemainingTickets: formData.showRemainingTickets
+    };
+  }
+
+  // Media & Links step: persists the images (on the event) and the tags/settings,
+  // then advances. Replaces the old separate Settings step.
+  saveMediaStep(): void {
+    if (!this.isEditMode || !this.eventId) {
+      this.stepper.next();
+      return;
+    }
+
+    this.clearErrors();
+    this.eventService.updateEvent(this.eventId, this.buildEventDto()).subscribe({
+      next: () => {
+        this.eventService.updateEventSettings(this.eventId!, this.buildSettingsDto()).subscribe({
+          next: () => {
+            this.showSuccess('Media & tags saved successfully');
+            this.stepper.next();
+          },
+          error: (error) => this.handleApiError(error)
+        });
+      },
+      error: (error) => this.handleApiError(error)
+    });
   }
 
   // Save Step 1: Basic Info
@@ -669,25 +938,7 @@ detailType = getEnumKeysAndValues(DetailType)
     }
 
     this.clearErrors();
-    const formData = this.basicInfoForm.value;
-    const eventDto: any = {
-      title: formData.title,
-      description: formData.description,
-      shortDescription: formData.shortDescription,
-      type: formData.type,
-      status: formData.status,
-      isActive: formData.isActive,
-      featured: formData.featured,
-      thumbnailImage: formData.thumbnailImage,
-      bannerImage: formData.bannerImage,
-      maxTicketsPerOrder: formData.maxTicketsPerOrder,
-      allowCancellations: formData.allowCancellations,
-      startDate: new Date(formData.startDate),
-      endDate: formData.endDate ? new Date(formData.endDate) : new Date(formData.startDate),
-      startTime: this.convertToTimeSpan(formData.startTime),
-      endTime: this.convertToTimeSpan(formData.endTime),
-      gateOpenTime: this.convertToTimeSpan(formData.gateOpenTime)
-    };
+    const eventDto = this.buildEventDto();
 
     if (this.isEditMode) {
       this.eventService.updateEvent(this.eventId!, eventDto).subscribe({
@@ -878,6 +1129,14 @@ removeGalleryImage(index: number): void {
   this.galleryArray.splice(index, 1);
 }
 
+addGalleryImageInput(input: HTMLInputElement): void {
+  const value = (input.value || '').trim();
+  if (value && !this.galleryArray.includes(value)) {
+    this.galleryArray.push(value);
+  }
+  input.value = '';
+}
+
 // Keyword Management
 addKeyword(event: any): void {
   const value = (event.value || '').trim();
@@ -891,6 +1150,14 @@ addKeyword(event: any): void {
 
 removeKeyword(index: number): void {
   this.keywordsArray.splice(index, 1);
+}
+
+addKeywordInput(input: HTMLInputElement): void {
+  const value = (input.value || '').trim();
+  if (value && !this.keywordsArray.includes(value)) {
+    this.keywordsArray.push(value);
+  }
+  input.value = '';
 }
 
 // Tag Management (if not already there)
@@ -909,6 +1176,15 @@ removeTag(tag: string): void {
   if (index >= 0) {
     this.tagsArray.splice(index, 1);
   }
+}
+
+// Add a tag from a native text input (custom tags control).
+addTagInput(input: HTMLInputElement): void {
+  const value = (input.value || '').trim();
+  if (value && !this.tagsArray.includes(value)) {
+    this.tagsArray.push(value);
+  }
+  input.value = '';
 }
 
 }

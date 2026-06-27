@@ -25,6 +25,12 @@ export interface ToggleResponse {
   featured?: boolean;
 }
 
+export interface EventGroup {
+  groupId: string;
+  groupName: string;
+  eventCount: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -36,8 +42,13 @@ export class EventService {
   // GET: Get all events (list view)
   getEvents(filter?: EventFilter): Observable<EventDto[]> {
     let params = this.buildFilterParams(filter);
-    
+
     return this.http.get<EventDto[]>(this.baseUrl, { params });
+  }
+
+  // GET: distinct artist/tour groups (for the group picker)
+  getGroups(): Observable<EventGroup[]> {
+    return this.http.get<EventGroup[]>(`${this.baseUrl}/groups`);
   }
 
   // GET: Get single event by ID
