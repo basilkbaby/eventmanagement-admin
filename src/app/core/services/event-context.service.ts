@@ -34,7 +34,9 @@ export class EventContextService {
 
   loadEvents(): void {
     this.isLoading.set(true);
-    this.eventService.getEvents({ isActive: true }).subscribe({
+    // Admins manage active + inactive events, so don't filter by isActive here.
+    // (The public site hides inactive events via the separate /Event endpoints.)
+    this.eventService.getEvents().subscribe({
       next: (events) => {
         const sorted = [...events].sort((a, b) =>
           new Date(b.startDate).getTime() - new Date(a.startDate).getTime()

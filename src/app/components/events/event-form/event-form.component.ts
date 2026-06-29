@@ -108,6 +108,7 @@ detailType = getEnumKeysAndValues(DetailType)
   // State
   isEditMode = false;
   isSubmitting = false;
+  saving = false; // true while a step's save/continue request is in flight
   currentStep = 0;
   totalSteps = 4; // Basic, Organizations, Media & Links, Additional Details
   eventId: string | null = null;
@@ -143,6 +144,10 @@ detailType = getEnumKeysAndValues(DetailType)
       next: (groups) => this.eventGroups = groups || [],
       error: () => this.eventGroups = []
     });
+
+    // Keep the organization form's required fields in sync with the selected type.
+    this.applyOrgTypeValidators();
+    this.organizationsForm.get('type')?.valueChanges.subscribe(() => this.applyOrgTypeValidators());
 
     if (this.isEditMode && this.eventId) {
       this.loadEventForEditing();
@@ -209,6 +214,7 @@ detailType = getEnumKeysAndValues(DetailType)
       thumbnailImage: [''],
       bannerImage: [''],
       maxTicketsPerOrder: [10, [Validators.required, Validators.min(1)]],
+      startingFromPrice: [''],
       allowCancellations: [true],
       startDate: ['', Validators.required],
       endDate: [''],
@@ -329,6 +335,7 @@ detailType = getEnumKeysAndValues(DetailType)
       thumbnailImage: eventData.thumbnailImage || '',
       bannerImage: eventData.bannerImage || '',
       maxTicketsPerOrder: eventData.maxTicketsPerOrder || 10,
+      startingFromPrice: eventData.startingFromPrice || '',
       allowCancellations: true,
       startDate: this.toDateInput(eventData.startDate),
       endDate: this.toDateInput(eventData.endDate),
@@ -407,8 +414,10 @@ detailType = getEnumKeysAndValues(DetailType)
   }
 
   // Organization Management Methods
-  editOrganization(index: number): void {
-    const organization = this.organizations[index] as any;
+  // Takes the org object (not a list index) — the list is sorted/filtered, so an
+  // index from the displayed list would point at the wrong org in this.organizations.
+  editOrganization(organization: any): void {
+    const index = this.organizations.indexOf(organization);
     this.organizationsForm.reset(); // clear any stale type-specific values first
     this.organizationsForm.patchValue({
       id: organization.id,
@@ -489,7 +498,8 @@ detailType = getEnumKeysAndValues(DetailType)
     // Add contact info for Organizer and Venue types
     if (type === OrganizationType.Organizer || type === OrganizationType.Venue) {
       organizationData.contactPerson = formData.contactPerson || '';
-      organizationData.contactEmail = formData.contactEmail || '';
+      // Send null (not '') for empty email — the API's [EmailAddress] rejects an empty string.
+      organizationData.contactEmail = formData.contactEmail?.trim() || null;
       organizationData.contactPhone = formData.contactPhone || '';
       organizationData.address = formData.address || '';
       organizationData.city = formData.city || '';
@@ -518,7 +528,7 @@ detailType = getEnumKeysAndValues(DetailType)
 
   private createOrganization(organizationData: any): void {
     if (this.isEditMode && this.eventId) {
-      this.eventService.addEventOrganization(this.eventId, organizationData).subscribe({
+      this.eventService.addEventOrganization(this.eventId, this.sanitizeOrg(organizationData)).subscribe({
         next: (newOrganization) => {
           this.organizations.push(newOrganization);
           this.showSuccess(`${getTypeDisplay(organizationData.type)} created successfully`);
@@ -553,7 +563,7 @@ detailType = getEnumKeysAndValues(DetailType)
   private updateOrganization(index: number, organizationData: any): void {
     const organizationId = this.organizations[index].id;
     if (organizationId && this.eventId) {
-      this.eventService.updateEventOrganization(this.eventId, organizationId, organizationData).subscribe({
+      this.eventService.updateEventOrganization(this.eventId, organizationId, this.sanitizeOrg(organizationData)).subscribe({
         next: (updatedOrganization) => {
           this.organizations[index] = {
             ...this.organizations[index],
@@ -584,8 +594,9 @@ detailType = getEnumKeysAndValues(DetailType)
     }
   }
 
-  deleteOrganization(index: number): void {
-    const organization = this.organizations[index];
+  deleteOrganization(organization: any): void {
+    const index = this.organizations.indexOf(organization);
+    if (index < 0) return;
     if (organization.id && this.eventId) {
       this.eventService.deleteEventOrganization(this.eventId, organization.id).subscribe({
         next: () => {
@@ -648,15 +659,36 @@ detailType = getEnumKeysAndValues(DetailType)
   }
 
   // Check if form should show location fields
-  showLocationFields(): boolean {
-    const type = this.organizationsForm.get('type')?.value;
-    return type === OrganizationType.Venue || type === OrganizationType.Organizer;
+  // Type helpers (coerce to number — the select value can arrive as a string).
+  isVenue(): boolean {
+    return Number(this.organizationsForm.get('type')?.value) === OrganizationType.Venue;
+  }
+  isOrganizer(): boolean {
+    return Number(this.organizationsForm.get('type')?.value) === OrganizationType.Organizer;
   }
 
-  // Check if form should show contact fields
+  // Location details apply to a Venue. Contact details apply to a Venue or an Organizer.
+  showLocationFields(): boolean {
+    return this.isVenue();
+  }
   showContactFields(): boolean {
-    const type = this.organizationsForm.get('type')?.value;
-    return type === OrganizationType.Venue || type === OrganizationType.Organizer;
+    return this.isVenue() || this.isOrganizer();
+  }
+
+  // Apply validators that depend on the selected organization type. Called whenever
+  // the type changes (and on reset/edit), so the form's required fields match the type.
+  applyOrgTypeValidators(): void {
+    const f = this.organizationsForm;
+    const setV = (ctrl: string, validators: any[]) => {
+      const c = f.get(ctrl);
+      c?.setValidators(validators);
+      c?.updateValueAndValidity({ emitEvent: false });
+    };
+
+    setV('name', [Validators.required]);                                   // always required
+    setV('city', this.isVenue() ? [Validators.required] : []);            // a venue needs a location
+    // Only an organizer must supply a contact email. A venue's contact details are fully optional.
+    setV('contactEmail', this.isOrganizer() ? [Validators.required, Validators.email] : []);
   }
 
   // Additional Details Management (keep existing)
@@ -701,6 +733,7 @@ detailType = getEnumKeysAndValues(DetailType)
 
   // Final step: finish editing and return to the event details (no separate review step).
   finishEvent(): void {
+    this.saving = true;
     this.showSuccess('Event saved successfully');
     if (this.isEditMode && this.eventId) {
       this.router.navigate(['/admin/events', this.eventId]);
@@ -851,6 +884,7 @@ detailType = getEnumKeysAndValues(DetailType)
       allowCancellations: true,
       groupId: group.groupId,
       groupName: group.groupName,
+      startingFromPrice: formData.startingFromPrice?.trim() || null,
       startDate: new Date(formData.startDate),
       endDate: formData.endDate ? new Date(formData.endDate) : new Date(formData.startDate),
       startTime: this.convertToTimeSpan(formData.startTime),
@@ -916,17 +950,19 @@ detailType = getEnumKeysAndValues(DetailType)
     }
 
     this.clearErrors();
+    this.saving = true;
     this.eventService.updateEvent(this.eventId, this.buildEventDto()).subscribe({
       next: () => {
         this.eventService.updateEventSettings(this.eventId!, this.buildSettingsDto()).subscribe({
           next: () => {
+            this.saving = false;
             this.showSuccess('Media & tags saved successfully');
             this.stepper.next();
           },
-          error: (error) => this.handleApiError(error)
+          error: (error) => { this.saving = false; this.handleApiError(error); }
         });
       },
-      error: (error) => this.handleApiError(error)
+      error: (error) => { this.saving = false; this.handleApiError(error); }
     });
   }
 
@@ -939,53 +975,74 @@ detailType = getEnumKeysAndValues(DetailType)
 
     this.clearErrors();
     const eventDto = this.buildEventDto();
+    this.saving = true;
 
     if (this.isEditMode) {
       this.eventService.updateEvent(this.eventId!, eventDto).subscribe({
         next: () => {
+          this.saving = false;
           this.showSuccess('Basic information saved successfully');
           this.stepper.next();
         },
         error: (error) => {
+          this.saving = false;
           this.handleApiError(error);
         }
       });
     } else {
       this.eventService.createEvent(eventDto).subscribe({
         next: (eventId) => {
+          this.saving = false;
           this.eventId = eventId;
           this.isEditMode = true;
           this.showSuccess('Event created successfully');
           this.stepper.next();
         },
         error: (error) => {
+          this.saving = false;
           this.handleApiError(error);
         }
       });
     }
   }
 
+  // Normalise an org before sending: empty email/URL fields must be null, since the API's
+  // [EmailAddress] and [Url] validators reject an empty string ('').
+  private sanitizeOrg(org: any): any {
+    const blankToNull = (v: any) => (typeof v === 'string' && v.trim() === '') ? null : v;
+    return {
+      ...org,
+      contactEmail: blankToNull(org.contactEmail),
+      website: blankToNull(org.website),
+      logoUrl: blankToNull(org.logoUrl),
+      mapUrl: blankToNull(org.mapUrl)
+    };
+  }
+
   // Save Organizations
   saveOrganizations(): void {
     if (this.isEditMode && this.eventId) {
+      this.saving = true;
       // Save all organizations to API
       const organizationPromises = this.organizations.map(org => {
+        const payload = this.sanitizeOrg(org);
         if (org.id) {
-          return this.eventService.updateEventOrganization(this.eventId!, org.id, org).toPromise();
+          return this.eventService.updateEventOrganization(this.eventId!, org.id, payload).toPromise();
         } else {
-          return this.eventService.addEventOrganization(this.eventId!, org).toPromise();
+          return this.eventService.addEventOrganization(this.eventId!, payload).toPromise();
         }
       });
 
       Promise.all(organizationPromises).then(() => {
+        this.saving = false;
         this.showSuccess('Organizations saved successfully');
         this.stepper.next();
       }).catch(error => {
+        this.saving = false;
         this.handleApiError(error);
       });
     } else {
       // For new events, just proceed
-      this.showSuccess('Organizations saved locally');
       this.stepper.next();
     }
   }

@@ -96,8 +96,8 @@ export interface CreateRowConfigRequest {
   rowNumberingType: RowNumberingType;
   skipRowLetters: string;
   hasColumnGap: boolean;
-  gapAfterColumn: number;
-  gapSize: number;
+  gapAfterColumn: number | null;
+  gapSize: number | null;
   gapColumns: string;
 }
 
@@ -109,6 +109,14 @@ export interface UpdateRowConfigRequest {
   type: string;
   customPrice: number;
   color: string;
+  blockLetter: string;
+  numberingDirection: string;
+  rowNumberingType: RowNumberingType;
+  skipRowLetters: string;
+  hasColumnGap: boolean;
+  gapAfterColumn: number | null;
+  gapSize: number | null;
+  gapColumns: string;
 }
 
 @Injectable({ providedIn: 'root' })

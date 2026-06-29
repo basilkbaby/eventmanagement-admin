@@ -12,7 +12,7 @@
     </div>
 
     <!-- Progress Stepper -->
-    <mat-stepper linear #stepper class="event-stepper">
+    <mat-stepper #stepper class="event-stepper">
 
         <!-- Step 1: Basic Information -->
         <mat-step [stepControl]="basicInfoForm">
@@ -160,7 +160,7 @@
                 </div>
 
                 <div class="form-row">
-                    <div class="ff-field full-width">
+                    <div class="ff-field half-width">
                         <label class="ff-label">Max Tickets Per Order <span class="req">*</span></label>
                         <input type="number" class="ff-control" formControlName="maxTicketsPerOrder" min="1"
                             [class.is-invalid]="fieldInvalid(basicInfoForm, 'maxTicketsPerOrder')">
@@ -173,6 +173,12 @@
                             Minimum 1 ticket per order
                         </div>
                     </div>
+
+                    <div class="ff-field half-width">
+                        <label class="ff-label">Price starting from</label>
+                        <input class="ff-control" formControlName="startingFromPrice" placeholder="e.g. £20">
+                        <div class="ff-hint">Shown as "Tickets from …" on event cards.</div>
+                    </div>
                 </div>
 
                 <div class="form-row">
@@ -184,9 +190,10 @@
             </form>
 
             <div class="step-actions">
-                <button mat-button (click)="saveBasicInfo()" [disabled]="!basicInfoForm.valid" color="primary">
-                    Save & Continue
-                    <mat-icon>arrow_forward</mat-icon>
+                <button mat-raised-button color="primary"
+                        (click)="saveBasicInfo()" [disabled]="!basicInfoForm.valid || saving">
+                    <ng-container *ngIf="!saving">Continue <mat-icon>arrow_forward</mat-icon></ng-container>
+                    <span class="btn-saving" *ngIf="saving"><mat-spinner diameter="18"></mat-spinner> Saving…</span>
                 </button>
             </div>
         </mat-step>
@@ -277,15 +284,33 @@
                                 </div>
 
                                 <div class="ff-field third-width">
-                                    <label class="ff-label">Contact Email</label>
+                                    <label class="ff-label">Contact Email <span class="req" *ngIf="isOrganizer()">*</span></label>
                                     <input type="email" class="ff-control" formControlName="contactEmail"
-                                        placeholder="contact@example.com">
+                                        placeholder="contact@example.com"
+                                        [class.is-invalid]="fieldInvalid(organizationsForm, 'contactEmail')">
+                                    <div class="ff-error"
+                                        *ngIf="organizationsForm.get('contactEmail')?.touched && organizationsForm.get('contactEmail')?.hasError('required')">
+                                        Contact email is required for an organizer
+                                    </div>
+                                    <div class="ff-error"
+                                        *ngIf="organizationsForm.get('contactEmail')?.touched && organizationsForm.get('contactEmail')?.hasError('email')">
+                                        Enter a valid email address
+                                    </div>
                                 </div>
 
                                 <div class="ff-field third-width">
                                     <label class="ff-label">Contact Phone</label>
                                     <input class="ff-control" formControlName="contactPhone"
                                         placeholder="+1 (555) 123-4567">
+                                </div>
+                            </div>
+
+                            <!-- Registration Number (Organizer) -->
+                            <div class="form-row" *ngIf="isOrganizer()">
+                                <div class="ff-field half-width">
+                                    <label class="ff-label">Registration Number</label>
+                                    <input class="ff-control" formControlName="registrationNumber"
+                                        placeholder="Business registration number">
                                 </div>
                             </div>
                         </div>
@@ -302,8 +327,12 @@
 
                             <div class="form-row">
                                 <div class="ff-field third-width">
-                                    <label class="ff-label">City</label>
-                                    <input class="ff-control" formControlName="city" placeholder="City">
+                                    <label class="ff-label">City <span class="req">*</span></label>
+                                    <input class="ff-control" formControlName="city" placeholder="City"
+                                        [class.is-invalid]="fieldInvalid(organizationsForm, 'city')">
+                                    <div class="ff-error" *ngIf="fieldInvalid(organizationsForm, 'city')">
+                                        City is required for a venue
+                                    </div>
                                 </div>
 
                                 <div class="ff-field third-width">
@@ -324,27 +353,17 @@
                                 </div>
 
                                 <!-- Map URL for Venue -->
-                                <div class="ff-field half-width"
-                                    *ngIf="organizationsForm.get('type')?.value === OrganizationType.Venue">
+                                <div class="ff-field half-width" *ngIf="isVenue()">
                                     <label class="ff-label">Map URL</label>
                                     <input class="ff-control" formControlName="mapUrl"
                                         placeholder="https://maps.google.com/...">
                                 </div>
 
                                 <!-- Capacity for Venue -->
-                                <div class="ff-field half-width"
-                                    *ngIf="organizationsForm.get('type')?.value === OrganizationType.Venue">
+                                <div class="ff-field half-width" *ngIf="isVenue()">
                                     <label class="ff-label">Capacity</label>
                                     <input type="number" class="ff-control" formControlName="capacity"
                                         placeholder="Maximum capacity">
-                                </div>
-
-                                <!-- Registration Number for Organizer -->
-                                <div class="ff-field half-width"
-                                    *ngIf="organizationsForm.get('type')?.value === OrganizationType.Organizer">
-                                    <label class="ff-label">Registration Number</label>
-                                    <input class="ff-control" formControlName="registrationNumber"
-                                        placeholder="Business registration number">
                                 </div>
                             </div>
                         </div>
@@ -358,13 +377,11 @@
                             </div>
 
                             <div class="half-width">
-                                <label class="ff-check"
-                                    *ngIf="organizationsForm.get('type')?.value === OrganizationType.Venue">
+                                <label class="ff-check" *ngIf="isVenue()">
                                     <input type="checkbox" formControlName="isPrimary">
                                     Primary Venue
                                 </label>
-                                <label class="ff-check"
-                                    *ngIf="organizationsForm.get('type')?.value === OrganizationType.Organizer">
+                                <label class="ff-check" *ngIf="isOrganizer()">
                                     <input type="checkbox" formControlName="isPrimary">
                                     Primary Organizer
                                 </label>
@@ -503,10 +520,10 @@
                             </div>
 
                             <div class="list-card__actions">
-                                <button type="button" class="icon-btn" (click)="editOrganization(i)" title="Edit">
+                                <button type="button" class="icon-btn" (click)="editOrganization(org)" title="Edit">
                                     <mat-icon>edit</mat-icon>
                                 </button>
-                                <button type="button" class="icon-btn icon-btn--danger" (click)="deleteOrganization(i)"
+                                <button type="button" class="icon-btn icon-btn--danger" (click)="deleteOrganization(org)"
                                     title="Delete">
                                     <mat-icon>delete</mat-icon>
                                 </button>
@@ -534,13 +551,13 @@
             </div>
 
             <div class="step-actions">
-                <button mat-button matStepperPrevious color="basic">
+                <button mat-button matStepperPrevious color="basic" [disabled]="saving">
                     <mat-icon>arrow_back</mat-icon>
                     Back
                 </button>
-                <button mat-button (click)="saveOrganizations()" color="primary">
-                    Save & Continue
-                    <mat-icon>arrow_forward</mat-icon>
+                <button mat-raised-button color="primary" (click)="saveOrganizations()" [disabled]="saving">
+                    <ng-container *ngIf="!saving">Continue <mat-icon>arrow_forward</mat-icon></ng-container>
+                    <span class="btn-saving" *ngIf="saving"><mat-spinner diameter="18"></mat-spinner> Saving…</span>
                 </button>
             </div>
         </mat-step>
@@ -673,13 +690,13 @@
             </form>
 
             <div class="step-actions">
-                <button mat-button matStepperPrevious color="basic">
+                <button mat-button matStepperPrevious color="basic" [disabled]="saving">
                     <mat-icon>arrow_back</mat-icon>
                     Back
                 </button>
-                <button mat-raised-button color="primary" (click)="saveMediaStep()">
-                    Save &amp; Continue
-                    <mat-icon>arrow_forward</mat-icon>
+                <button mat-raised-button color="primary" (click)="saveMediaStep()" [disabled]="saving">
+                    <ng-container *ngIf="!saving">Continue <mat-icon>arrow_forward</mat-icon></ng-container>
+                    <span class="btn-saving" *ngIf="saving"><mat-spinner diameter="18"></mat-spinner> Saving…</span>
                 </button>
             </div>
         </mat-step>
@@ -819,13 +836,13 @@
             </div>
 
             <div class="step-actions">
-                <button mat-button matStepperPrevious color="basic">
+                <button mat-button matStepperPrevious color="basic" [disabled]="saving">
                     <mat-icon>arrow_back</mat-icon>
                     Back
                 </button>
-                <button mat-raised-button color="primary" (click)="finishEvent()">
-                    <mat-icon>check</mat-icon>
-                    Finish
+                <button mat-raised-button color="primary" (click)="finishEvent()" [disabled]="saving">
+                    <ng-container *ngIf="!saving"><mat-icon>check</mat-icon> Save</ng-container>
+                    <span class="btn-saving" *ngIf="saving"><mat-spinner diameter="18"></mat-spinner> Saving…</span>
                 </button>
             </div>
         </mat-step>

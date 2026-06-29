@@ -32,8 +32,11 @@ export interface EventDto
     isPast: boolean;
     createdBy : string;
     updatedBy : string;
-    createdAt: Date; 
+    createdAt: Date;
     updatedAt: Date;
+    startingFromPrice?: string | null;
+    groupId?: string | null;
+    groupName?: string | null;
 }
 
 

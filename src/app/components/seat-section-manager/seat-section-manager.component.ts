@@ -109,8 +109,8 @@ export class SeatSectionManagerComponent implements OnInit {
   ];
 
   readonly numberingDirections = [
-    { value: 'LTR', label: 'Left to Right' },
-    { value: 'RTL', label: 'Right to Left' }
+    { value: 'left',  label: 'Left' },
+    { value: 'right', label: 'Right' }
   ];
 
   constructor(
@@ -129,7 +129,7 @@ export class SeatSectionManagerComponent implements OnInit {
       x:                  [0,   Validators.required],
       y:                  [0,   Validators.required],
       rowOffset:          [null],
-      numberingDirection: ['LTR'],
+      numberingDirection: ['left'],
       rowNumberingType:   [RowNumberingType.PERSECTION],
       skipRowLetters:     [''],
       hasColumnGap:       [false],
@@ -147,7 +147,7 @@ export class SeatSectionManagerComponent implements OnInit {
       customPrice:        [0,          [Validators.required, Validators.min(0)]],
       color:              ['#4caf50',   Validators.required],
       blockLetter:        [''],
-      numberingDirection: ['LTR'],
+      numberingDirection: ['left'],
       rowNumberingType:   [RowNumberingType.PERSECTION],
       skipRowLetters:     [''],
       hasColumnGap:       [false],
@@ -176,7 +176,21 @@ export class SeatSectionManagerComponent implements OnInit {
     if (!eventId) return;
     this.isLoading = true;
     this.seatSectionService.getSections(eventId).subscribe({
-      next:  (s) => { this.sections = s; this.isLoading = false; },
+      next:  (s) => {
+        // Rows are stored 0-based in the backend but shown 1-based in the admin,
+        // so the first row reads as "1" instead of "0".
+        (s || []).forEach(sec => {
+          (sec.rowConfigs || []).forEach(rc => {
+            rc.fromRow = rc.fromRow + 1;
+            rc.toRow = rc.toRow + 1;
+          });
+          // Show row configs left-to-right (by their starting column, ascending).
+          sec.rowConfigs = (sec.rowConfigs || []).sort((a, b) => (a.fromColumn ?? 0) - (b.fromColumn ?? 0));
+        });
+        // Show sections top-to-bottom (by their y position, ascending).
+        this.sections = (s || []).sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
+        this.isLoading = false;
+      },
       error: () => { this.showError('Failed to load sections'); this.isLoading = false; }
     });
   }
@@ -197,7 +211,7 @@ export class SeatSectionManagerComponent implements OnInit {
         x:                  section.x,
         y:                  section.y,
         rowOffset:          section.rowOffset,
-        numberingDirection: section.numberingDirection || 'LTR',
+        numberingDirection: this.normalizeDirection(section.numberingDirection),
         rowNumberingType:   section.rowNumberingType,
         skipRowLetters:     (section.skipRowLetters || []).join(','),
         hasColumnGap:       section.hasColumnGap,
@@ -209,7 +223,7 @@ export class SeatSectionManagerComponent implements OnInit {
       this.sectionForm.reset({
         name: '', sectionLabel: '', seatSectionType: SeatSectionType.SEAT,
         rows: 10, seatsPerRow: 20, x: 0, y: 0,
-        rowOffset: null, numberingDirection: 'LTR',
+        rowOffset: null, numberingDirection: 'left',
         rowNumberingType: RowNumberingType.PERSECTION,
         skipRowLetters: '', hasColumnGap: false,
         gapAfterColumn: null, gapSize: null, gapColumns: ''
@@ -259,7 +273,7 @@ export class SeatSectionManagerComponent implements OnInit {
         sectionLabel: fv.sectionLabel || fv.name,
         rowOffset: fv.rowOffset != null ? +fv.rowOffset : null,
         seatSectionType:    fv.seatSectionType,
-        numberingDirection: fv.numberingDirection || 'LTR',
+        numberingDirection: fv.numberingDirection || 'left',
         rowNumberingType:   fv.rowNumberingType,
         skipRowLetters:     fv.skipRowLetters || '',
         hasColumnGap:       !!fv.hasColumnGap,
@@ -288,7 +302,7 @@ export class SeatSectionManagerComponent implements OnInit {
         fromColumn: rowConfig.fromColumn, toColumn: rowConfig.toColumn,
         type: rowConfig.type, customPrice: rowConfig.customPrice, color: rowConfig.color,
         blockLetter: rowConfig.blockLetter || '',
-        numberingDirection: rowConfig.numberingDirection || 'LTR',
+        numberingDirection: this.normalizeDirection(rowConfig.numberingDirection),
         rowNumberingType:   rowConfig.rowNumberingType,
         skipRowLetters:     (rowConfig.skipRowLetters || []).join(','),
         hasColumnGap: rowConfig.hasColumnGap,
@@ -300,7 +314,7 @@ export class SeatSectionManagerComponent implements OnInit {
       this.rowConfigForm.reset({
         fromRow: 1, toRow: section.rows, fromColumn: 1, toColumn: section.seatsPerRow,
         type: 'STANDARD', customPrice: 0, color: '#4caf50', blockLetter: '',
-        numberingDirection: 'LTR', rowNumberingType: RowNumberingType.PERSECTION,
+        numberingDirection: 'left', rowNumberingType: RowNumberingType.PERSECTION,
         skipRowLetters: '', hasColumnGap: false,
         gapAfterColumn: null, gapSize: null, gapColumns: ''
       });
@@ -317,9 +331,18 @@ export class SeatSectionManagerComponent implements OnInit {
 
     if (this.isEditRowConfigMode && this.selectedRowConfig) {
       const payload: UpdateRowConfigRequest = {
-        fromRow: +fv.fromRow, toRow: +fv.toRow,
+        // Admin enters 1-based rows; the backend stores them 0-based.
+        fromRow: +fv.fromRow - 1, toRow: +fv.toRow - 1,
         fromColumn: +fv.fromColumn, toColumn: +fv.toColumn,
-        type: fv.type, customPrice: +fv.customPrice, color: fv.color
+        type: fv.type, customPrice: +fv.customPrice, color: fv.color,
+        blockLetter: fv.blockLetter || '',
+        numberingDirection: fv.numberingDirection || 'left',
+        rowNumberingType: fv.rowNumberingType,
+        skipRowLetters: fv.skipRowLetters || '',
+        hasColumnGap: !!fv.hasColumnGap,
+        gapAfterColumn: fv.hasColumnGap && fv.gapAfterColumn != null && fv.gapAfterColumn !== '' ? +fv.gapAfterColumn : null,
+        gapSize:        fv.hasColumnGap && fv.gapSize        != null && fv.gapSize        !== '' ? +fv.gapSize        : null,
+        gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : ''
       };
       this.seatSectionService.updateRowConfig(this.selectedRowConfig.id, payload).subscribe({
         next:  () => { this.showSuccess('Row config updated'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
@@ -327,16 +350,17 @@ export class SeatSectionManagerComponent implements OnInit {
       });
     } else {
       const payload: CreateRowConfigRequest = {
-        fromRow: +fv.fromRow, toRow: +fv.toRow,
+        // Admin enters 1-based rows; the backend stores them 0-based.
+        fromRow: +fv.fromRow - 1, toRow: +fv.toRow - 1,
         fromColumn: +fv.fromColumn, toColumn: +fv.toColumn,
         type: fv.type, customPrice: +fv.customPrice, color: fv.color,
         blockLetter: fv.blockLetter || '',
-        numberingDirection: fv.numberingDirection || 'LTR',
+        numberingDirection: fv.numberingDirection || 'left',
         rowNumberingType: fv.rowNumberingType,
         skipRowLetters: fv.skipRowLetters || '',
         hasColumnGap: !!fv.hasColumnGap,
-        gapAfterColumn: fv.hasColumnGap ? (+fv.gapAfterColumn || 0) : 0,
-        gapSize:        fv.hasColumnGap ? (+fv.gapSize        || 0) : 0,
+        gapAfterColumn: fv.hasColumnGap && fv.gapAfterColumn != null && fv.gapAfterColumn !== '' ? +fv.gapAfterColumn : null,
+        gapSize:        fv.hasColumnGap && fv.gapSize        != null && fv.gapSize        !== '' ? +fv.gapSize        : null,
         gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : ''
       };
       this.seatSectionService.addRowConfig(this.selectedSection!.id, payload).subscribe({
@@ -539,7 +563,25 @@ export class SeatSectionManagerComponent implements OnInit {
     }
   }
 
-  getTotalSeats(s: SectionDto): number { return s.rows * s.seatsPerRow; }
+  // Actual seats come from the row configs (each config = a block of rows × columns),
+  // not the full section grid. rowConfigs here are 1-based, so toX - fromX + 1.
+  getTotalSeats(s: SectionDto): number {
+    const configs = s.rowConfigs || [];
+    return configs.reduce((sum, rc) =>
+      sum + (rc.toRow - rc.fromRow + 1) * (rc.toColumn - rc.fromColumn + 1), 0);
+  }
+
+  // Rows / columns actually covered by the row configs (the used extent), not the grid.
+  getRowCount(s: SectionDto): number {
+    const c = s.rowConfigs || [];
+    if (!c.length) return 0;
+    return Math.max(...c.map(rc => rc.toRow)) - Math.min(...c.map(rc => rc.fromRow)) + 1;
+  }
+  getColCount(s: SectionDto): number {
+    const c = s.rowConfigs || [];
+    if (!c.length) return 0;
+    return Math.max(...c.map(rc => rc.toColumn)) - Math.min(...c.map(rc => rc.fromColumn)) + 1;
+  }
 
   getSectionTierBands(s: SectionDto): { color: string; flex: number; label: string }[] {
     const sorted = [...s.rowConfigs].sort((a, b) => a.fromRow - b.fromRow);
@@ -560,6 +602,11 @@ export class SeatSectionManagerComponent implements OnInit {
 
   get sectionHasColumnGap(): boolean { return !!this.sectionForm.get('hasColumnGap')?.value; }
   get rowConfigHasGap():     boolean { return !!this.rowConfigForm.get('hasColumnGap')?.value; }
+
+  // Map any stored value (incl. legacy 'LTR'/'RTL') to the 'left' | 'right' the renderer uses.
+  private normalizeDirection(dir?: string | null): 'left' | 'right' {
+    return (dir || '').toLowerCase().startsWith('r') ? 'right' : 'left';
+  }
 
   private markAllTouched(fg: FormGroup): void {
     Object.values(fg.controls).forEach(c => c.markAsTouched());

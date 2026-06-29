@@ -65,12 +65,12 @@
         <div class="sc-stats">
           <div class="stat-chip">
             <mat-icon>table_rows</mat-icon>
-            <span class="stat-val">{{ section.rows }}</span>
+            <span class="stat-val">{{ getRowCount(section) }}</span>
             <span class="stat-lbl">rows</span>
           </div>
           <div class="stat-chip">
             <mat-icon>view_column</mat-icon>
-            <span class="stat-val">{{ section.seatsPerRow }}</span>
+            <span class="stat-val">{{ getColCount(section) }}</span>
             <span class="stat-lbl">/ row</span>
           </div>
           <div class="stat-chip stat-chip--seats">
@@ -554,7 +554,7 @@
         </mat-form-field>
       </div>
 
-      <ng-container *ngIf="!isEditRowConfigMode">
+      <ng-container>
         <div class="form-section-title">Advanced</div>
         <div class="form-row-2">
           <mat-form-field appearance="outline">
@@ -578,26 +578,14 @@
           </mat-form-field>
         </div>
         <mat-slide-toggle formControlName="hasColumnGap" class="gap-toggle">Has Column Gap</mat-slide-toggle>
-        <div class="form-row-3 gap-fields" *ngIf="rowConfigHasGap">
-          <mat-form-field appearance="outline">
-            <mat-label>Gap After Column</mat-label>
-            <input matInput type="number" formControlName="gapAfterColumn" min="1">
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Gap Size</mat-label>
-            <input matInput type="number" formControlName="gapSize" min="1">
-          </mat-form-field>
+        <div class="form-row-1 gap-fields" *ngIf="rowConfigHasGap">
           <mat-form-field appearance="outline">
             <mat-label>Gap Columns</mat-label>
-            <input matInput formControlName="gapColumns">
+            <input matInput formControlName="gapColumns" placeholder="e.g. 5,10">
+            <mat-hint>Comma-separated column numbers to add a gap after</mat-hint>
           </mat-form-field>
         </div>
       </ng-container>
-
-      <p class="edit-note" *ngIf="isEditRowConfigMode">
-        <mat-icon inline>info</mat-icon>
-        Advanced settings can only be changed by deleting and re-creating the config.
-      </p>
 
     </form>
   </mat-dialog-content>

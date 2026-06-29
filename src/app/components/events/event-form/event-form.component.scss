@@ -1033,3 +1033,13 @@ input[type="time"].ff-control {
   }
   .org-dialog-title { font-size: 1.05rem; }
 }
+
+/* In-button saving spinner */
+.step-actions .btn-saving {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  ::ng-deep .mdc-circular-progress__indeterminate-circle-graphic circle,
+  ::ng-deep circle { stroke: #fff; }
+}
