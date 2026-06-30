@@ -8,10 +8,40 @@
         <span class="material-icons">{{ event.isActive ? 'visibility' : 'visibility_off' }}</span>
         {{ event.isActive ? 'Hide from site' : 'Show on site' }}
       </button>
+      <button class="ed-btn ed-btn--soft" (click)="openCloneModal()">
+        <span class="material-icons">content_copy</span>
+        Clone Event
+      </button>
       <button class="ed-btn ed-btn--primary" [routerLink]="['/admin/events', event.id, 'edit']">
         <span class="material-icons">edit</span>
         Edit Event
       </button>
+    </div>
+  </div>
+
+  <!-- ── Clone modal ─────────────────────────────────────────────────────── -->
+  <div class="ed-modal-overlay" *ngIf="showCloneModal" (click)="cancelClone()">
+    <div class="ed-modal" (click)="$event.stopPropagation()">
+      <h3 class="ed-modal__title">
+        <span class="material-icons">content_copy</span>
+        Clone Event
+      </h3>
+      <p class="ed-modal__hint">
+        Creates a draft copy with all settings, sponsors, details and seat layout.
+        Seats are reset to available.
+      </p>
+      <label class="ed-modal__label" for="cloneName">New event name</label>
+      <input id="cloneName" class="ed-modal__input" type="text"
+             [(ngModel)]="cloneName" [disabled]="isCloning"
+             placeholder="Enter a name for the clone"
+             (keyup.enter)="confirmClone()">
+      <div class="ed-modal__actions">
+        <button class="ed-btn ed-btn--soft" (click)="cancelClone()" [disabled]="isCloning">Cancel</button>
+        <button class="ed-btn ed-btn--primary" (click)="confirmClone()" [disabled]="isCloning || !cloneName.trim()">
+          <span class="material-icons" *ngIf="!isCloning">content_copy</span>
+          {{ isCloning ? 'Cloning…' : 'Clone' }}
+        </button>
+      </div>
     </div>
   </div>
 

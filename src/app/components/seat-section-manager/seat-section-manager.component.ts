@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, TemplateRef, inject, DestroyRef } from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, debounceTime } from 'rxjs';
+import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,17 +30,9 @@ import {
   CreateRowConfigRequest,
   UpdateRowConfigRequest
 } from '../../core/services/seat-section.service';
-
-export interface PreviewCell {
-  color: string;
-  type: string;
-  price?: number;
-}
-
-export interface PreviewRow {
-  label: string;
-  cells: PreviewCell[];
-}
+import { SeatMapVisualComponent } from '../seat-map-admin/seat-map-visual/seat-map-visual.component';
+import { VenueData, VenueSection, Seat } from '../../core/models/DTOs/seats.DTO.model';
+import { generateVenueSeats, SeatRowLabel } from '../../core/utils/seat-generation.util';
 
 @Component({
   selector: 'app-seat-section-manager',
@@ -62,7 +54,8 @@ export interface PreviewRow {
     MatCardModule,
     MatExpansionModule,
     MatDividerModule,
-    MatChipsModule
+    MatChipsModule,
+    SeatMapVisualComponent
   ],
   templateUrl: './seat-section-manager.component.html',
   styleUrls: ['./seat-section-manager.component.scss']
@@ -71,7 +64,6 @@ export class SeatSectionManagerComponent implements OnInit {
   @ViewChild('sectionDialog')   sectionDialog!:   TemplateRef<any>;
   @ViewChild('rowConfigDialog') rowConfigDialog!: TemplateRef<any>;
   @ViewChild('deleteDialog')    deleteDialog!:    TemplateRef<any>;
-  @ViewChild('previewDialog')   previewDialog!:   TemplateRef<any>;
 
   readonly SeatSectionType  = SeatSectionType;
   readonly RowNumberingType = RowNumberingType;
@@ -87,12 +79,10 @@ export class SeatSectionManagerComponent implements OnInit {
   selectedRowConfig: RowConfigDto | null = null;
   deleteTarget: 'section' | 'rowconfig' = 'section';
 
-  // Full-screen preview
-  previewSection: SectionDto | null = null;
-  previewRows:    PreviewRow[]      = [];
-
-  // Live preview inside the section form dialog
-  livePreviewRows: PreviewRow[] = [];
+  // Venue preview — rendered with the same canvas + geometry as the live seat map
+  venueData:        VenueData | null = null;
+  previewSeats:     Seat[]           = [];
+  previewRowLabels: SeatRowLabel[]   = [];
 
   sectionForm:   FormGroup;
   rowConfigForm: FormGroup;
@@ -156,11 +146,6 @@ export class SeatSectionManagerComponent implements OnInit {
       gapColumns:         ['']
     });
 
-    // Rebuild live preview whenever relevant form fields change
-    this.sectionForm.valueChanges
-      .pipe(debounceTime(120))
-      .subscribe(() => this.buildLivePreview());
-
     const destroyRef = inject(DestroyRef);
     toObservable(this.eventContext.selectedEventId)
       .pipe(filter(id => !!id), takeUntilDestroyed(destroyRef))
@@ -177,9 +162,14 @@ export class SeatSectionManagerComponent implements OnInit {
     this.isLoading = true;
     this.seatSectionService.getSections(eventId).subscribe({
       next:  (s) => {
+        const raw = s || [];
+        // Build the venue preview from the raw 0-based data so it matches the live
+        // seat map exactly (must run before the 1-based display adjustment below).
+        this.buildVenuePreview(raw);
+
         // Rows are stored 0-based in the backend but shown 1-based in the admin,
         // so the first row reads as "1" instead of "0".
-        (s || []).forEach(sec => {
+        raw.forEach(sec => {
           (sec.rowConfigs || []).forEach(rc => {
             rc.fromRow = rc.fromRow + 1;
             rc.toRow = rc.toRow + 1;
@@ -188,11 +178,45 @@ export class SeatSectionManagerComponent implements OnInit {
           sec.rowConfigs = (sec.rowConfigs || []).sort((a, b) => (a.fromColumn ?? 0) - (b.fromColumn ?? 0));
         });
         // Show sections top-to-bottom (by their y position, ascending).
-        this.sections = (s || []).sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
+        this.sections = raw.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
         this.isLoading = false;
       },
       error: () => { this.showError('Failed to load sections'); this.isLoading = false; }
     });
+  }
+
+  // Build the venue preview (same renderer + geometry as the live seat map).
+  private buildVenuePreview(sections: SectionDto[]): void {
+    // Clone sections so recentering doesn't mutate the data shown in the cards / edit form.
+    const venueSections = (sections as unknown as VenueSection[]).map(s => ({ ...s }));
+    const { seats, rowLabels } = generateVenueSeats(venueSections);
+
+    // The renderer draws the stage at a fixed canvas centre (1400 / 2). Shift the whole
+    // layout so its horizontal midpoint sits under the stage, keeping the stage centered.
+    const STAGE_CENTRE = 700;
+    if (venueSections.length) {
+      let minX = Infinity, maxX = -Infinity;
+      for (const seat of seats) { minX = Math.min(minX, seat.cx); maxX = Math.max(maxX, seat.cx); }
+      for (const s of venueSections) {
+        minX = Math.min(minX, s.x);
+        maxX = Math.max(maxX, s.x + s.seatsPerRow * 26);
+      }
+      const dx = STAGE_CENTRE - (minX + maxX) / 2;
+      if (isFinite(dx) && dx !== 0) {
+        venueSections.forEach(s => s.x += dx);
+        seats.forEach(seat => seat.cx += dx);
+        rowLabels.forEach(l => l.x += dx);
+      }
+    }
+
+    this.previewSeats     = seats;
+    this.previewRowLabels = rowLabels;
+    this.venueData = {
+      eventName: '',
+      eventDate: new Date(),
+      sections: venueSections,
+      seatManagement: { reservedSeats: [], blockedSeats: [], soldSeats: [], unavailableSeats: [] }
+    };
   }
 
   // ── Section Dialog ────────────────────────────────────────────────────────
@@ -230,11 +254,9 @@ export class SeatSectionManagerComponent implements OnInit {
       });
     }
 
-    this.buildLivePreview();
-
     this.dialog.open(this.sectionDialog, {
-      width:     '1100px',
-      maxWidth:  '98vw',
+      width:     '640px',
+      maxWidth:  '96vw',
       maxHeight: '92vh',
       panelClass: 'section-form-dialog'
     });
@@ -412,127 +434,14 @@ export class SeatSectionManagerComponent implements OnInit {
     }
   }
 
-  // ── Full Preview ──────────────────────────────────────────────────────────
+  // ── Section list / legend ────────────────────────────────────────────────
 
-  openFullPreview(section: SectionDto): void {
-    this.previewSection = section;
-    this.previewRows    = this.buildRowsFor(section.rows, section.seatsPerRow, section.rowConfigs,
-                            (section.skipRowLetters || []).join(','), section.rowOffset || 0);
-    this.dialog.open(this.previewDialog, {
-      width:      '95vw',
-      maxWidth:   '1300px',
-      maxHeight:  '90vh',
-      panelClass: 'full-preview-dialog'
-    });
-  }
-
-  // Returns every-5th column-number label for the preview header row
-  getColLabels(seatsPerRow: number): (number | null)[] {
-    return Array.from({ length: seatsPerRow }, (_, i) => {
-      const n = i + 1;
-      return (n === 1 || n % 5 === 0 || n === seatsPerRow) ? n : null;
-    });
-  }
-
-  // ── Live Preview (form dialog) ────────────────────────────────────────────
-
-  buildLivePreview(): void {
-    const fv    = this.sectionForm.value;
-    const rows  = Math.max(1, Math.min(+fv.rows  || 1, 80));
-    const cols  = Math.max(1, Math.min(+fv.seatsPerRow || 1, 80));
-    const skip  = fv.skipRowLetters || '';
-    const off   = +fv.rowOffset || 0;
-    const cfgs  = (this.isEditSectionMode && this.selectedSection)
-                    ? this.selectedSection.rowConfigs
-                    : [];
-
-    this.livePreviewRows = this.buildRowsFor(rows, cols, cfgs, skip, off);
-  }
-
-  // ── Shared preview builder ────────────────────────────────────────────────
-
-  buildRowsFor(
-    rows: number,
-    cols: number,
-    configs: RowConfigDto[],
-    skipLettersStr: string,
-    rowOffset: number
-  ): PreviewRow[] {
-    const labels = this.computeRowLabels(rows, skipLettersStr, rowOffset);
-    return labels.map((label, ri) => ({
-      label,
-      cells: Array.from({ length: cols }, (_, ci) => {
-        const cfg = configs.find(rc =>
-          (ri + 1) >= rc.fromRow && (ri + 1) <= rc.toRow &&
-          (ci + 1) >= rc.fromColumn && (ci + 1) <= rc.toColumn
-        );
-        return { color: cfg?.color ?? '#e8eaed', type: cfg?.type ?? '', price: cfg?.customPrice };
-      })
-    }));
-  }
-
-  computeRowLabels(rows: number, skipLettersStr: string, offset: number): string[] {
-    const skip   = new Set((skipLettersStr || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean));
-    const labels: string[] = [];
-    let code     = 65; // 'A'
-    let advanced = 0;
-
-    // skip `offset` usable letters at the start
-    while (advanced < offset && code <= 90) {
-      if (!skip.has(String.fromCharCode(code))) advanced++;
-      code++;
-    }
-
-    for (let r = 0; r < rows; r++) {
-      while (code <= 90 && skip.has(String.fromCharCode(code))) code++;
-      labels.push(code <= 90 ? String.fromCharCode(code) : `R${r + 1}`);
-      code++;
-    }
-    return labels;
-  }
-
-  // ── UI Helpers ────────────────────────────────────────────────────────────
-
-  // ── Venue canvas (right-side overview) ───────────────────────────────────
-
+  // Expand/collapse a section card to reveal its row-config details.
   selectSection(section: SectionDto): void {
     this.activeSectionId = this.activeSectionId === section.id ? null : section.id;
   }
 
-  // GAP=26 matches seat-map-admin: cx = section.x + columnPosition*26, cy = section.y + globalRow*26
-  private readonly SEAT_GAP = 26;
-
-  /** Right/bottom edges always derived from GAP=26, matching the seat map renderer exactly. */
-  private sectionRight(s: SectionDto):  number { return s.x + s.seatsPerRow * this.SEAT_GAP; }
-  private sectionBottom(s: SectionDto): number { return s.y + s.rows        * this.SEAT_GAP; }
-
-  get canvasBounds(): { minX: number; minY: number; width: number; height: number } {
-    if (!this.sections.length) return { minX: 0, minY: 0, width: 500, height: 400 };
-    const minX  = Math.min(...this.sections.map(s => s.x));
-    const minY  = Math.min(...this.sections.map(s => s.y));
-    const maxMX = Math.max(...this.sections.map(s => this.sectionRight(s)));
-    const maxMY = Math.max(...this.sections.map(s => this.sectionBottom(s)));
-    const pad   = this.SEAT_GAP * 2;
-    return {
-      minX:   minX - pad,
-      minY:   minY - pad,
-      width:  (maxMX - minX) + pad * 2 || 500,
-      height: (maxMY - minY) + pad * 2 || 400
-    };
-  }
-
-  /** Percentage-based position/size for each section block inside the venue canvas. */
-  getSectionCanvasStyle(section: SectionDto): Record<string, string> {
-    const b = this.canvasBounds;
-    return {
-      left:   `${((section.x                              - b.minX) / b.width  * 100).toFixed(3)}%`,
-      top:    `${((section.y                              - b.minY) / b.height * 100).toFixed(3)}%`,
-      width:  `${(section.seatsPerRow * this.SEAT_GAP               / b.width  * 100).toFixed(3)}%`,
-      height: `${(section.rows        * this.SEAT_GAP               / b.height * 100).toFixed(3)}%`
-    };
-  }
-
-  /** Background for a venue canvas block — proportional gradient matching row tier heights. */
+  /** Swatch colour for a section's legend entry when it has no row configs. */
   getSectionBg(section: SectionDto): string {
     const cfgs = section.rowConfigs;
     if (!cfgs.length) {
@@ -581,23 +490,6 @@ export class SeatSectionManagerComponent implements OnInit {
     const c = s.rowConfigs || [];
     if (!c.length) return 0;
     return Math.max(...c.map(rc => rc.toColumn)) - Math.min(...c.map(rc => rc.fromColumn)) + 1;
-  }
-
-  getSectionTierBands(s: SectionDto): { color: string; flex: number; label: string }[] {
-    const sorted = [...s.rowConfigs].sort((a, b) => a.fromRow - b.fromRow);
-    const bands: { color: string; flex: number; label: string }[] = [];
-    let cursor = 1;
-    for (const rc of sorted) {
-      if (rc.fromRow > cursor) {
-        bands.push({ color: '#dde1e7', flex: rc.fromRow - cursor, label: '' });
-      }
-      bands.push({ color: rc.color, flex: rc.toRow - rc.fromRow + 1, label: rc.type });
-      cursor = rc.toRow + 1;
-    }
-    if (cursor <= s.rows) {
-      bands.push({ color: '#dde1e7', flex: s.rows - cursor + 1, label: '' });
-    }
-    return bands;
   }
 
   get sectionHasColumnGap(): boolean { return !!this.sectionForm.get('hasColumnGap')?.value; }

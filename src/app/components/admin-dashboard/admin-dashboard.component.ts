@@ -44,6 +44,12 @@ export class AdminDashboardComponent implements OnInit {
     return id ? ['/admin/events/seatmap', id] : null;
   }
 
+  /** Returns the router-link array for the Event Details card, or null to disable it. */
+  get eventDetailsLink(): string[] | null {
+    const id = this.eventContext.selectedEventId();
+    return id ? ['/admin/events', id] : null;
+  }
+
   selectedEvent: string = 'all';
   isLoading: boolean = true;
   events: DashboardEvent[] = [];

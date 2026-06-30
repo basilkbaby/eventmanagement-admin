@@ -70,8 +70,16 @@
       color: white;
     }
 
+    &.icon-details {
+      background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    }
+
     &.icon-seats {
       background: linear-gradient(135deg, #3366ff 0%, #764ba2 100%);
+    }
+
+    &.icon-sections {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     }
 
     &.icon-orders {

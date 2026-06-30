@@ -50,7 +50,7 @@ export class SidebarComponent {
     { path: '/admin/dashboard',         icon: 'dashboard',           label: 'Dashboard' },
     { path: '',                          icon: 'info',                label: 'Event Details', detailsLink: true },
     { path: '',                          icon: 'event_seat',          label: 'Seats', seatsLink: true },
-    { path: '/admin/sections',          icon: 'grid_view',           label: 'Seat Sections' },
+    { path: '/admin/sections',          icon: 'grid_view',           label: 'Seating Layout' },
     { path: '/admin/orders',            icon: 'confirmation_number', label: 'Ticket Sales' },
     { path: '/admin/coupons',           icon: 'local_offer',         label: 'Coupons' },
     { path: '/admin/discounts',         icon: 'sell',                label: 'Discounts' },

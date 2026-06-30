@@ -120,6 +120,13 @@ export class EventService {
     return this.http.put<ToggleResponse>(`${this.baseUrl}/${eventId}/toggle-featured`, {});
   }
 
+  // POST: Clone an event (returns the new event's id). Optional new title.
+  cloneEvent(eventId: string, newTitle?: string): Observable<string> {
+    let params = new HttpParams();
+    if (newTitle && newTitle.trim()) params = params.set('newTitle', newTitle.trim());
+    return this.http.post<string>(`${this.baseUrl}/${eventId}/clone`, {}, { params });
+  }
+
   // GET: Check if event exists
   checkEventExists(eventId: string): Observable<boolean> {
     return this.http.get<boolean>(`${this.baseUrl}/${eventId}/exists`);

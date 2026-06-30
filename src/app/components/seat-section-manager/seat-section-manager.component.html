@@ -4,7 +4,7 @@
   <div class="page-header">
     <div class="header-title">
       <mat-icon>event_seat</mat-icon>
-      <h1>Seat Sections</h1>
+      <h1>Seating Layout</h1>
     </div>
     <button mat-raised-button color="primary"
             (click)="openSectionDialog()"
@@ -16,7 +16,7 @@
   <!-- States -->
   <div class="empty-state" *ngIf="!eventContext.selectedEventId() && !isLoading">
     <mat-icon>event</mat-icon>
-    <p>Select an event from the top bar to manage its seat sections.</p>
+    <p>Select an event from the top bar to set up its seating layout.</p>
   </div>
 
   <div class="loading-state" *ngIf="isLoading">
@@ -148,12 +148,6 @@
             </div>
           </div>
 
-          <div class="sc-detail-footer">
-            <button mat-button color="primary" (click)="openFullPreview(section)">
-              <mat-icon>fullscreen</mat-icon> Full Layout Preview
-            </button>
-          </div>
-
         </div><!-- /sc-details -->
       </div><!-- /section-card -->
     </div><!-- /section-list -->
@@ -167,34 +161,16 @@
       </div>
 
       <div class="venue-canvas">
-        <div class="vc-section-block"
-             *ngFor="let s of sections"
-             [ngStyle]="getSectionCanvasStyle(s)"
-             [class.vc-active]="activeSectionId === s.id"
-             [matTooltip]="s.name + ' · ' + s.rows + ' rows × ' + s.seatsPerRow + ' seats'"
-             (click)="selectSection(s)">
-
-          <!-- No configs: solid color fill -->
-          <ng-container *ngIf="!s.rowConfigs.length">
-            <div class="vc-solid-fill" [style.background]="getSectionBg(s)">
-              <span class="vc-label">{{ s.sectionLabel || s.name }}</span>
-              <span class="vc-dims">{{ s.rows }}×{{ s.seatsPerRow }}</span>
-            </div>
-          </ng-container>
-
-          <!-- With configs: stacked tier bands -->
-          <ng-container *ngIf="s.rowConfigs.length">
-            <div class="vc-tier-fill">
-              <div class="vc-tier-band"
-                   *ngFor="let band of getSectionTierBands(s)"
-                   [style.flex]="band.flex.toString()"
-                   [style.background-color]="band.color">
-                <span class="vc-tier-label" *ngIf="band.label">{{ band.label }}</span>
-              </div>
-            </div>
-            <div class="vc-section-name-tag">{{ s.sectionLabel || s.name }}</div>
-          </ng-container>
-
+        <app-seat-map-visual
+          *ngIf="venueData && previewSeats.length"
+          [venueData]="venueData"
+          [seats]="previewSeats"
+          [rowLabels]="previewRowLabels"
+          [selectedSeatIds]="[]">
+        </app-seat-map-visual>
+        <div class="vc-empty" *ngIf="!previewSeats.length">
+          <mat-icon>event_seat</mat-icon>
+          <span>No seats to preview — add sections and row configs.</span>
         </div>
       </div>
 
@@ -221,99 +197,13 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     FULL LAYOUT PREVIEW DIALOG
-════════════════════════════════════════════════════════════════════════════ -->
-<ng-template #previewDialog>
-  <div class="preview-dialog-header">
-    <div class="preview-dialog-title">
-      <mat-icon>event_seat</mat-icon>
-      <span>{{ previewSection?.name }}</span>
-      <span class="type-badge type-{{ previewSection.seatSectionType }}" *ngIf="previewSection">
-        {{ getSectionTypeLabel(previewSection.seatSectionType) }}
-      </span>
-    </div>
-    <div class="preview-dialog-stats" *ngIf="previewSection">
-      <span><mat-icon inline>grid_on</mat-icon> {{ previewSection.rows }} rows × {{ previewSection.seatsPerRow }} seats</span>
-      <span><mat-icon inline>chair</mat-icon> {{ getTotalSeats(previewSection) }} total seats</span>
-      <span><mat-icon inline>palette</mat-icon> {{ previewSection.rowConfigs.length }} price tiers</span>
-    </div>
-    <button mat-icon-button mat-dialog-close class="close-btn"><mat-icon>close</mat-icon></button>
-  </div>
-
-  <mat-dialog-content class="preview-content">
-    <!-- Stage bar -->
-    <div class="stage-bar" *ngIf="previewSection?.seatSectionType === SeatSectionType.SEAT">
-      <mat-icon>music_note</mat-icon> STAGE / FRONT
-    </div>
-
-    <!-- Grid -->
-    <div class="full-grid-wrap" *ngIf="previewSection && previewRows.length > 0">
-      <!-- Column numbers header -->
-      <div class="col-numbers-row">
-        <div class="row-label-spacer"></div>
-        <div class="col-number" *ngFor="let n of getColLabels(previewSection.seatsPerRow)">
-          {{ n !== null ? n : '' }}
-        </div>
-      </div>
-      <!-- Seat rows -->
-      <div class="seat-row" *ngFor="let row of previewRows">
-        <div class="row-label">{{ row.label }}</div>
-        <div class="seat-cell"
-             *ngFor="let cell of row.cells; let ci = index"
-             [style.background-color]="cell.color"
-             [title]="row.label + (ci + 1) + (cell.type ? ' · ' + cell.type : '') + (cell.price != null ? ' · £' + cell.price : '')">
-        </div>
-      </div>
-    </div>
-
-    <!-- No configs notice -->
-    <div class="preview-no-config" *ngIf="previewSection && previewSection.rowConfigs.length === 0">
-      <mat-icon>palette</mat-icon>
-      <p>No row configs — all {{ getTotalSeats(previewSection) }} seats are unassigned.</p>
-      <div class="full-grid-wrap">
-        <div class="col-numbers-row">
-          <div class="row-label-spacer"></div>
-          <div class="col-number" *ngFor="let n of getColLabels(previewSection.seatsPerRow)">
-            {{ n !== null ? n : '' }}
-          </div>
-        </div>
-        <div class="seat-row" *ngFor="let row of previewRows">
-          <div class="row-label">{{ row.label }}</div>
-          <div class="seat-cell" *ngFor="let cell of row.cells" [style.background-color]="cell.color"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Legend -->
-    <div class="preview-legend" *ngIf="previewSection?.rowConfigs?.length">
-      <div class="legend-entry" *ngFor="let rc of previewSection!.rowConfigs">
-        <div class="legend-swatch" [style.background-color]="rc.color"></div>
-        <div class="legend-info">
-          <strong>{{ rc.type }}</strong>
-          <span>Rows {{ rc.fromRow }}–{{ rc.toRow }}, Cols {{ rc.fromColumn }}–{{ rc.toColumn }}</span>
-          <span>£{{ rc.customPrice | number:'1.2-2' }}</span>
-          <span *ngIf="rc.blockLetter">Block: {{ rc.blockLetter }}</span>
-        </div>
-      </div>
-    </div>
-  </mat-dialog-content>
-
-  <mat-dialog-actions align="end">
-    <button mat-raised-button mat-dialog-close>Close</button>
-  </mat-dialog-actions>
-</ng-template>
-
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     SECTION FORM DIALOG  (two-column: form left, live preview right)
+     SECTION FORM DIALOG
 ════════════════════════════════════════════════════════════════════════════ -->
 <ng-template #sectionDialog>
   <h2 mat-dialog-title>{{ isEditSectionMode ? 'Edit Section' : 'New Section' }}</h2>
 
   <mat-dialog-content class="section-dialog-content">
-    <div class="dialog-two-col">
-
-      <!-- LEFT: form fields -->
-      <div class="dialog-form-col">
+    <div class="dialog-single-col">
         <form [formGroup]="sectionForm">
 
           <div class="form-row-2">
@@ -420,58 +310,6 @@
           </p>
 
         </form>
-      </div>
-
-      <!-- RIGHT: live preview -->
-      <div class="dialog-preview-col">
-        <div class="live-preview-panel">
-          <div class="live-preview-title">
-            <mat-icon>preview</mat-icon>
-            Live Preview
-            <span class="live-preview-dims">
-              {{ sectionForm.get('rows')?.value }} rows × {{ sectionForm.get('seatsPerRow')?.value }} seats
-            </span>
-          </div>
-
-          <!-- Stage indicator -->
-          <div class="stage-bar-sm" *ngIf="sectionForm.get('seatSectionType')?.value === SeatSectionType.SEAT || (isEditSectionMode && selectedSection?.seatSectionType === SeatSectionType.SEAT)">
-            <mat-icon>music_note</mat-icon> STAGE
-          </div>
-
-          <div class="live-grid-scroll">
-            <!-- Col headers (every 5th) -->
-            <div class="live-col-header" *ngIf="livePreviewRows.length">
-              <div class="live-row-label-spacer"></div>
-              <div class="live-col-num"
-                   *ngFor="let n of getColLabels(sectionForm.get('seatsPerRow')?.value || 1)">
-                {{ n !== null ? n : '' }}
-              </div>
-            </div>
-            <!-- Rows -->
-            <div class="live-row" *ngFor="let row of livePreviewRows">
-              <div class="live-row-label">{{ row.label }}</div>
-              <div class="live-seat"
-                   *ngFor="let cell of row.cells"
-                   [style.background-color]="cell.color"
-                   [title]="cell.type">
-              </div>
-            </div>
-          </div>
-
-          <div class="live-preview-hint" *ngIf="!isEditSectionMode && (!selectedSection || !selectedSection.rowConfigs.length)">
-            <mat-icon>info</mat-icon>
-            Row configs define seat colors — add them after creating the section.
-          </div>
-
-          <!-- Legend for edit mode where configs already exist -->
-          <div class="live-legend" *ngIf="isEditSectionMode && selectedSection?.rowConfigs?.length">
-            <div class="legend-item" *ngFor="let rc of selectedSection!.rowConfigs">
-              <div class="legend-swatch" [style.background-color]="rc.color"></div>
-              <span>{{ rc.type }} · rows {{ rc.fromRow }}–{{ rc.toRow }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
     </div>
   </mat-dialog-content>

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 // Update import to use the correct model
@@ -16,6 +17,7 @@ import { FormatTimePipe } from '../../../core/pipes/time-format.pipe';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     RouterModule,
     OrganizationFilterPipe,
     FormatDatePipe,
@@ -30,9 +32,15 @@ export class EventDetailsComponent implements OnInit {
   isLoading: boolean = true;
   currentUserRole: string = 'admin'; // This would come from auth service
 
+  // Clone dialog state
+  showCloneModal = false;
+  cloneName = '';
+  isCloning = false;
+
   OrganizationType = OrganizationType;
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private eventService: EventService,
     private snackBar: MatSnackBar,
     private datePipe: DatePipe
@@ -149,6 +157,37 @@ export class EventDetailsComponent implements OnInit {
         }
       });
     }
+  }
+
+  // ── Clone event ────────────────────────────────────────────────────────────
+  openCloneModal() {
+    if (!this.event) return;
+    this.cloneName = `Copy of ${this.event.title}`;
+    this.showCloneModal = true;
+  }
+
+  cancelClone() {
+    if (this.isCloning) return;
+    this.showCloneModal = false;
+  }
+
+  confirmClone() {
+    if (!this.event || this.isCloning) return;
+    this.isCloning = true;
+    this.eventService.cloneEvent(this.event.id, this.cloneName).subscribe({
+      next: (newId) => {
+        this.isCloning = false;
+        this.showCloneModal = false;
+        this.snackBar.open('Event cloned as a draft', 'Close', { duration: 3000 });
+        // Open the new clone (a draft) straight in the editor
+        this.router.navigate(['/admin/events', newId, 'edit']);
+      },
+      error: (error) => {
+        console.error('Error cloning event:', error);
+        this.isCloning = false;
+        this.snackBar.open('Failed to clone event', 'Close', { duration: 3000 });
+      }
+    });
   }
 
   // Format time to display without seconds
