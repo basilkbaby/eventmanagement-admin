@@ -9,7 +9,7 @@
     <nav class="sidebar-nav">
       <mat-nav-list class="nav-list">
 
-        <a *ngFor="let item of navigationItems"
+        <a *ngFor="let item of visibleNavigationItems"
            mat-list-item
            [routerLink]="getNavLink(item)"
            class="nav-item"

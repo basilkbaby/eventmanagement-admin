@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { EventContextService } from '../../core/services/event-context.service';
+import { AuthService } from '../../core/services/auth.service';
 import { FormsModule } from '@angular/forms';
 
 // Angular Material
@@ -37,6 +38,12 @@ import {  DashboardStats,DashboardEvent } from '../../core/services/dashboard.se
 })
 export class AdminDashboardComponent implements OnInit {
   readonly eventContext = inject(EventContextService);
+  private authService = inject(AuthService);
+
+  /** Seating Layout is a SuperAdmin-only tool. */
+  get isSuperAdmin(): boolean {
+    return this.authService.hasRole('SuperAdmin');
+  }
 
   /** Returns the router-link array for the Seats card, or null to disable it. */
   get seatsLink(): string[] | null {

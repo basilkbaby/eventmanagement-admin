@@ -28,6 +28,8 @@ import { EventService, EventGroup } from '../../../core/services/event.service';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { OrganizationTypeDisplayPipe } from '../../../core/pipes/organization-type-display.pipe';
 import { getEnumKeysAndValues } from '../../../core/utility/enum-utils';
+import { ImageUploadComponent } from '../../common/image-upload/image-upload.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-event-form',
@@ -54,7 +56,8 @@ import { getEnumKeysAndValues } from '../../../core/utility/enum-utils';
     MatBadgeModule,
     OrganizationTypeDisplayPipe,
     MatBadgeModule,
-    MatDialogModule
+    MatDialogModule,
+    ImageUploadComponent
   ],
   templateUrl: './event-form.component.html',
   styleUrls: ['./event-form.component.scss']
@@ -126,13 +129,25 @@ detailType = getEnumKeysAndValues(DetailType)
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private authService: AuthService
   ) {
     this.basicInfoForm = this.createBasicInfoForm();
     this.organizationsForm = this.createOrganizationsForm();
     this.settingsForm = this.createSettingsForm();
     this.mediaLinksForm = this.createMediaLinksForm();
     this.additionalDetailsForm = this.createAdditionalDetailsForm();
+  }
+
+  /** Direct-to-blob image upload is limited to SuperAdmins. */
+  get isSuperAdmin(): boolean {
+    return this.authService.hasRole('SuperAdmin');
+  }
+
+  /** Blob folder for event images — scoped under the event's id so each event's
+   *  images live together (e.g. events/{id}/banners). Falls back to "new" before save. */
+  imageFolder(kind: string): string {
+    return `events/${this.eventId || 'new'}/${kind}`;
   }
 
   ngOnInit() {

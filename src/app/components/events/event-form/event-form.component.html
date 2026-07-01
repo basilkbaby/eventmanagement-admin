@@ -578,6 +578,10 @@
                                 <input class="ff-control" formControlName="bannerImage"
                                     placeholder="https://example.com/banner.jpg">
                                 <div class="ff-hint">URL for the event banner image (recommended: 1200x400px)</div>
+                                <app-image-upload *ngIf="isSuperAdmin" [folder]="imageFolder('banners')"
+                                    [value]="basicInfoForm.get('bannerImage')?.value || ''"
+                                    (valueChange)="basicInfoForm.get('bannerImage')?.setValue($event); basicInfoForm.get('bannerImage')?.markAsDirty()">
+                                </app-image-upload>
                             </div>
                         </div>
 
@@ -587,6 +591,10 @@
                                 <input class="ff-control" formControlName="thumbnailImage"
                                     placeholder="https://example.com/thumbnail.jpg">
                                 <div class="ff-hint">URL for the event thumbnail (recommended: 400x300px)</div>
+                                <app-image-upload *ngIf="isSuperAdmin" [folder]="imageFolder('thumbnails')"
+                                    [value]="basicInfoForm.get('thumbnailImage')?.value || ''"
+                                    (valueChange)="basicInfoForm.get('thumbnailImage')?.setValue($event); basicInfoForm.get('thumbnailImage')?.markAsDirty()">
+                                </app-image-upload>
                             </div>
                         </div>
                     </div>

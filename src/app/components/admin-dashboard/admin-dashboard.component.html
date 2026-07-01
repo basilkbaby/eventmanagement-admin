@@ -191,7 +191,7 @@
       <mat-icon class="card-arrow">arrow_forward_ios</mat-icon>
     </a>
 
-    <a routerLink="/admin/sections" class="quick-link-card">
+    <a *ngIf="isSuperAdmin" routerLink="/admin/sections" class="quick-link-card">
       <div class="card-icon icon-sections">
         <mat-icon>grid_view</mat-icon>
       </div>

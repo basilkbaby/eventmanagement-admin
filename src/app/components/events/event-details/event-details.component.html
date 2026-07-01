@@ -8,7 +8,7 @@
         <span class="material-icons">{{ event.isActive ? 'visibility' : 'visibility_off' }}</span>
         {{ event.isActive ? 'Hide from site' : 'Show on site' }}
       </button>
-      <button class="ed-btn ed-btn--soft" (click)="openCloneModal()">
+      <button *ngIf="isSuperAdmin" class="ed-btn ed-btn--soft" (click)="openCloneModal()">
         <span class="material-icons">content_copy</span>
         Clone Event
       </button>

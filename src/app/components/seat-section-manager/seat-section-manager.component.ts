@@ -345,8 +345,33 @@ export class SeatSectionManagerComponent implements OnInit {
     this.dialog.open(this.rowConfigDialog, { width: '680px', maxWidth: '96vw', maxHeight: '92vh' });
   }
 
+  // Cross-field / bounds validation the per-field validators can't express.
+  // Rows/columns here are the 1-based values the admin enters.
+  rowConfigErrors(): string[] {
+    const errs: string[] = [];
+    const fv = this.rowConfigForm.value;
+    const fromRow = +fv.fromRow, toRow = +fv.toRow;
+    const fromCol = +fv.fromColumn, toCol = +fv.toColumn;
+    const s = this.selectedSection;
+
+    if (Number.isFinite(fromRow) && Number.isFinite(toRow) && toRow < fromRow)
+      errs.push('To Row must be greater than or equal to From Row.');
+    if (Number.isFinite(fromCol) && Number.isFinite(toCol) && toCol < fromCol)
+      errs.push('To Column must be greater than or equal to From Column.');
+    if (s) {
+      if (fromRow < 1 || toRow > s.rows)
+        errs.push(`Rows must be between 1 and ${s.rows}.`);
+      if (fromCol < 1 || toCol > s.seatsPerRow)
+        errs.push(`Columns must be between 1 and ${s.seatsPerRow}.`);
+    }
+    return errs;
+  }
+
   onRowConfigSubmit(): void {
     if (this.rowConfigForm.invalid) { this.markAllTouched(this.rowConfigForm); return; }
+
+    const rangeErrors = this.rowConfigErrors();
+    if (rangeErrors.length) { this.showError(rangeErrors[0]); return; }
 
     const fv = this.rowConfigForm.value;
     this.isSaving = true;

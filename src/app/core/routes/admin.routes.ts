@@ -39,6 +39,8 @@ export const ADMIN_ROUTES: Routes = [
   },
   {
     path: 'sections',
+    canActivate: [AuthGuard],
+    data: { roles: ['SuperAdmin'] },
     loadComponent: () => import('../../components/seat-section-manager/seat-section-manager.component').then(m => m.SeatSectionManagerComponent)
   },
   {

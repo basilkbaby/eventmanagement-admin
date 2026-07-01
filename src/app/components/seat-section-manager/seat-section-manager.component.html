@@ -381,6 +381,10 @@
         </div>
       </div>
 
+      <div class="rc-range-error" *ngFor="let err of rowConfigErrors()">
+        <mat-icon inline>error_outline</mat-icon> {{ err }}
+      </div>
+
       <div class="form-section-title">Display</div>
       <div class="form-row-2">
         <div class="color-field">
@@ -440,7 +444,8 @@
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button mat-button mat-dialog-close>Cancel</button>
-    <button mat-raised-button color="primary" (click)="onRowConfigSubmit()" [disabled]="isSaving">
+    <button mat-raised-button color="primary" (click)="onRowConfigSubmit()"
+            [disabled]="isSaving || rowConfigForm.invalid || rowConfigErrors().length > 0">
       <mat-icon *ngIf="isSaving">hourglass_empty</mat-icon>
       {{ isEditRowConfigMode ? 'Save Changes' : 'Add Config' }}
     </button>

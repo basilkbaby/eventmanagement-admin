@@ -7,6 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 // Update import to use the correct model
 import { EventService } from '../../../core/services/event.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { EventAdditionalDetailDto, EventDetailDto, EventDto, EventVenueDto } from '../../../core/models/DTOs/event.DTO.model';
 import { DetailType, EventStatus, EventType, OrganizationType, SectionType } from '../../../core/models/Enums/event.enums';
 import { OrganizationFilterPipe } from '../../../core/pipes/organization-filter.pipe';
@@ -45,8 +46,14 @@ export class EventDetailsComponent implements OnInit {
     private router: Router,
     private eventService: EventService,
     private snackBar: MatSnackBar,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private authService: AuthService
   ) {}
+
+  /** Cloning an event is a SuperAdmin-only action. */
+  get isSuperAdmin(): boolean {
+    return this.authService.hasRole('SuperAdmin');
+  }
 
   ngOnInit() {
     // React to :id changes so switching events (which navigates to a new id while

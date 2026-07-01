@@ -11,6 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 
 import { EventContextService } from '../../../core/services/event-context.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 interface NavigationItem {
   path: string;
@@ -19,6 +20,7 @@ interface NavigationItem {
   badge?: number;
   seatsLink?: boolean; // dynamic link that targets the selected event's seatmap
   detailsLink?: boolean; // dynamic link that targets the selected event's details/edit page
+  superAdminOnly?: boolean; // only shown to SuperAdmins
 }
 
 @Component({
@@ -43,6 +45,7 @@ export class SidebarComponent {
   @Input() isMobile = false;
 
   readonly eventContext = inject(EventContextService);
+  private authService = inject(AuthService);
   private router = inject(Router);
   readonly currentYear = new Date().getFullYear();
 
@@ -50,7 +53,7 @@ export class SidebarComponent {
     { path: '/admin/dashboard',         icon: 'dashboard',           label: 'Dashboard' },
     { path: '',                          icon: 'info',                label: 'Event Details', detailsLink: true },
     { path: '',                          icon: 'event_seat',          label: 'Seats', seatsLink: true },
-    { path: '/admin/sections',          icon: 'grid_view',           label: 'Seating Layout' },
+    { path: '/admin/sections',          icon: 'grid_view',           label: 'Seating Layout', superAdminOnly: true },
     { path: '/admin/orders',            icon: 'confirmation_number', label: 'Ticket Sales' },
     { path: '/admin/coupons',           icon: 'local_offer',         label: 'Coupons' },
     { path: '/admin/discounts',         icon: 'sell',                label: 'Discounts' },
@@ -58,6 +61,12 @@ export class SidebarComponent {
     // { path: '/admin/reports',        icon: 'assessment',          label: 'Reports' },
     // { path: '/admin/settings',       icon: 'settings',            label: 'Settings' }
   ];
+
+  /** Nav items filtered by role — SuperAdmin-only items are hidden from everyone else. */
+  get visibleNavigationItems(): NavigationItem[] {
+    const isSuperAdmin = this.authService.hasRole('SuperAdmin');
+    return this.navigationItems.filter(item => !item.superAdminOnly || isSuperAdmin);
+  }
 
   /** Returns the router link for a nav item.
    *  Seats: points to the seatmap of the currently selected event.

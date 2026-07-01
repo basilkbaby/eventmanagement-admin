@@ -1,0 +1,15 @@
+<div class="img-upload">
+  <div class="img-upload__preview" *ngIf="value">
+    <img [src]="value" alt="Uploaded image preview">
+    <button type="button" class="img-upload__remove" (click)="clear()" title="Remove image">×</button>
+  </div>
+
+  <label class="img-upload__drop" [class.is-uploading]="uploading">
+    <input type="file" [accept]="accept" hidden [disabled]="uploading" (change)="onFileSelected($event)">
+    <mat-icon>{{ uploading ? 'hourglass_empty' : 'cloud_upload' }}</mat-icon>
+    <span class="img-upload__label">{{ uploading ? 'Uploading…' : (value ? 'Replace image' : 'Upload image') }}</span>
+    <span class="img-upload__sub" *ngIf="!uploading">PNG, JPG, WEBP or GIF · max 5MB</span>
+  </label>
+
+  <div class="img-upload__error" *ngIf="error">{{ error }}</div>
+</div>
