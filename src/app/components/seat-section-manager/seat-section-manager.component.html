@@ -207,100 +207,106 @@
         <form [formGroup]="sectionForm">
 
           <div class="form-row-2">
-            <mat-form-field appearance="outline">
-              <mat-label>Section Name *</mat-label>
-              <input matInput formControlName="name" placeholder="e.g. Main Floor">
-              <mat-error *ngIf="sectionForm.get('name')?.hasError('required')">Required</mat-error>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Display Label</mat-label>
-              <input matInput formControlName="sectionLabel" placeholder="Label on the map">
-              <mat-hint>Defaults to Name if blank</mat-hint>
-            </mat-form-field>
+            <div class="ff-field">
+              <label class="ff-label">Section Name <span class="req">*</span></label>
+              <input class="ff-control" formControlName="name" placeholder="e.g. Main Floor"
+                     [class.is-invalid]="sectionForm.get('name')?.invalid && sectionForm.get('name')?.touched">
+              <div class="ff-error" *ngIf="sectionForm.get('name')?.hasError('required') && sectionForm.get('name')?.touched">Required</div>
+            </div>
+            <div class="ff-field">
+              <label class="ff-label">Display Label</label>
+              <input class="ff-control" formControlName="sectionLabel" placeholder="Label on the map">
+              <div class="ff-hint">Defaults to Name if blank</div>
+            </div>
           </div>
 
           <div class="form-row-3">
-            <mat-form-field appearance="outline" *ngIf="!isEditSectionMode">
-              <mat-label>Section Type *</mat-label>
-              <mat-select formControlName="seatSectionType">
-                <mat-option *ngFor="let t of sectionTypes" [value]="t.value">{{ t.label }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="ff-field" *ngIf="!isEditSectionMode">
+              <label class="ff-label">Section Type <span class="req">*</span></label>
+              <select class="ff-control" formControlName="seatSectionType">
+                <option *ngFor="let t of sectionTypes" [ngValue]="t.value">{{ t.label }}</option>
+              </select>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Rows *</mat-label>
-              <input matInput type="number" formControlName="rows" min="1">
-              <mat-error *ngIf="sectionForm.get('rows')?.hasError('required')">Required</mat-error>
-              <mat-error *ngIf="sectionForm.get('rows')?.hasError('min')">Min 1</mat-error>
-            </mat-form-field>
+            <div class="ff-field">
+              <label class="ff-label">Rows <span class="req">*</span></label>
+              <input class="ff-control" type="number" formControlName="rows" min="1"
+                     [class.is-invalid]="sectionForm.get('rows')?.invalid && sectionForm.get('rows')?.touched">
+              <div class="ff-error" *ngIf="sectionForm.get('rows')?.hasError('required') && sectionForm.get('rows')?.touched">Required</div>
+              <div class="ff-error" *ngIf="sectionForm.get('rows')?.hasError('min') && sectionForm.get('rows')?.touched">Min 1</div>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Seats Per Row *</mat-label>
-              <input matInput type="number" formControlName="seatsPerRow" min="1">
-              <mat-error *ngIf="sectionForm.get('seatsPerRow')?.hasError('required')">Required</mat-error>
-            </mat-form-field>
+            <div class="ff-field">
+              <label class="ff-label">Seats Per Row <span class="req">*</span></label>
+              <input class="ff-control" type="number" formControlName="seatsPerRow" min="1"
+                     [class.is-invalid]="sectionForm.get('seatsPerRow')?.invalid && sectionForm.get('seatsPerRow')?.touched">
+              <div class="ff-error" *ngIf="sectionForm.get('seatsPerRow')?.hasError('required') && sectionForm.get('seatsPerRow')?.touched">Required</div>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Row Offset</mat-label>
-              <input matInput type="number" formControlName="rowOffset">
-              <mat-hint>Shifts row letter start</mat-hint>
-            </mat-form-field>
+            <div class="ff-field">
+              <label class="ff-label">Row Offset</label>
+              <input class="ff-control" type="number" formControlName="rowOffset">
+              <div class="ff-hint">Shifts row letter start</div>
+            </div>
           </div>
 
           <div class="form-section-title">Canvas Position (top-left corner)</div>
           <div class="form-row-2">
-            <mat-form-field appearance="outline">
-              <mat-label>X</mat-label>
-              <input matInput type="number" formControlName="x">
-              <mat-hint>Left edge in pixels</mat-hint>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Y</mat-label>
-              <input matInput type="number" formControlName="y">
-              <mat-hint>Top edge in pixels</mat-hint>
-            </mat-form-field>
+            <div class="ff-field">
+              <label class="ff-label">X</label>
+              <input class="ff-control" type="number" formControlName="x">
+              <div class="ff-hint">Left edge in pixels</div>
+            </div>
+            <div class="ff-field">
+              <label class="ff-label">Y</label>
+              <input class="ff-control" type="number" formControlName="y">
+              <div class="ff-hint">Top edge in pixels</div>
+            </div>
           </div>
 
           <!-- Create-only: numbering + gap -->
           <ng-container *ngIf="!isEditSectionMode">
             <div class="form-section-title">Numbering</div>
             <div class="form-row-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Direction</mat-label>
-                <mat-select formControlName="numberingDirection">
-                  <mat-option *ngFor="let d of numberingDirections" [value]="d.value">{{ d.label }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Row Numbering</mat-label>
-                <mat-select formControlName="rowNumberingType">
-                  <mat-option *ngFor="let t of rowNumberingTypes" [value]="t.value">{{ t.label }}</mat-option>
-                </mat-select>
-              </mat-form-field>
+              <div class="ff-field">
+                <label class="ff-label">Direction</label>
+                <select class="ff-control" formControlName="numberingDirection">
+                  <option *ngFor="let d of numberingDirections" [ngValue]="d.value">{{ d.label }}</option>
+                </select>
+              </div>
+              <div class="ff-field">
+                <label class="ff-label">Row Numbering</label>
+                <select class="ff-control" formControlName="rowNumberingType">
+                  <option *ngFor="let t of rowNumberingTypes" [ngValue]="t.value">{{ t.label }}</option>
+                </select>
+              </div>
             </div>
             <div class="form-row-1">
-              <mat-form-field appearance="outline">
-                <mat-label>Skip Row Letters</mat-label>
-                <input matInput formControlName="skipRowLetters" placeholder="e.g. I,O,Q">
-                <mat-hint>Comma-separated letters to omit from row labels (reflected in preview)</mat-hint>
-              </mat-form-field>
+              <div class="ff-field">
+                <label class="ff-label">Skip Row Letters</label>
+                <input class="ff-control" formControlName="skipRowLetters" placeholder="e.g. I,O,Q">
+                <div class="ff-hint">Comma-separated letters to omit from row labels</div>
+              </div>
             </div>
 
             <div class="form-section-title">Column Gap</div>
-            <mat-slide-toggle formControlName="hasColumnGap" class="gap-toggle">Has Column Gap</mat-slide-toggle>
+            <label class="ff-check gap-toggle">
+              <input type="checkbox" formControlName="hasColumnGap">
+              Has Column Gap
+            </label>
             <div class="form-row-3 gap-fields" *ngIf="sectionHasColumnGap">
-              <mat-form-field appearance="outline">
-                <mat-label>Gap After Column</mat-label>
-                <input matInput type="number" formControlName="gapAfterColumn" min="1">
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Gap Size</mat-label>
-                <input matInput type="number" formControlName="gapSize" min="1">
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Gap Columns</mat-label>
-                <input matInput formControlName="gapColumns" placeholder="e.g. 5,10">
-              </mat-form-field>
+              <div class="ff-field">
+                <label class="ff-label">Gap After Column</label>
+                <input class="ff-control" type="number" formControlName="gapAfterColumn" min="1">
+              </div>
+              <div class="ff-field">
+                <label class="ff-label">Gap Size</label>
+                <input class="ff-control" type="number" formControlName="gapSize" min="1">
+              </div>
+              <div class="ff-field">
+                <label class="ff-label">Gap Columns</label>
+                <input class="ff-control" formControlName="gapColumns" placeholder="e.g. 5,10">
+              </div>
             </div>
           </ng-container>
 
@@ -335,42 +341,44 @@
     <form [formGroup]="rowConfigForm">
 
       <div class="form-row-2">
-        <mat-form-field appearance="outline">
-          <mat-label>Seat Type *</mat-label>
-          <input matInput formControlName="type" placeholder="e.g. STANDARD, VIP, PREMIUM">
-          <mat-error *ngIf="rowConfigForm.get('type')?.hasError('required')">Required</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Custom Price (£) *</mat-label>
-          <input matInput type="number" formControlName="customPrice" min="0" step="0.01">
-          <mat-error *ngIf="rowConfigForm.get('customPrice')?.hasError('required')">Required</mat-error>
-        </mat-form-field>
+        <div class="ff-field">
+          <label class="ff-label">Seat Type <span class="req">*</span></label>
+          <input class="ff-control" formControlName="type" placeholder="e.g. STANDARD, VIP, PREMIUM"
+                 [class.is-invalid]="rowConfigForm.get('type')?.invalid && rowConfigForm.get('type')?.touched">
+          <div class="ff-error" *ngIf="rowConfigForm.get('type')?.hasError('required') && rowConfigForm.get('type')?.touched">Required</div>
+        </div>
+        <div class="ff-field">
+          <label class="ff-label">Custom Price (£) <span class="req">*</span></label>
+          <input class="ff-control" type="number" formControlName="customPrice" min="0" step="0.01"
+                 [class.is-invalid]="rowConfigForm.get('customPrice')?.invalid && rowConfigForm.get('customPrice')?.touched">
+          <div class="ff-error" *ngIf="rowConfigForm.get('customPrice')?.hasError('required') && rowConfigForm.get('customPrice')?.touched">Required</div>
+        </div>
       </div>
 
       <div class="form-section-title">Row Range</div>
       <div class="form-row-2">
-        <mat-form-field appearance="outline">
-          <mat-label>From Row *</mat-label>
-          <input matInput type="number" formControlName="fromRow" min="1">
-          <mat-hint *ngIf="selectedSection">Section has {{ selectedSection.rows }} rows</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>To Row *</mat-label>
-          <input matInput type="number" formControlName="toRow" min="1">
-        </mat-form-field>
+        <div class="ff-field">
+          <label class="ff-label">From Row <span class="req">*</span></label>
+          <input class="ff-control" type="number" formControlName="fromRow" min="1">
+          <div class="ff-hint" *ngIf="selectedSection">Section has {{ selectedSection.rows }} rows</div>
+        </div>
+        <div class="ff-field">
+          <label class="ff-label">To Row <span class="req">*</span></label>
+          <input class="ff-control" type="number" formControlName="toRow" min="1">
+        </div>
       </div>
 
       <div class="form-section-title">Column Range</div>
       <div class="form-row-2">
-        <mat-form-field appearance="outline">
-          <mat-label>From Column *</mat-label>
-          <input matInput type="number" formControlName="fromColumn" min="1">
-          <mat-hint *ngIf="selectedSection">Section has {{ selectedSection.seatsPerRow }} seats per row</mat-hint>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>To Column *</mat-label>
-          <input matInput type="number" formControlName="toColumn" min="1">
-        </mat-form-field>
+        <div class="ff-field">
+          <label class="ff-label">From Column <span class="req">*</span></label>
+          <input class="ff-control" type="number" formControlName="fromColumn" min="1">
+          <div class="ff-hint" *ngIf="selectedSection">Section has {{ selectedSection.seatsPerRow }} seats per row</div>
+        </div>
+        <div class="ff-field">
+          <label class="ff-label">To Column <span class="req">*</span></label>
+          <input class="ff-control" type="number" formControlName="toColumn" min="1">
+        </div>
       </div>
 
       <div class="form-section-title">Display</div>
@@ -385,43 +393,46 @@
             </div>
           </div>
         </div>
-        <mat-form-field appearance="outline">
-          <mat-label>Block Letter</mat-label>
-          <input matInput formControlName="blockLetter" placeholder="e.g. A, VIP">
-          <mat-hint>Prefix for block-style seat IDs</mat-hint>
-        </mat-form-field>
+        <div class="ff-field">
+          <label class="ff-label">Block Letter</label>
+          <input class="ff-control" formControlName="blockLetter" placeholder="e.g. A, VIP">
+          <div class="ff-hint">Prefix for block-style seat IDs</div>
+        </div>
       </div>
 
       <ng-container>
         <div class="form-section-title">Advanced</div>
         <div class="form-row-2">
-          <mat-form-field appearance="outline">
-            <mat-label>Numbering Direction</mat-label>
-            <mat-select formControlName="numberingDirection">
-              <mat-option *ngFor="let d of numberingDirections" [value]="d.value">{{ d.label }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Row Numbering Type</mat-label>
-            <mat-select formControlName="rowNumberingType">
-              <mat-option *ngFor="let t of rowNumberingTypes" [value]="t.value">{{ t.label }}</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="ff-field">
+            <label class="ff-label">Numbering Direction</label>
+            <select class="ff-control" formControlName="numberingDirection">
+              <option *ngFor="let d of numberingDirections" [ngValue]="d.value">{{ d.label }}</option>
+            </select>
+          </div>
+          <div class="ff-field">
+            <label class="ff-label">Row Numbering Type</label>
+            <select class="ff-control" formControlName="rowNumberingType">
+              <option *ngFor="let t of rowNumberingTypes" [ngValue]="t.value">{{ t.label }}</option>
+            </select>
+          </div>
         </div>
         <div class="form-row-1">
-          <mat-form-field appearance="outline">
-            <mat-label>Skip Row Letters</mat-label>
-            <input matInput formControlName="skipRowLetters" placeholder="e.g. I,O">
-            <mat-hint>Comma-separated</mat-hint>
-          </mat-form-field>
+          <div class="ff-field">
+            <label class="ff-label">Skip Row Letters</label>
+            <input class="ff-control" formControlName="skipRowLetters" placeholder="e.g. I,O">
+            <div class="ff-hint">Comma-separated</div>
+          </div>
         </div>
-        <mat-slide-toggle formControlName="hasColumnGap" class="gap-toggle">Has Column Gap</mat-slide-toggle>
+        <label class="ff-check gap-toggle">
+          <input type="checkbox" formControlName="hasColumnGap">
+          Has Column Gap
+        </label>
         <div class="form-row-1 gap-fields" *ngIf="rowConfigHasGap">
-          <mat-form-field appearance="outline">
-            <mat-label>Gap Columns</mat-label>
-            <input matInput formControlName="gapColumns" placeholder="e.g. 5,10">
-            <mat-hint>Comma-separated column numbers to add a gap after</mat-hint>
-          </mat-form-field>
+          <div class="ff-field">
+            <label class="ff-label">Gap Columns</label>
+            <input class="ff-control" formControlName="gapColumns" placeholder="e.g. 5,10">
+            <div class="ff-hint">Comma-separated column numbers to add a gap after</div>
+          </div>
         </div>
       </ng-container>
 

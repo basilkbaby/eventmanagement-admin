@@ -703,6 +703,12 @@
   overflow: hidden;
 }
 
+.dialog-single-col {
+  padding: 20px 24px;
+  overflow-y: auto;
+  max-height: calc(92vh - 130px);
+}
+
 .dialog-two-col {
   display: grid;
   grid-template-columns: 1fr 380px;
@@ -877,8 +883,80 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
-.gap-toggle { display: block; margin: 4px 0 12px; }
+.gap-toggle { margin: 6px 0 12px; }
 .gap-fields { margin-top: 8px; }
+
+// ── Custom form controls (.ff-*) — replaces Material form fields in dialogs ─────
+.ff-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.ff-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  .req { color: var(--danger-color); margin-left: 2px; }
+}
+
+.ff-control {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-color);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+
+  &::placeholder { color: var(--text-secondary); opacity: .6; }
+  &:hover:not(:focus):not(:disabled) { border-color: var(--text-secondary); }
+  &:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 16%, transparent);
+  }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+  &.is-invalid {
+    border-color: var(--danger-color);
+    &:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-color) 16%, transparent); }
+  }
+}
+
+select.ff-control {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  option { color: var(--text-color); background: var(--card-bg); }
+}
+
+.ff-hint  { font-size: 12px; color: var(--text-secondary); }
+.ff-error { font-size: 12px; font-weight: 500; color: var(--danger-color); }
+
+.ff-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-color);
+  user-select: none;
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+  }
+}
 
 .edit-note {
   margin: 0 0 16px;
