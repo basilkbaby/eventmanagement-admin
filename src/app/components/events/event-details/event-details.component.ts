@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
@@ -38,6 +39,7 @@ export class EventDetailsComponent implements OnInit {
   isCloning = false;
 
   OrganizationType = OrganizationType;
+  private destroyRef = inject(DestroyRef);
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -47,11 +49,14 @@ export class EventDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.loadEvent();
+    // React to :id changes so switching events (which navigates to a new id while
+    // reusing this component) reloads the page instead of keeping the old event.
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => this.loadEvent(params.get('id')));
   }
 
-  loadEvent() {
-    const eventId = this.route.snapshot.paramMap.get('id');
+  loadEvent(eventId: string | null = this.route.snapshot.paramMap.get('id')) {
     if (eventId) {
       this.isLoading = true;
       // Use getEventDetails to get full event with all related data

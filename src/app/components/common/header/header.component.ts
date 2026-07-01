@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -45,6 +45,19 @@ export class HeaderComponent implements OnInit {
   selectEvent(id: string): void {
     this.onEventChange(id);
     this.switcherOpen = false;
+    this.syncRouteToSelectedEvent(id);
+  }
+
+  /** When an event-scoped page is open, follow the newly selected event so the
+   *  URL and page reflect the chosen event instead of keeping the old one.
+   *  The edit page is intentionally left alone so switching doesn't discard edits. */
+  private syncRouteToSelectedEvent(id: string): void {
+    const url = this.router.url.split('?')[0].split('#')[0];
+    if (/^\/admin\/events\/seatmap\/[^/]+$/.test(url)) {
+      this.router.navigate(['/admin/events/seatmap', id]);
+    } else if (/^\/admin\/events\/[^/]+$/.test(url) && !url.endsWith('/create')) {
+      this.router.navigate(['/admin/events', id]);
+    }
   }
 
   // ── Profile dropdown state ────────────────────────────────────────────────
@@ -72,7 +85,8 @@ export class HeaderComponent implements OnInit {
 
   constructor(
     public authService: AuthService,
-    public eventContext: EventContextService
+    public eventContext: EventContextService,
+    private router: Router
   ) {}
 
   ngOnInit() {
