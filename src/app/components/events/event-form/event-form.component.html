@@ -327,7 +327,7 @@
 
                             <div class="form-row">
                                 <div class="ff-field third-width">
-                                    <label class="ff-label">City <span class="req">*</span></label>
+                                    <label class="ff-label">City <span class="req" *ngIf="isVenue()">*</span></label>
                                     <input class="ff-control" formControlName="city" placeholder="City"
                                         [class.is-invalid]="fieldInvalid(organizationsForm, 'city')">
                                     <div class="ff-error" *ngIf="fieldInvalid(organizationsForm, 'city')">

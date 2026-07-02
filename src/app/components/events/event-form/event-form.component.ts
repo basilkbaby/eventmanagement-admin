@@ -682,9 +682,9 @@ detailType = getEnumKeysAndValues(DetailType)
     return Number(this.organizationsForm.get('type')?.value) === OrganizationType.Organizer;
   }
 
-  // Location details apply to a Venue. Contact details apply to a Venue or an Organizer.
+  // Location details apply to a Venue or an Organizer. Contact details too.
   showLocationFields(): boolean {
-    return this.isVenue();
+    return this.isVenue() || this.isOrganizer();
   }
   showContactFields(): boolean {
     return this.isVenue() || this.isOrganizer();
