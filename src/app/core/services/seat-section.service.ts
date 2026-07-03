@@ -26,6 +26,7 @@ export interface SectionDto {
   gapSize: number | null;
   gapColumns: string | null;
   rowOffset: number | null;
+  isActive: boolean;
   rowConfigs: RowConfigDto[];
 }
 
@@ -135,6 +136,10 @@ export class SeatSectionService {
 
   updateSection(sectionId: string, dto: UpdateSectionRequest): Observable<void> {
     return this.http.put<void>(`${this.base}/sections/${sectionId}`, dto);
+  }
+
+  setSectionActive(sectionId: string, isActive: boolean): Observable<void> {
+    return this.http.put<void>(`${this.base}/sections/${sectionId}/active`, { isActive });
   }
 
   deleteSection(sectionId: string): Observable<void> {

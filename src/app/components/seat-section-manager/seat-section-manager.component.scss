@@ -96,6 +96,24 @@
     border-color: #1976d2;
     box-shadow: 0 4px 16px rgba(25,118,210,.14);
   }
+
+  // Disabled: kept in the layout but excluded from the customer seat map.
+  &.sc-disabled {
+    background: #fafafa;
+    border-style: dashed;
+    .sc-stats, .sc-color-bar, .section-name { opacity: .55; }
+  }
+}
+
+.disabled-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #fdecea;
+  color: #c62828;
 }
 
 // Card header

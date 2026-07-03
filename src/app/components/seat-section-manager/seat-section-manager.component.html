@@ -41,6 +41,7 @@
       <div class="section-card"
            *ngFor="let section of sections"
            [class.sc-active]="activeSectionId === section.id"
+           [class.sc-disabled]="section.isActive === false"
            (click)="selectSection(section)">
 
         <!-- Card header -->
@@ -50,8 +51,13 @@
             <span class="type-badge type-{{ section.seatSectionType }}">
               {{ getSectionTypeLabel(section.seatSectionType) }}
             </span>
+            <span class="disabled-badge" *ngIf="section.isActive === false">Disabled</span>
           </div>
           <div class="sc-actions" (click)="$event.stopPropagation()">
+            <button mat-icon-button (click)="toggleSectionActive(section, $event)"
+                    [matTooltip]="section.isActive === false ? 'Enable section' : 'Disable section (hide from customers)'">
+              <mat-icon>{{ section.isActive === false ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
             <button mat-icon-button (click)="openSectionDialog(section)" matTooltip="Edit section">
               <mat-icon>edit</mat-icon>
             </button>

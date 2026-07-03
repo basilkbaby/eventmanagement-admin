@@ -425,6 +425,21 @@ export class SeatSectionManagerComponent implements OnInit {
     this.dialog.open(this.deleteDialog, { width: '420px' });
   }
 
+  // Enable/disable a section. Disabled sections stay in the layout but are hidden
+  // from the customer-facing seat map (not sellable).
+  toggleSectionActive(section: SectionDto, event?: Event): void {
+    event?.stopPropagation();
+    const next = !section.isActive;
+    this.seatSectionService.setSectionActive(section.id, next).subscribe({
+      next: () => {
+        section.isActive = next;
+        this.showSuccess(next ? 'Section enabled' : 'Section disabled');
+        this.loadSections();
+      },
+      error: () => this.showError('Failed to update section')
+    });
+  }
+
   openDeleteRowConfigDialog(section: SectionDto, rowConfig: RowConfigDto): void {
     this.selectedSection   = section;
     this.selectedRowConfig = rowConfig;
