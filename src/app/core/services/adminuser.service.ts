@@ -45,6 +45,18 @@ export class AdminUserService {
     return this.http.post<void>(`${this.apiUrl}/${userId}/events`, events);
   }
 
+  // SuperAdmin: list users granted access to a specific event (excludes SuperAdmins).
+  getEventUsers(eventId: string): Observable<User[]> {
+    return this.http.get<User[]>(`${this.apiUrl}/event/${eventId}`);
+  }
+
+  // SuperAdmin: create a user (name/email/password) with access to a specific event.
+  createEventUser(eventId: string, user: { name: string; email: string; password: string }):
+    Observable<{ userId: string; created: boolean; message: string }> {
+    return this.http.post<{ userId: string; created: boolean; message: string }>(
+      `${this.apiUrl}/event/${eventId}`, user);
+  }
+
   // Remove events from user
   removeEvents(userId: string, eventIds: string[]): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${userId}/events`, { 

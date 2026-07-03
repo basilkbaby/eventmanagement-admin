@@ -44,6 +44,12 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () => import('../../components/seat-section-manager/seat-section-manager.component').then(m => m.SeatSectionManagerComponent)
   },
   {
+    path: 'event-users',
+    canActivate: [AuthGuard],
+    data: { roles: ['SuperAdmin'] },
+    loadComponent: () => import('../../components/users/event-users/event-users.component').then(m => m.EventUsersComponent)
+  },
+  {
     path: 'orders',
     children: [
       {

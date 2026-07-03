@@ -1,0 +1,168 @@
+.eu-page { padding: 4px 4px 40px; }
+
+.eu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+
+  .eu-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    mat-icon { color: var(--primary-color); }
+    h1 { margin: 0; font-size: 22px; font-weight: 500; }
+    .eu-event {
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 3px 10px;
+      background: var(--hover-color);
+      border-radius: 20px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    align-items: stretch;
+    .eu-btn { width: 100%; justify-content: center; }
+  }
+}
+
+.eu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-color);
+  font: 600 14px/1 var(--font-family);
+  cursor: pointer;
+  transition: background .15s ease, box-shadow .15s ease;
+
+  mat-icon { font-size: 19px; width: 19px; height: 19px; }
+
+  &--primary {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+    &:hover { background: var(--primary-dark, var(--primary-color)); }
+  }
+
+  &:disabled { opacity: .55; cursor: not-allowed; }
+}
+
+.eu-empty, .eu-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  mat-icon { font-size: 48px; width: 48px; height: 48px; display: block; margin: 0 auto 14px; opacity: .4; }
+  p { margin: 0 0 18px; font-size: 15px; }
+}
+
+.eu-table {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+.eu-row {
+  display: grid;
+  grid-template-columns: 1.4fr 2fr 1fr 0.8fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 14px;
+
+  &:first-child { border-top: none; }
+
+  &--head {
+    background: var(--hover-color);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr 1fr;
+    &--head { display: none; }
+  }
+}
+
+.eu-name { font-weight: 600; }
+.eu-mail { color: var(--text-secondary); word-break: break-all; }
+
+.eu-role {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  color: var(--primary-color);
+  margin-right: 4px;
+}
+
+.eu-status {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2e7d32;
+  &--off { color: #c62828; }
+}
+
+/* Modal */
+.eu-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(15, 23, 42, .45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+.eu-modal {
+  width: 100%; max-width: 440px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, .4);
+  padding: 22px;
+
+  &__title {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 0 8px; font: 700 18px/1.2 var(--font-family); color: var(--text-color);
+    mat-icon { color: var(--primary-color); }
+  }
+  &__hint { margin: 0 0 16px; font-size: 13px; line-height: 1.45; color: var(--text-secondary); }
+  &__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+}
+
+/* Custom form controls (match the app's .ff-* style) */
+.ff-label {
+  display: block;
+  margin: 12px 0 6px;
+  font: 600 13px/1 var(--font-family);
+  color: var(--text-secondary);
+}
+.ff-control {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  font-family: inherit; font-size: 14px;
+  color: var(--text-color);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  &:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 16%, transparent);
+  }
+  &:disabled { opacity: .6; cursor: not-allowed; }
+}

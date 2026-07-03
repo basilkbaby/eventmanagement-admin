@@ -1,0 +1,86 @@
+<div class="eu-page">
+
+  <!-- Header -->
+  <div class="eu-header">
+    <div class="eu-title">
+      <mat-icon>group</mat-icon>
+      <h1>Event Users</h1>
+      <span class="eu-event" *ngIf="eventContext.selectedEvent()">{{ eventContext.selectedEvent()!.title }}</span>
+    </div>
+    <button class="eu-btn eu-btn--primary" (click)="openAdd()"
+            [disabled]="!eventContext.selectedEventId()">
+      <mat-icon>person_add</mat-icon> Add User
+    </button>
+  </div>
+
+  <!-- No event selected -->
+  <div class="eu-empty" *ngIf="!eventContext.selectedEventId()">
+    <mat-icon>event</mat-icon>
+    <p>Select an event from the top bar to manage its users.</p>
+  </div>
+
+  <ng-container *ngIf="eventContext.selectedEventId()">
+    <div class="eu-loading" *ngIf="isLoading">Loading users…</div>
+
+    <div class="eu-empty" *ngIf="!isLoading && users.length === 0">
+      <mat-icon>person_off</mat-icon>
+      <p>No users for this event yet.</p>
+      <button class="eu-btn eu-btn--primary" (click)="openAdd()">
+        <mat-icon>person_add</mat-icon> Add the first user
+      </button>
+    </div>
+
+    <!-- Users table -->
+    <div class="eu-table" *ngIf="!isLoading && users.length">
+      <div class="eu-row eu-row--head">
+        <span>Name</span><span>Email</span><span>Role</span><span>Status</span>
+      </div>
+      <div class="eu-row" *ngFor="let u of users">
+        <span class="eu-name">{{ userName(u) }}</span>
+        <span class="eu-mail">{{ u.email }}</span>
+        <span>
+          <span class="eu-role" *ngFor="let r of u.roles">{{ r }}</span>
+        </span>
+        <span>
+          <span class="eu-status" [class.eu-status--off]="!u.isActive">
+            {{ u.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </span>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Add user modal -->
+  <div class="eu-modal-overlay" *ngIf="showAddModal" (click)="cancelAdd()">
+    <div class="eu-modal" (click)="$event.stopPropagation()">
+      <h3 class="eu-modal__title"><mat-icon>person_add</mat-icon> Add User</h3>
+      <p class="eu-modal__hint">
+        Creates a login that can access
+        <strong>{{ eventContext.selectedEvent()?.title }}</strong> only.
+        If the email already exists, that user is granted access to this event.
+      </p>
+
+      <label class="ff-label" for="euName">Name</label>
+      <input id="euName" class="ff-control" type="text" [(ngModel)]="newUser.name"
+             [disabled]="isSaving" placeholder="Full name">
+
+      <label class="ff-label" for="euEmail">Email</label>
+      <input id="euEmail" class="ff-control" type="email" [(ngModel)]="newUser.email"
+             [disabled]="isSaving" placeholder="name@example.com">
+
+      <label class="ff-label" for="euPass">Password</label>
+      <input id="euPass" class="ff-control" type="password" [(ngModel)]="newUser.password"
+             [disabled]="isSaving" placeholder="At least 6 characters"
+             (keyup.enter)="confirmAdd()">
+
+      <div class="eu-modal__actions">
+        <button class="eu-btn" (click)="cancelAdd()" [disabled]="isSaving">Cancel</button>
+        <button class="eu-btn eu-btn--primary" (click)="confirmAdd()"
+                [disabled]="isSaving || !newUser.name.trim() || !newUser.email.trim() || !newUser.password.trim()">
+          {{ isSaving ? 'Adding…' : 'Add User' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
