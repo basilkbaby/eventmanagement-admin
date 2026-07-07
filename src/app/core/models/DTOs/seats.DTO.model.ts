@@ -37,6 +37,7 @@ export interface VenueSection {
   curveStrength?: number;          // 0 = flat grid; 1-100 bends rows onto a bounded arc
   rotation?: number;               // degrees; rotates the whole block around its centre
   rowWidthStep?: number;           // taper: extra seats added per row going back
+  seatStartNumber?: number;        // first seat number in the section (default 1)
   numberingDirection ? : string;
   rowConfigs: SectionRowConfig[];
   rowNumberingType?: RowNumberingType;
@@ -63,6 +64,9 @@ export interface SectionRowConfig {
   hasColumnGap?: boolean;          // Enable column gap
   gapAfterColumn?: number;         // Gap after this column (e.g., 12)
   gapSize?: number;                // Size of gap (default: 1)
+  gapColumns?: string;             // Comma-separated gap columns
+  rowSeatCounts?: string;          // CSV per-row seat counts, e.g. "30,32,34" (overrides width)
+  rowStartNumbers?: string;        // CSV per-row starting seat numbers (aligned to rowSeatCounts)
 }
 
 // seats.model.ts

@@ -290,6 +290,13 @@
               <div class="ff-hint">Extra seats added to each row toward the back (0 = equal rows). Makes a fan/trapezoid block.</div>
             </div>
           </div>
+          <div class="form-row-1">
+            <div class="ff-field">
+              <label class="ff-label">Start seat #</label>
+              <input class="ff-control" type="number" min="1" step="1" formControlName="seatStartNumber">
+              <div class="ff-hint">First seat number in this section (default 1). E.g. 35 numbers seats 35, 36, 37… instead of 1, 2, 3…</div>
+            </div>
+          </div>
 
           <!-- Create-only: numbering + gap -->
           <ng-container *ngIf="!isEditSectionMode">
@@ -386,12 +393,12 @@
       <div class="form-row-2">
         <div class="ff-field">
           <label class="ff-label">From Row <span class="req">*</span></label>
-          <input class="ff-control" type="number" formControlName="fromRow" min="1">
+          <input class="ff-control" type="number" formControlName="fromRow" min="1" (input)="syncPerRow()">
           <div class="ff-hint" *ngIf="selectedSection">Section has {{ selectedSection.rows }} rows</div>
         </div>
         <div class="ff-field">
           <label class="ff-label">To Row <span class="req">*</span></label>
-          <input class="ff-control" type="number" formControlName="toRow" min="1">
+          <input class="ff-control" type="number" formControlName="toRow" min="1" (input)="syncPerRow()">
         </div>
       </div>
 
@@ -466,6 +473,28 @@
           </div>
         </div>
       </ng-container>
+
+      <div class="form-section-title">Per-row seats</div>
+      <label class="ff-check">
+        <input type="checkbox" [(ngModel)]="perRowEnabled" [ngModelOptions]="{standalone:true}" (change)="syncPerRow()">
+        Custom seat count per row
+      </label>
+      <div class="ff-hint">
+        When on, each row uses its own seat count (and optional start number) instead of the column range.
+        Leave a row's seats blank to fall back to the column width; leave start blank to use the section's start number.
+      </div>
+      <div class="perrow-grid" *ngIf="perRowEnabled">
+        <div class="perrow-row perrow-head">
+          <span>Row</span><span>Seats</span><span>Start #</span>
+        </div>
+        <div class="perrow-row" *ngFor="let r of perRow; let i = index">
+          <span class="perrow-idx">{{ i + 1 }}</span>
+          <input class="ff-control" type="number" min="0" placeholder="—"
+                 [(ngModel)]="r.seats" [ngModelOptions]="{standalone:true}">
+          <input class="ff-control" type="number" min="1" placeholder="—"
+                 [(ngModel)]="r.start" [ngModelOptions]="{standalone:true}">
+        </div>
+      </div>
 
     </form>
   </mat-dialog-content>

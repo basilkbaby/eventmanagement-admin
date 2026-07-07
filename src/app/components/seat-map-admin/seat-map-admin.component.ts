@@ -9,7 +9,7 @@ import {
   TicketType, VenueData, VenueSection
 } from '../../core/models/DTOs/seats.DTO.model';
 import { SeatMapVisualComponent } from './seat-map-visual/seat-map-visual.component';
-import { applyCurveToSection, applyRotationToSection } from '../../core/utils/seat-generation.util';
+import { applyCurveToSection, applyRotationToSection, parseRowNums } from '../../core/utils/seat-generation.util';
 import { AdminSeatService } from '../../core/services/admin-seat.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { FormatDatePipe } from '../../core/pipes/format-date.pipe';
@@ -401,6 +401,13 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
         const step       = Math.max(0, (section as any).rowWidthStep || 0);
         const baseWidth  = toColumn - fromColumn + 1;
         const baseCentre = currentColumnPosition + (baseWidth - 1) / 2;
+        // Seat numbering starts at this section's SeatStartNumber (default 1).
+        const sectionStart = Math.max(1, (section as any).seatStartNumber || 1);
+        // Per-row overrides: RowSeatCounts gives each row its own width (and optionally its
+        // own start number). Absent -> previous behaviour (fixed cols / taper).
+        const rowCounts = parseRowNums((rowConfig as any).rowSeatCounts);
+        const rowStarts = parseRowNums((rowConfig as any).rowStartNumbers);
+        const shaped    = !!rowCounts;
 
         const numberFor = (actualCol: number, total: number): number => {
           switch (numberingDirection) {
@@ -431,22 +438,28 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
             perConfigRowIndex++;
           }
 
-          const rowWidth = baseWidth + step * (r - fromRow);
+          const ri = r - fromRow;
+          const rowWidth = shaped
+            ? (rowCounts![ri] > 0 ? rowCounts![ri] : baseWidth)
+            : baseWidth + step * ri;
+          const rowStart = shaped && rowStarts && rowStarts[ri] > 0 ? rowStarts[ri] : sectionStart;
+          const rowOffsetNum = rowStart - 1;
+          const shapedRow = shaped || step > 0;
           let rowMinX = Infinity, rowMaxX = -Infinity;
 
           for (let k = 0; k < rowWidth; k++) {
-            // Tapered rows widen symmetrically around the block centre; un-tapered rows
-            // keep the original left-to-right packing (including column gaps).
+            // Shaped rows (per-row counts or taper) widen symmetrically around the block
+            // centre; plain rows keep the original left-to-right packing (incl. column gaps).
             let columnPosition: number;
             let numericSeatNumber: number;
-            if (step > 0) {
+            if (shapedRow) {
               columnPosition    = baseCentre - (rowWidth - 1) / 2 + k;
-              numericSeatNumber = numberFor(k + 1, rowWidth);
+              numericSeatNumber = numberFor(k + 1, rowWidth) + rowOffsetNum;
             } else {
               const c = fromColumn + k;
               const columnOffset = gapCols.filter((g: number) => c > g).length * gapSize;
               columnPosition     = currentColumnPosition + (c - fromColumn) + columnOffset;
-              numericSeatNumber  = numberFor(c - fromColumn + 1, baseWidth);
+              numericSeatNumber  = numberFor(c - fromColumn + 1, baseWidth) + rowOffsetNum;
             }
 
             const shortSectionName  = sectionName.charAt(0);
@@ -471,7 +484,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
               status: seatStatus, originalStatus: seatStatus,
               price: rowConfig.customPrice || 0, color: rowConfig.color,
               gridRow: globalRow, gridColumn: Math.round(columnPosition) + 1,
-              isStandingArea: false, originalColumn: step > 0 ? k + 1 : fromColumn + k,
+              isStandingArea: false, originalColumn: shapedRow ? k + 1 : fromColumn + k,
               numberingDirection, blockIndex: configIndex, blockLetter,
               blockStartSeat: 1, blockTotalSeats: rowWidth,
               rowNumberingType: sectionRowNumberingType
@@ -482,7 +495,10 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
           rowLabelPositions.set(rowKey, { minX: rowMinX, maxX: rowMaxX, y: section.y + (globalRow * 26), numberingDirection, blockLetter, rowLetter });
         }
 
-        if (step > 0) {
+        if (shaped) {
+          const maxW = Math.max(baseWidth, ...rowCounts!.map(n => (n > 0 ? n : 0)));
+          currentColumnPosition += maxW + 2;
+        } else if (step > 0) {
           currentColumnPosition += baseWidth + step * (toRow - fromRow) + 2;
         } else {
           currentColumnPosition += (toColumn - fromColumn + 1);

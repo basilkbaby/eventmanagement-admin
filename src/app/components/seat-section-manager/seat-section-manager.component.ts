@@ -87,6 +87,11 @@ export class SeatSectionManagerComponent implements OnInit {
   sectionForm:   FormGroup;
   rowConfigForm: FormGroup;
 
+  // Per-row seat counts (Option A): when enabled, each row in the block gets its own
+  // seat count and optional start number, serialised to the CSV fields on save.
+  perRowEnabled = false;
+  perRow: { seats: number | null; start: number | null }[] = [];
+
   readonly sectionTypes = [
     { value: SeatSectionType.SEAT,     label: 'Seated' },
     { value: SeatSectionType.STANDING, label: 'Standing' },
@@ -122,6 +127,7 @@ export class SeatSectionManagerComponent implements OnInit {
       curveStrength:      [0,   [Validators.min(0), Validators.max(100)]],
       rotation:           [0,   [Validators.min(-180), Validators.max(180)]],
       rowWidthStep:       [0,   [Validators.min(0), Validators.max(10)]],
+      seatStartNumber:    [1,   [Validators.min(1)]],
       numberingDirection: ['left'],
       rowNumberingType:   [RowNumberingType.PERSECTION],
       skipRowLetters:     [''],
@@ -241,6 +247,7 @@ export class SeatSectionManagerComponent implements OnInit {
         curveStrength:      section.curveStrength ?? 0,
         rotation:           section.rotation ?? 0,
         rowWidthStep:       section.rowWidthStep ?? 0,
+        seatStartNumber:    section.seatStartNumber ?? 1,
         numberingDirection: this.normalizeDirection(section.numberingDirection),
         rowNumberingType:   section.rowNumberingType,
         skipRowLetters:     (section.skipRowLetters || []).join(','),
@@ -253,7 +260,7 @@ export class SeatSectionManagerComponent implements OnInit {
       this.sectionForm.reset({
         name: '', sectionLabel: '', seatSectionType: SeatSectionType.SEAT,
         rows: 10, seatsPerRow: 20, x: 0, y: 0,
-        rowOffset: null, curveStrength: 0, rotation: 0, rowWidthStep: 0, numberingDirection: 'left',
+        rowOffset: null, curveStrength: 0, rotation: 0, rowWidthStep: 0, seatStartNumber: 1, numberingDirection: 'left',
         rowNumberingType: RowNumberingType.PERSECTION,
         skipRowLetters: '', hasColumnGap: false,
         gapAfterColumn: null, gapSize: null, gapColumns: ''
@@ -291,7 +298,8 @@ export class SeatSectionManagerComponent implements OnInit {
         rowOffset: fv.rowOffset != null ? +fv.rowOffset : null,
         curveStrength: +fv.curveStrength || 0,
         rotation: +fv.rotation || 0,
-        rowWidthStep: +fv.rowWidthStep || 0
+        rowWidthStep: +fv.rowWidthStep || 0,
+        seatStartNumber: Math.max(1, +fv.seatStartNumber || 1)
       };
       this.seatSectionService.updateSection(this.selectedSection.id, payload).subscribe({
         next:  () => { this.showSuccess('Section updated'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
@@ -306,6 +314,7 @@ export class SeatSectionManagerComponent implements OnInit {
         curveStrength: +fv.curveStrength || 0,
         rotation: +fv.rotation || 0,
         rowWidthStep: +fv.rowWidthStep || 0,
+        seatStartNumber: Math.max(1, +fv.seatStartNumber || 1),
         seatSectionType:    fv.seatSectionType,
         numberingDirection: fv.numberingDirection || 'left',
         rowNumberingType:   fv.rowNumberingType,
@@ -344,6 +353,8 @@ export class SeatSectionManagerComponent implements OnInit {
         gapSize: rowConfig.gapSize,
         gapColumns: rowConfig.gapColumns || ''
       });
+      this.perRowEnabled = !!(rowConfig.rowSeatCounts && rowConfig.rowSeatCounts.trim());
+      this.parseCsvToPerRow(rowConfig.rowSeatCounts, rowConfig.rowStartNumbers);
     } else {
       this.rowConfigForm.reset({
         fromRow: 1, toRow: section.rows, fromColumn: 1, toColumn: section.seatsPerRow,
@@ -352,9 +363,40 @@ export class SeatSectionManagerComponent implements OnInit {
         skipRowLetters: '', hasColumnGap: false,
         gapAfterColumn: null, gapSize: null, gapColumns: ''
       });
+      this.perRowEnabled = false;
+      this.perRow = [];
+      this.syncPerRow();
     }
 
     this.dialog.open(this.rowConfigDialog, { width: '680px', maxWidth: '96vw', maxHeight: '92vh' });
+  }
+
+  // Resize the per-row list to match the block's row count (toRow - fromRow + 1),
+  // preserving any values already entered. Called when the dialog opens or rows change.
+  syncPerRow(): void {
+    const fv = this.rowConfigForm.value;
+    const count = Math.max(0, Math.min(300, (+fv.toRow) - (+fv.fromRow) + 1));
+    if (!Number.isFinite(count)) { this.perRow = []; return; }
+    const next: { seats: number | null; start: number | null }[] = [];
+    for (let i = 0; i < count; i++) next.push(this.perRow[i] || { seats: null, start: null });
+    this.perRow = next;
+  }
+
+  private parseCsvToPerRow(counts?: string | null, starts?: string | null): void {
+    const c = (counts || '').split(',').map(s => s.trim());
+    const st = (starts || '').split(',').map(s => s.trim());
+    this.syncPerRow();
+    this.perRow = this.perRow.map((_, i) => ({
+      seats: c[i] && !isNaN(+c[i]) ? +c[i] : null,
+      start: st[i] && !isNaN(+st[i]) ? +st[i] : null,
+    }));
+  }
+
+  // Serialise the per-row list back to CSV; returns null when nothing is set.
+  private perRowToCsv(pick: 'seats' | 'start'): string | null {
+    if (!this.perRowEnabled) return null;
+    if (!this.perRow.some(r => r[pick] != null)) return null;
+    return this.perRow.map(r => (r[pick] != null ? r[pick] : '')).join(',');
   }
 
   // Cross-field / bounds validation the per-field validators can't express.
@@ -401,7 +443,9 @@ export class SeatSectionManagerComponent implements OnInit {
         hasColumnGap: !!fv.hasColumnGap,
         gapAfterColumn: fv.hasColumnGap && fv.gapAfterColumn != null && fv.gapAfterColumn !== '' ? +fv.gapAfterColumn : null,
         gapSize:        fv.hasColumnGap && fv.gapSize        != null && fv.gapSize        !== '' ? +fv.gapSize        : null,
-        gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : ''
+        gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : '',
+        rowSeatCounts:   this.perRowToCsv('seats'),
+        rowStartNumbers: this.perRowToCsv('start')
       };
       this.seatSectionService.updateRowConfig(this.selectedRowConfig.id, payload).subscribe({
         next:  () => { this.showSuccess('Row config updated'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
@@ -420,7 +464,9 @@ export class SeatSectionManagerComponent implements OnInit {
         hasColumnGap: !!fv.hasColumnGap,
         gapAfterColumn: fv.hasColumnGap && fv.gapAfterColumn != null && fv.gapAfterColumn !== '' ? +fv.gapAfterColumn : null,
         gapSize:        fv.hasColumnGap && fv.gapSize        != null && fv.gapSize        !== '' ? +fv.gapSize        : null,
-        gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : ''
+        gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : '',
+        rowSeatCounts:   this.perRowToCsv('seats'),
+        rowStartNumbers: this.perRowToCsv('start')
       };
       this.seatSectionService.addRowConfig(this.selectedSection!.id, payload).subscribe({
         next:  () => { this.showSuccess('Row config added'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
