@@ -5,6 +5,83 @@ import {
 export interface SeatRowLabel { x: number; y: number; label: string; side: 'left' | 'right'; }
 export interface GeneratedSeats { seats: Seat[]; rowLabels: SeatRowLabel[]; }
 
+// Maximum half-sweep (radians) at curveStrength = 100. Bounding the angle keeps the
+// widest row from folding past 90° into a vertical stack at the ends.
+const CURVE_PHI_CAP = 1.15;
+
+/**
+ * Bends one section's seats (and its row labels) onto a bounded arc, in place.
+ * `points` and `labels` must contain ONLY the items for a single section.
+ * curveStrength 0 (or falsy) is a no-op — the section stays a flat grid.
+ *
+ * The transform mirrors the approved preview: rows bow so their ends rise toward
+ * the stage (concave up), and the sweep angle is capped so seats never fold over.
+ * It operates purely on already-computed x/y, so it composes with any numbering,
+ * gap or block rules without touching them.
+ */
+export function applyCurveToSection(
+  points: { cx: number; cy: number }[],
+  labels: { x: number; y: number }[],
+  curveStrength: number | undefined | null
+): void {
+  const strength = Math.max(0, Math.min(100, curveStrength || 0));
+  if (strength <= 0 || points.length === 0) return;
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity;
+  for (const p of points) {
+    if (p.cx < minX) minX = p.cx;
+    if (p.cx > maxX) maxX = p.cx;
+    if (p.cy < minY) minY = p.cy;
+  }
+  const centreX = (minX + maxX) / 2;
+  const baseY   = minY;                       // front row (nearest the stage)
+  const maxHalf = (maxX - minX) / 2;          // widest row's half-width, in px
+  const phiMax  = (strength / 100) * CURVE_PHI_CAP;
+  if (phiMax <= 1e-4 || maxHalf <= 0) return;
+  const R0 = maxHalf / phiMax;                // radius that caps the widest row at phiMax
+
+  const warp = (x: number, y: number): { x: number; y: number } => {
+    const dx     = x - centreX;               // flat horizontal offset from centre
+    const rowPx  = y - baseY;                 // distance behind the front row
+    const radius = R0 + rowPx;
+    const phi    = dx / radius;
+    return { x: centreX + radius * Math.sin(phi), y: baseY + rowPx - radius * (1 - Math.cos(phi)) };
+  };
+
+  for (const p of points) { const w = warp(p.cx, p.cy); p.cx = w.x; p.cy = w.y; }
+  for (const l of labels) { const w = warp(l.x,  l.y);  l.x  = w.x; l.y  = w.y; }
+}
+
+/**
+ * Rotates one section's seats (and its row labels) around the section's centre, in place.
+ * `points` and `labels` must contain ONLY the items for a single section.
+ * rotationDeg 0 (or falsy) is a no-op. Apply this AFTER curve so the whole (curved)
+ * block tilts as one — used to slant side blocks toward the stage.
+ */
+export function applyRotationToSection(
+  points: { cx: number; cy: number }[],
+  labels: { x: number; y: number }[],
+  rotationDeg: number | undefined | null
+): void {
+  const th = ((rotationDeg || 0) * Math.PI) / 180;
+  if (th === 0 || points.length === 0) return;
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of points) {
+    if (p.cx < minX) minX = p.cx; if (p.cx > maxX) maxX = p.cx;
+    if (p.cy < minY) minY = p.cy; if (p.cy > maxY) maxY = p.cy;
+  }
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  const cos = Math.cos(th), sin = Math.sin(th);
+  const rot = (x: number, y: number): { x: number; y: number } => {
+    const dx = x - cx, dy = y - cy;
+    return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+  };
+
+  for (const p of points) { const r = rot(p.cx, p.cy); p.cx = r.x; p.cy = r.y; }
+  for (const l of labels) { const r = rot(l.x,  l.y);  l.x  = r.x; l.y  = r.y; }
+}
+
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 // Seat pitch — must stay in sync with the canvas renderer (SeatMapVisualComponent GAP = 26).
 const GAP = 26;
@@ -83,6 +160,11 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
       return;
     }
 
+    // Remember where this section's seats/labels begin so we can curve just this
+    // section after its flat geometry is laid out.
+    const seatStart  = seats.length;
+    const labelStart = rowLabels.length;
+
     const sectionName = section.name.toUpperCase();
     const rowOffset   = section.rowOffset || 0;
     const rowConfigs  = section.rowConfigs || [];
@@ -110,9 +192,12 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
 
       let perConfigRowIndex = 0;
 
-      const calculateSeatNumber = (col: number): number => {
-        const actualCol = col - fromColumn + 1;
-        const total     = toColumn - fromColumn + 1;
+      // Row taper: each row going back gets `step` extra seats, centred on the block.
+      const step       = Math.max(0, section.rowWidthStep || 0);
+      const baseWidth  = toColumn - fromColumn + 1;
+      const baseCentre = currentColumnPosition + (baseWidth - 1) / 2;
+
+      const numberFor = (actualCol: number, total: number): number => {
         switch (numberingDirection) {
           case 'right': return total - actualCol + 1;
           case 'center': {
@@ -141,19 +226,29 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
           perConfigRowIndex++;
         }
 
+        const rowWidth = baseWidth + step * (r - fromRow);
         let rowMinX = Infinity, rowMaxX = -Infinity;
 
-        for (let c = fromColumn; c <= toColumn; c++) {
-          const columnOffset = gapCols.filter((g: number) => c > g).length * gapSize;
-          const numericSeatNumber = calculateSeatNumber(c);
-          const shortSectionName  = sectionName.charAt(0);
-          let seatId: string;
-          if (sectionRowNumberingType === RowNumberingType.CONTINUOUS)
-            seatId = `${shortSectionName}-${rowLetter}${numericSeatNumber}`;
-          else
-            seatId = `${shortSectionName}-${blockLetter}-${rowLetter}${numericSeatNumber}`;
+        for (let k = 0; k < rowWidth; k++) {
+          // Tapered rows widen symmetrically around the block centre; un-tapered rows
+          // keep the original left-to-right packing (including column gaps).
+          let columnPosition: number;
+          let numericSeatNumber: number;
+          if (step > 0) {
+            columnPosition    = baseCentre - (rowWidth - 1) / 2 + k;
+            numericSeatNumber = numberFor(k + 1, rowWidth);
+          } else {
+            const c = fromColumn + k;
+            const columnOffset = gapCols.filter((g: number) => c > g).length * gapSize;
+            columnPosition     = currentColumnPosition + (c - fromColumn) + columnOffset;
+            numericSeatNumber  = numberFor(c - fromColumn + 1, baseWidth);
+          }
 
-          const columnPosition = currentColumnPosition + (c - fromColumn) + columnOffset;
+          const shortSectionName = sectionName.charAt(0);
+          const seatId = sectionRowNumberingType === RowNumberingType.CONTINUOUS
+            ? `${shortSectionName}-${rowLetter}${numericSeatNumber}`
+            : `${shortSectionName}-${blockLetter}-${rowLetter}${numericSeatNumber}`;
+
           const cx = section.x + (columnPosition * GAP);
           const cy = section.y + (globalRow * GAP);
 
@@ -167,10 +262,10 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
             sectionConfigId: rowConfig.id, ticketType: rowConfig.type as TicketType,
             status: SeatStatus.AVAILABLE, originalStatus: SeatStatus.AVAILABLE,
             price: rowConfig.customPrice || 0, color: rowConfig.color,
-            gridRow: globalRow, gridColumn: columnPosition + 1,
-            isStandingArea: false, originalColumn: c,
+            gridRow: globalRow, gridColumn: Math.round(columnPosition) + 1,
+            isStandingArea: false, originalColumn: step > 0 ? k + 1 : fromColumn + k,
             numberingDirection, blockIndex: configIndex, blockLetter,
-            blockStartSeat: 1, blockTotalSeats: toColumn - fromColumn + 1,
+            blockStartSeat: 1, blockTotalSeats: rowWidth,
             rowNumberingType: sectionRowNumberingType
           });
         }
@@ -179,8 +274,12 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
         rowLabelPositions.set(rowKey, { minX: rowMinX, maxX: rowMaxX, y: section.y + (globalRow * GAP), numberingDirection, blockLetter, rowLetter });
       }
 
-      currentColumnPosition += (toColumn - fromColumn + 1);
-      currentColumnPosition += gapCols.filter((g: number) => g >= fromColumn && g < toColumn).length * gapSize;
+      if (step > 0) {
+        currentColumnPosition += baseWidth + step * (toRow - fromRow) + 2;
+      } else {
+        currentColumnPosition += (toColumn - fromColumn + 1);
+        currentColumnPosition += gapCols.filter((g: number) => g >= fromColumn && g < toColumn).length * gapSize;
+      }
     });
 
     rowLabelPositions.forEach(pos => {
@@ -194,6 +293,10 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
       }
       rowLabels.push({ x: labelX, y: pos.y + 4, label: pos.rowLetter, side });
     });
+
+    // Bend this section's rows onto an arc, then tilt the whole block, when configured.
+    applyCurveToSection(seats.slice(seatStart), rowLabels.slice(labelStart), section.curveStrength);
+    applyRotationToSection(seats.slice(seatStart), rowLabels.slice(labelStart), section.rotation);
   });
 
   return { seats, rowLabels };

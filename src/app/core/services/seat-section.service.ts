@@ -26,6 +26,9 @@ export interface SectionDto {
   gapSize: number | null;
   gapColumns: string | null;
   rowOffset: number | null;
+  curveStrength: number;
+  rotation: number;
+  rowWidthStep: number;
   isActive: boolean;
   rowConfigs: RowConfigDto[];
 }
@@ -60,6 +63,9 @@ export interface CreateSectionRequest {
   seatsPerRow: number;
   sectionLabel: string;
   rowOffset: number | null;
+  curveStrength: number;
+  rotation: number;
+  rowWidthStep: number;
   seatSectionType: SeatSectionType;
   numberingDirection: string;
   rowNumberingType: RowNumberingType;
@@ -82,6 +88,9 @@ export interface UpdateSectionRequest {
   seatsPerRow: number;
   sectionLabel: string;
   rowOffset: number | null;
+  curveStrength: number;
+  rotation: number;
+  rowWidthStep: number;
 }
 
 export interface CreateRowConfigRequest {

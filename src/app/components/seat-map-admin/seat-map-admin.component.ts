@@ -9,6 +9,7 @@ import {
   TicketType, VenueData, VenueSection
 } from '../../core/models/DTOs/seats.DTO.model';
 import { SeatMapVisualComponent } from './seat-map-visual/seat-map-visual.component';
+import { applyCurveToSection, applyRotationToSection } from '../../core/utils/seat-generation.util';
 import { AdminSeatService } from '../../core/services/admin-seat.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { FormatDatePipe } from '../../core/pipes/format-date.pipe';
@@ -363,6 +364,11 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
       if (sectionType === SeatSectionType.FOH) return;
       if (sectionType === SeatSectionType.STANDING) { this.createStandingSection(section); return; }
 
+      // Remember where this section's seats/labels begin so we can curve just this
+      // section once its flat geometry is laid out.
+      const seatStart  = this.seats.length;
+      const labelStart = this.rowLabels.length;
+
       const sectionName = section.name.toUpperCase();
       const rowOffset   = section.rowOffset || 0;
       const rowConfigs  = section.rowConfigs || [];
@@ -391,9 +397,12 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
 
         let perConfigRowIndex = 0;
 
-        const calculateSeatNumber = (col: number): number => {
-          const actualCol = col - fromColumn + 1;
-          const total     = toColumn - fromColumn + 1;
+        // Row taper: each row going back gets `step` extra seats, centred on the block.
+        const step       = Math.max(0, (section as any).rowWidthStep || 0);
+        const baseWidth  = toColumn - fromColumn + 1;
+        const baseCentre = currentColumnPosition + (baseWidth - 1) / 2;
+
+        const numberFor = (actualCol: number, total: number): number => {
           switch (numberingDirection) {
             case 'right': return total - actualCol + 1;
             case 'center': {
@@ -422,21 +431,29 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
             perConfigRowIndex++;
           }
 
+          const rowWidth = baseWidth + step * (r - fromRow);
           let rowMinX = Infinity, rowMaxX = -Infinity;
 
-          for (let c = fromColumn; c <= toColumn; c++) {
-            // Count how many gap columns are before this column
-            const columnOffset = gapCols.filter((g: number) => c > g).length * gapSize;
+          for (let k = 0; k < rowWidth; k++) {
+            // Tapered rows widen symmetrically around the block centre; un-tapered rows
+            // keep the original left-to-right packing (including column gaps).
+            let columnPosition: number;
+            let numericSeatNumber: number;
+            if (step > 0) {
+              columnPosition    = baseCentre - (rowWidth - 1) / 2 + k;
+              numericSeatNumber = numberFor(k + 1, rowWidth);
+            } else {
+              const c = fromColumn + k;
+              const columnOffset = gapCols.filter((g: number) => c > g).length * gapSize;
+              columnPosition     = currentColumnPosition + (c - fromColumn) + columnOffset;
+              numericSeatNumber  = numberFor(c - fromColumn + 1, baseWidth);
+            }
 
-            const numericSeatNumber = calculateSeatNumber(c);
             const shortSectionName  = sectionName.charAt(0);
-            let seatId: string;
-            if (sectionRowNumberingType === RowNumberingType.CONTINUOUS)
-              seatId = `${shortSectionName}-${rowLetter}${numericSeatNumber}`;
-            else
-              seatId = `${shortSectionName}-${blockLetter}-${rowLetter}${numericSeatNumber}`;
+            const seatId = sectionRowNumberingType === RowNumberingType.CONTINUOUS
+              ? `${shortSectionName}-${rowLetter}${numericSeatNumber}`
+              : `${shortSectionName}-${blockLetter}-${rowLetter}${numericSeatNumber}`;
 
-            const columnPosition = currentColumnPosition + (c - fromColumn) + columnOffset;
             // ── GAP changed from 22 to 26 to match canvas rendering ──
             const cx = section.x + (columnPosition * 26);
             const cy = section.y + (globalRow     * 26);
@@ -453,10 +470,10 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
               sectionConfigId: rowConfig.id, ticketType: rowConfig.type,
               status: seatStatus, originalStatus: seatStatus,
               price: rowConfig.customPrice || 0, color: rowConfig.color,
-              gridRow: globalRow, gridColumn: columnPosition + 1,
-              isStandingArea: false, originalColumn: c,
+              gridRow: globalRow, gridColumn: Math.round(columnPosition) + 1,
+              isStandingArea: false, originalColumn: step > 0 ? k + 1 : fromColumn + k,
               numberingDirection, blockIndex: configIndex, blockLetter,
-              blockStartSeat: 1, blockTotalSeats: toColumn - fromColumn + 1,
+              blockStartSeat: 1, blockTotalSeats: rowWidth,
               rowNumberingType: sectionRowNumberingType
             });
           }
@@ -465,9 +482,13 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
           rowLabelPositions.set(rowKey, { minX: rowMinX, maxX: rowMaxX, y: section.y + (globalRow * 26), numberingDirection, blockLetter, rowLetter });
         }
 
-        currentColumnPosition += (toColumn - fromColumn + 1);
-        // Add gaps that fall within this config's column range
-        currentColumnPosition += gapCols.filter((g: number) => g >= fromColumn && g < toColumn).length * gapSize;
+        if (step > 0) {
+          currentColumnPosition += baseWidth + step * (toRow - fromRow) + 2;
+        } else {
+          currentColumnPosition += (toColumn - fromColumn + 1);
+          // Add gaps that fall within this config's column range
+          currentColumnPosition += gapCols.filter((g: number) => g >= fromColumn && g < toColumn).length * gapSize;
+        }
       });
 
       rowLabelPositions.forEach(pos => {
@@ -481,6 +502,10 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
         }
         this.rowLabels.push({ x: labelX, y: pos.y + 4, label: pos.rowLetter, side });
       });
+
+      // Bend this section's rows onto an arc, then tilt the whole block, when configured.
+      applyCurveToSection(this.seats.slice(seatStart), this.rowLabels.slice(labelStart), section.curveStrength);
+      applyRotationToSection(this.seats.slice(seatStart), this.rowLabels.slice(labelStart), (section as any).rotation);
     });
   }
 

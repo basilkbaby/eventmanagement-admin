@@ -34,6 +34,9 @@ export interface VenueSection {
   sectionLabel?: string;
   seatSectionType?: SeatSectionType;
   rowOffset?: number;
+  curveStrength?: number;          // 0 = flat grid; 1-100 bends rows onto a bounded arc
+  rotation?: number;               // degrees; rotates the whole block around its centre
+  rowWidthStep?: number;           // taper: extra seats added per row going back
   numberingDirection ? : string;
   rowConfigs: SectionRowConfig[];
   rowNumberingType?: RowNumberingType;

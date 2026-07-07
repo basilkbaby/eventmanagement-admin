@@ -270,6 +270,27 @@
             </div>
           </div>
 
+          <div class="form-section-title">Shape</div>
+          <div class="form-row-1">
+            <div class="ff-field">
+              <label class="ff-label">Curve — {{ sectionForm.get('curveStrength')?.value || 0 }}</label>
+              <input class="ff-control" type="range" min="0" max="100" step="1" formControlName="curveStrength">
+              <div class="ff-hint">0 = straight rows. Higher bends this section’s rows onto an arc curving toward the stage (seat numbers keep increasing along each row).</div>
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="ff-field">
+              <label class="ff-label">Rotation — {{ sectionForm.get('rotation')?.value || 0 }}°</label>
+              <input class="ff-control" type="range" min="-45" max="45" step="1" formControlName="rotation">
+              <div class="ff-hint">Tilts the whole block. Use to slant side blocks toward the stage (e.g. −18° left, +18° right).</div>
+            </div>
+            <div class="ff-field">
+              <label class="ff-label">Widen / row</label>
+              <input class="ff-control" type="number" min="0" max="10" step="1" formControlName="rowWidthStep">
+              <div class="ff-hint">Extra seats added to each row toward the back (0 = equal rows). Makes a fan/trapezoid block.</div>
+            </div>
+          </div>
+
           <!-- Create-only: numbering + gap -->
           <ng-container *ngIf="!isEditSectionMode">
             <div class="form-section-title">Numbering</div>
