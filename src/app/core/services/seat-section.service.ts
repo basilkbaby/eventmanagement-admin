@@ -30,6 +30,7 @@ export interface SectionDto {
   rotation: number;
   rowWidthStep: number;
   seatStartNumber: number;
+  blockGap: number;
   isActive: boolean;
   rowConfigs: RowConfigDto[];
 }
@@ -53,6 +54,7 @@ export interface RowConfigDto {
   gapColumns: string | null;
   rowSeatCounts: string | null;
   rowStartNumbers: string | null;
+  rowAlign: string | null;
 }
 
 export interface CreateSectionRequest {
@@ -70,6 +72,7 @@ export interface CreateSectionRequest {
   rotation: number;
   rowWidthStep: number;
   seatStartNumber: number;
+  blockGap: number;
   seatSectionType: SeatSectionType;
   numberingDirection: string;
   rowNumberingType: RowNumberingType;
@@ -96,6 +99,7 @@ export interface UpdateSectionRequest {
   rotation: number;
   rowWidthStep: number;
   seatStartNumber: number;
+  blockGap: number;
 }
 
 export interface CreateRowConfigRequest {
@@ -116,6 +120,7 @@ export interface CreateRowConfigRequest {
   gapColumns: string;
   rowSeatCounts: string | null;
   rowStartNumbers: string | null;
+  rowAlign: string | null;
 }
 
 export interface UpdateRowConfigRequest {
@@ -136,6 +141,7 @@ export interface UpdateRowConfigRequest {
   gapColumns: string;
   rowSeatCounts: string | null;
   rowStartNumbers: string | null;
+  rowAlign: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

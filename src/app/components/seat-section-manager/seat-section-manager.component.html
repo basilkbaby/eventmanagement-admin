@@ -290,11 +290,16 @@
               <div class="ff-hint">Extra seats added to each row toward the back (0 = equal rows). Makes a fan/trapezoid block.</div>
             </div>
           </div>
-          <div class="form-row-1">
+          <div class="form-row-2">
             <div class="ff-field">
               <label class="ff-label">Start seat #</label>
               <input class="ff-control" type="number" min="1" step="1" formControlName="seatStartNumber">
               <div class="ff-hint">First seat number in this section (default 1). E.g. 35 numbers seats 35, 36, 37… instead of 1, 2, 3…</div>
+            </div>
+            <div class="ff-field">
+              <label class="ff-label">Block gap (aisle)</label>
+              <input class="ff-control" type="number" min="0" max="20" step="1" formControlName="blockGap">
+              <div class="ff-hint">Aisle width, in seat columns, between adjacent blocks (L/C/R). Default 2 — increase for wider aisles.</div>
             </div>
           </div>
 
@@ -475,6 +480,18 @@
       </ng-container>
 
       <div class="form-section-title">Per-row seats</div>
+      <div class="form-row-1">
+        <div class="ff-field">
+          <label class="ff-label">Row alignment</label>
+          <select class="ff-control" formControlName="rowAlign">
+            <option value="auto">Auto (edges fan outward, middle centred)</option>
+            <option value="left">Flush left (grow right)</option>
+            <option value="center">Centered</option>
+            <option value="right">Flush right (grow left)</option>
+          </select>
+          <div class="ff-hint">How rows of different width line up. Auto: leftmost block flush right, rightmost flush left, middle centred.</div>
+        </div>
+      </div>
       <label class="ff-check">
         <input type="checkbox" [(ngModel)]="perRowEnabled" [ngModelOptions]="{standalone:true}" (change)="syncPerRow()">
         Custom seat count per row

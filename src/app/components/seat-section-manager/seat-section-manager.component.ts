@@ -128,6 +128,7 @@ export class SeatSectionManagerComponent implements OnInit {
       rotation:           [0,   [Validators.min(-180), Validators.max(180)]],
       rowWidthStep:       [0,   [Validators.min(0), Validators.max(10)]],
       seatStartNumber:    [1,   [Validators.min(1)]],
+      blockGap:           [2,   [Validators.min(0), Validators.max(20)]],
       numberingDirection: ['left'],
       rowNumberingType:   [RowNumberingType.PERSECTION],
       skipRowLetters:     [''],
@@ -152,7 +153,8 @@ export class SeatSectionManagerComponent implements OnInit {
       hasColumnGap:       [false],
       gapAfterColumn:     [null],
       gapSize:            [null],
-      gapColumns:         ['']
+      gapColumns:         [''],
+      rowAlign:           ['auto']
     });
 
     const destroyRef = inject(DestroyRef);
@@ -248,6 +250,7 @@ export class SeatSectionManagerComponent implements OnInit {
         rotation:           section.rotation ?? 0,
         rowWidthStep:       section.rowWidthStep ?? 0,
         seatStartNumber:    section.seatStartNumber ?? 1,
+        blockGap:           section.blockGap ?? 2,
         numberingDirection: this.normalizeDirection(section.numberingDirection),
         rowNumberingType:   section.rowNumberingType,
         skipRowLetters:     (section.skipRowLetters || []).join(','),
@@ -260,7 +263,7 @@ export class SeatSectionManagerComponent implements OnInit {
       this.sectionForm.reset({
         name: '', sectionLabel: '', seatSectionType: SeatSectionType.SEAT,
         rows: 10, seatsPerRow: 20, x: 0, y: 0,
-        rowOffset: null, curveStrength: 0, rotation: 0, rowWidthStep: 0, seatStartNumber: 1, numberingDirection: 'left',
+        rowOffset: null, curveStrength: 0, rotation: 0, rowWidthStep: 0, seatStartNumber: 1, blockGap: 2, numberingDirection: 'left',
         rowNumberingType: RowNumberingType.PERSECTION,
         skipRowLetters: '', hasColumnGap: false,
         gapAfterColumn: null, gapSize: null, gapColumns: ''
@@ -299,7 +302,8 @@ export class SeatSectionManagerComponent implements OnInit {
         curveStrength: +fv.curveStrength || 0,
         rotation: +fv.rotation || 0,
         rowWidthStep: +fv.rowWidthStep || 0,
-        seatStartNumber: Math.max(1, +fv.seatStartNumber || 1)
+        seatStartNumber: Math.max(1, +fv.seatStartNumber || 1),
+        blockGap: Math.max(0, Number.isFinite(+fv.blockGap) ? +fv.blockGap : 2)
       };
       this.seatSectionService.updateSection(this.selectedSection.id, payload).subscribe({
         next:  () => { this.showSuccess('Section updated'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
@@ -315,6 +319,7 @@ export class SeatSectionManagerComponent implements OnInit {
         rotation: +fv.rotation || 0,
         rowWidthStep: +fv.rowWidthStep || 0,
         seatStartNumber: Math.max(1, +fv.seatStartNumber || 1),
+        blockGap: Math.max(0, Number.isFinite(+fv.blockGap) ? +fv.blockGap : 2),
         seatSectionType:    fv.seatSectionType,
         numberingDirection: fv.numberingDirection || 'left',
         rowNumberingType:   fv.rowNumberingType,
@@ -351,7 +356,8 @@ export class SeatSectionManagerComponent implements OnInit {
         hasColumnGap: rowConfig.hasColumnGap,
         gapAfterColumn: rowConfig.gapAfterColumn,
         gapSize: rowConfig.gapSize,
-        gapColumns: rowConfig.gapColumns || ''
+        gapColumns: rowConfig.gapColumns || '',
+        rowAlign: rowConfig.rowAlign || 'auto'
       });
       this.perRowEnabled = !!(rowConfig.rowSeatCounts && rowConfig.rowSeatCounts.trim());
       this.parseCsvToPerRow(rowConfig.rowSeatCounts, rowConfig.rowStartNumbers);
@@ -361,7 +367,7 @@ export class SeatSectionManagerComponent implements OnInit {
         type: 'STANDARD', customPrice: 0, color: '#4caf50', blockLetter: '',
         numberingDirection: 'left', rowNumberingType: RowNumberingType.PERSECTION,
         skipRowLetters: '', hasColumnGap: false,
-        gapAfterColumn: null, gapSize: null, gapColumns: ''
+        gapAfterColumn: null, gapSize: null, gapColumns: '', rowAlign: 'auto'
       });
       this.perRowEnabled = false;
       this.perRow = [];
@@ -445,7 +451,8 @@ export class SeatSectionManagerComponent implements OnInit {
         gapSize:        fv.hasColumnGap && fv.gapSize        != null && fv.gapSize        !== '' ? +fv.gapSize        : null,
         gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : '',
         rowSeatCounts:   this.perRowToCsv('seats'),
-        rowStartNumbers: this.perRowToCsv('start')
+        rowStartNumbers: this.perRowToCsv('start'),
+        rowAlign:        fv.rowAlign || 'auto'
       };
       this.seatSectionService.updateRowConfig(this.selectedRowConfig.id, payload).subscribe({
         next:  () => { this.showSuccess('Row config updated'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
@@ -466,7 +473,8 @@ export class SeatSectionManagerComponent implements OnInit {
         gapSize:        fv.hasColumnGap && fv.gapSize        != null && fv.gapSize        !== '' ? +fv.gapSize        : null,
         gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : '',
         rowSeatCounts:   this.perRowToCsv('seats'),
-        rowStartNumbers: this.perRowToCsv('start')
+        rowStartNumbers: this.perRowToCsv('start'),
+        rowAlign:        fv.rowAlign || 'auto'
       };
       this.seatSectionService.addRowConfig(this.selectedSection!.id, payload).subscribe({
         next:  () => { this.showSuccess('Row config added'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },

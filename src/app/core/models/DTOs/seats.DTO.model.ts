@@ -38,6 +38,7 @@ export interface VenueSection {
   rotation?: number;               // degrees; rotates the whole block around its centre
   rowWidthStep?: number;           // taper: extra seats added per row going back
   seatStartNumber?: number;        // first seat number in the section (default 1)
+  blockGap?: number;               // aisle width (columns) between blocks (default 2)
   numberingDirection ? : string;
   rowConfigs: SectionRowConfig[];
   rowNumberingType?: RowNumberingType;
@@ -67,6 +68,7 @@ export interface SectionRowConfig {
   gapColumns?: string;             // Comma-separated gap columns
   rowSeatCounts?: string;          // CSV per-row seat counts, e.g. "30,32,34" (overrides width)
   rowStartNumbers?: string;        // CSV per-row starting seat numbers (aligned to rowSeatCounts)
+  rowAlign?: string;               // auto | left | center | right — how differing rows line up
 }
 
 // seats.model.ts

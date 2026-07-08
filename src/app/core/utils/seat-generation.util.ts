@@ -198,21 +198,36 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
       const gapSize     = rowConfig.gapSize || 1;
       const skipLetters = rowConfig.skipRowLetters || sectionSkipLetters;
 
-      if (configIndex > 0) currentColumnPosition += 2;
+      // Aisle (in columns) inserted before each block after the first. Per-section, default 2.
+      const blockGap = Math.max(0, section.blockGap ?? 2);
+      if (configIndex > 0) currentColumnPosition += blockGap;
 
       let perConfigRowIndex = 0;
 
       // Row taper: each row going back gets `step` extra seats, centred on the block.
       const step       = Math.max(0, section.rowWidthStep || 0);
       const baseWidth  = toColumn - fromColumn + 1;
-      const baseCentre = currentColumnPosition + (baseWidth - 1) / 2;
       // Seat numbering starts at this section's SeatStartNumber (default 1).
       const sectionStart = Math.max(1, section.seatStartNumber || 1);
       // Per-row overrides: when RowSeatCounts is set, each row uses its own width (and
       // optionally its own start number). Absent -> previous behaviour (fixed cols / taper).
       const rowCounts = parseRowNums(rowConfig.rowSeatCounts);
       const rowStarts = parseRowNums(rowConfig.rowStartNumbers);
-      const shaped    = !!rowCounts;
+      const shaped    = !!rowCounts || step > 0;
+      // Effective block width = the WIDEST row, so centring and advance stay consistent
+      // even when per-row counts (or taper) differ from the column range.
+      const blockWidth = rowCounts
+        ? Math.max(1, ...rowCounts.map(n => (n > 0 ? n : baseWidth)))
+        : step > 0 ? baseWidth + step * (toRow - fromRow)
+        : baseWidth;
+      // Row alignment within the block. "auto" = edges fan outward (leftmost flush right,
+      // rightmost flush left), middle/single centred. Explicit left/center/right override.
+      const blockCount = sortedConfigs.length;
+      const align = (rowConfig.rowAlign || 'auto').toLowerCase();
+      const resolvedAlign = align !== 'auto' ? align
+        : (blockCount > 1 && configIndex === 0) ? 'right'
+        : (blockCount > 1 && configIndex === blockCount - 1) ? 'left'
+        : 'center';
 
       const numberFor = (actualCol: number, total: number): number => {
         switch (numberingDirection) {
@@ -244,21 +259,26 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
         }
 
         const ri = r - fromRow;
-        const rowWidth = shaped
-          ? (rowCounts![ri] > 0 ? rowCounts![ri] : baseWidth)
-          : baseWidth + step * ri;
-        const rowStart = shaped && rowStarts && rowStarts[ri] > 0 ? rowStarts[ri] : sectionStart;
+        const rowWidth = rowCounts
+          ? (rowCounts[ri] > 0 ? rowCounts[ri] : baseWidth)
+          : step > 0 ? baseWidth + step * ri
+          : baseWidth;
+        const rowStart = rowCounts && rowStarts && rowStarts[ri] > 0 ? rowStarts[ri] : sectionStart;
         const rowOffsetNum = rowStart - 1;
-        const shapedRow = shaped || step > 0;
+        // Anchor shaped rows: left = flush left (grow right), right = flush right (grow left),
+        // center = centred. (resolvedAlign already applied the auto/position logic.)
+        const rowAnchor = resolvedAlign === 'left' ? 0
+                        : resolvedAlign === 'right' ? (blockWidth - rowWidth)
+                        : (blockWidth - rowWidth) / 2;
         let rowMinX = Infinity, rowMaxX = -Infinity;
 
         for (let k = 0; k < rowWidth; k++) {
-          // Shaped rows (per-row counts or taper) widen symmetrically around the block
-          // centre; plain rows keep the original left-to-right packing (incl. column gaps).
+          // Shaped rows (per-row counts or taper) anchor per numbering direction; plain
+          // rows keep the original left-to-right packing (incl. column gaps).
           let columnPosition: number;
           let numericSeatNumber: number;
-          if (shapedRow) {
-            columnPosition    = baseCentre - (rowWidth - 1) / 2 + k;
+          if (shaped) {
+            columnPosition    = currentColumnPosition + rowAnchor + k;
             numericSeatNumber = numberFor(k + 1, rowWidth) + rowOffsetNum;
           } else {
             const c = fromColumn + k;
@@ -286,7 +306,7 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
             status: SeatStatus.AVAILABLE, originalStatus: SeatStatus.AVAILABLE,
             price: rowConfig.customPrice || 0, color: rowConfig.color,
             gridRow: globalRow, gridColumn: Math.round(columnPosition) + 1,
-            isStandingArea: false, originalColumn: shapedRow ? k + 1 : fromColumn + k,
+            isStandingArea: false, originalColumn: shaped ? k + 1 : fromColumn + k,
             numberingDirection, blockIndex: configIndex, blockLetter,
             blockStartSeat: 1, blockTotalSeats: rowWidth,
             rowNumberingType: sectionRowNumberingType
@@ -298,10 +318,7 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
       }
 
       if (shaped) {
-        const maxW = Math.max(baseWidth, ...rowCounts!.map(n => (n > 0 ? n : 0)));
-        currentColumnPosition += maxW + 2;
-      } else if (step > 0) {
-        currentColumnPosition += baseWidth + step * (toRow - fromRow) + 2;
+        currentColumnPosition += blockWidth;
       } else {
         currentColumnPosition += (toColumn - fromColumn + 1);
         currentColumnPosition += gapCols.filter((g: number) => g >= fromColumn && g < toColumn).length * gapSize;
