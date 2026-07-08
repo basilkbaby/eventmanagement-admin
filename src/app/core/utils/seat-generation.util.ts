@@ -145,6 +145,7 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
 
   const getDefaultBlockLetter = (i: number) => ALPHA[i % 26];
   const defaultRowNumberingType = RowNumberingType.PERSECTION;
+  // Shared across sections so CONTINUOUS numbering runs venue-wide (letters never repeat).
   const continuousLetterGenerator = createLetterGenerator();
 
   const sortedSections = [...sections].sort((a, b) => a.y !== b.y ? a.y - b.y : a.x - b.x);
@@ -180,6 +181,9 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
     const rowConfigs  = section.rowConfigs || [];
     const sectionRowNumberingType = section.rowNumberingType ?? defaultRowNumberingType;
     const sectionSkipLetters      = section.skipRowLetters || [];
+    // One continuous letter per physical row, shared across all blocks of that row.
+    // The generator is shared across sections, so letters continue venue-wide.
+    const continuousRowLetters      = new Map<number, string>();
     const sortedConfigs           = [...rowConfigs].sort((a, b) => (a.fromColumn || 0) - (b.fromColumn || 0));
     const rowLabelPositions = new Map<string, { minX: number; maxX: number; y: number; numberingDirection: 'left' | 'right' | 'center'; blockLetter: string; rowLetter: string }>();
 
@@ -252,7 +256,14 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
         const globalRow = r + rowOffset;
         let rowLetter: string;
         if (sectionRowNumberingType === RowNumberingType.CONTINUOUS) {
-          rowLetter = continuousLetterGenerator.getNextLetter(skipLetters);
+          // One letter per physical row, reused across every block of that row.
+          const cached = continuousRowLetters.get(globalRow);
+          if (cached !== undefined) {
+            rowLetter = cached;
+          } else {
+            rowLetter = continuousLetterGenerator.getNextLetter(skipLetters);
+            continuousRowLetters.set(globalRow, rowLetter);
+          }
         } else {
           rowLetter = getRowLetterForIndex(perConfigRowIndex, skipLetters);
           perConfigRowIndex++;
@@ -313,8 +324,18 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
           });
         }
 
-        const rowKey = `${section.id}-${blockLetter}-${rowLetter}`;
-        rowLabelPositions.set(rowKey, { minX: rowMinX, maxX: rowMaxX, y: section.y + (globalRow * GAP), numberingDirection, blockLetter, rowLetter });
+        // One label per physical row (merge all blocks), so the row letter shows once at the
+        // row's start even when blocks share a block letter. Keep the leftmost block's values.
+        const rowKey = `${section.id}-${globalRow}`;
+        const exLbl = rowLabelPositions.get(rowKey);
+        rowLabelPositions.set(rowKey, {
+          minX: Math.min(rowMinX, exLbl?.minX ?? Infinity),
+          maxX: Math.max(rowMaxX, exLbl?.maxX ?? -Infinity),
+          y: section.y + (globalRow * GAP),
+          numberingDirection: exLbl?.numberingDirection ?? numberingDirection,
+          blockLetter: exLbl?.blockLetter ?? blockLetter,
+          rowLetter: exLbl?.rowLetter ?? rowLetter
+        });
       }
 
       if (shaped) {

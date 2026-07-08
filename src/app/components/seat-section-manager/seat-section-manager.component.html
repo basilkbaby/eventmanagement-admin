@@ -303,7 +303,18 @@
             </div>
           </div>
 
-          <!-- Create-only: numbering + gap -->
+          <!-- Row numbering: editable on create AND edit -->
+          <div class="form-row-1">
+            <div class="ff-field">
+              <label class="ff-label">Row numbering</label>
+              <select class="ff-control" formControlName="rowNumberingType">
+                <option *ngFor="let t of rowNumberingTypes" [ngValue]="t.value">{{ t.label }}</option>
+              </select>
+              <div class="ff-hint">Per section: row letters restart at A in every section. Continuous: letters run unbroken down this section's rows.</div>
+            </div>
+          </div>
+
+          <!-- Create-only: direction + skip letters + gap -->
           <ng-container *ngIf="!isEditSectionMode">
             <div class="form-section-title">Numbering</div>
             <div class="form-row-2">
@@ -311,12 +322,6 @@
                 <label class="ff-label">Direction</label>
                 <select class="ff-control" formControlName="numberingDirection">
                   <option *ngFor="let d of numberingDirections" [ngValue]="d.value">{{ d.label }}</option>
-                </select>
-              </div>
-              <div class="ff-field">
-                <label class="ff-label">Row Numbering</label>
-                <select class="ff-control" formControlName="rowNumberingType">
-                  <option *ngFor="let t of rowNumberingTypes" [ngValue]="t.value">{{ t.label }}</option>
                 </select>
               </div>
             </div>
@@ -445,18 +450,13 @@
 
       <ng-container>
         <div class="form-section-title">Advanced</div>
-        <div class="form-row-2">
+        <div class="form-row-1">
           <div class="ff-field">
             <label class="ff-label">Numbering Direction</label>
             <select class="ff-control" formControlName="numberingDirection">
               <option *ngFor="let d of numberingDirections" [ngValue]="d.value">{{ d.label }}</option>
             </select>
-          </div>
-          <div class="ff-field">
-            <label class="ff-label">Row Numbering Type</label>
-            <select class="ff-control" formControlName="rowNumberingType">
-              <option *ngFor="let t of rowNumberingTypes" [ngValue]="t.value">{{ t.label }}</option>
-            </select>
+            <div class="ff-hint">Row numbering (per-section vs continuous) is set on the section, not per block.</div>
           </div>
         </div>
         <div class="form-row-1">

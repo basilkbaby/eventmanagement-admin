@@ -51,6 +51,8 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
   private panX = 0;
   private panY = 0;
   private zoom = 0.72;
+  // World-space centre X of the seat content — the stage is centred over this.
+  private contentCenterX = 700; // CANVAS_W / 2; updated in centreView()
 
   // Mouse pan
   private mouseDown = false;
@@ -115,6 +117,7 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
     if (ch['selectedSeatIds']) this.selectedSet = new Set(this.selectedSeatIds);
     if (ch['seats']) {
       this.rebuildCaches();
+      this.updateContentCentre();   // keep the stage centred over the seats as they change
       if (!ch['seats'].previousValue || ch['seats'].previousValue.length === 0) {
         setTimeout(() => { this.sizeCanvas(); this.centreView(); }, 0);
       }
@@ -185,6 +188,18 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
     this.dirty = true;
   }
 
+  // Recompute the seat-content centre (world space) so the stage stays centred over it,
+  // without changing the current pan/zoom.
+  private updateContentCentre() {
+    if (this.seats.length) {
+      let minX = Infinity, maxX = -Infinity;
+      for (const s of this.seats) { if (s.cx < minX) minX = s.cx; if (s.cx > maxX) maxX = s.cx; }
+      this.contentCenterX = (minX + maxX) / 2;
+    } else {
+      this.contentCenterX = this.CANVAS_W / 2;
+    }
+  }
+
   private centreView() {
     const host = this.hostRef.nativeElement;
     const w = host.clientWidth, h = host.clientHeight;
@@ -203,10 +218,12 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
       this.zoom = Math.max(0.2, Math.min(1.4, Math.min(zx, zy)));
       this.panX = pad + (w - pad*2 - contentW * this.zoom) / 2 - (minX - this.SR * 2) * this.zoom;
       this.panY = pad + (h - pad*2 - contentH * this.zoom) / 2 - minY * this.zoom;
+      this.contentCenterX = (minX + maxX) / 2;
     } else {
       this.zoom = 0.72;
       this.panX = (w - this.CANVAS_W * this.zoom) / 2;
       this.panY = Math.max(16, (h - this.CANVAS_H * this.zoom) / 2);
+      this.contentCenterX = this.CANVAS_W / 2;
     }
     this.dirty = true;
   }
@@ -260,7 +277,7 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
   // ── Stage ──────────────────────────────────────────────────────────────────
 
   private drawStage(ctx: CanvasRenderingContext2D) {
-    const x = (this.CANVAS_W - this.STAGE_W) / 2, y = 10;
+    const x = this.contentCenterX - this.STAGE_W / 2, y = 10;
     const w = this.STAGE_W, h = this.STAGE_H;
     ctx.fillStyle = '#f8f9fb';
     this.rrect(ctx, x, y, w, h, 10); ctx.fill();

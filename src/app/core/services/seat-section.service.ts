@@ -100,6 +100,7 @@ export interface UpdateSectionRequest {
   rowWidthStep: number;
   seatStartNumber: number;
   blockGap: number;
+  rowNumberingType: RowNumberingType;
 }
 
 export interface CreateRowConfigRequest {

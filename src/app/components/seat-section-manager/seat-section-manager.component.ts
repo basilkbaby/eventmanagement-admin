@@ -303,7 +303,8 @@ export class SeatSectionManagerComponent implements OnInit {
         rotation: +fv.rotation || 0,
         rowWidthStep: +fv.rowWidthStep || 0,
         seatStartNumber: Math.max(1, +fv.seatStartNumber || 1),
-        blockGap: Math.max(0, Number.isFinite(+fv.blockGap) ? +fv.blockGap : 2)
+        blockGap: Math.max(0, Number.isFinite(+fv.blockGap) ? +fv.blockGap : 2),
+        rowNumberingType: fv.rowNumberingType
       };
       this.seatSectionService.updateSection(this.selectedSection.id, payload).subscribe({
         next:  () => { this.showSuccess('Section updated'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
