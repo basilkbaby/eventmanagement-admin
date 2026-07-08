@@ -1013,22 +1013,26 @@ select.ff-control {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid rgba(0,0,0,.23);
-  border-radius: 4px;
-  padding: 6px 12px;
-  height: 56px;
   box-sizing: border-box;
-  &:hover { border-color: rgba(0,0,0,.87); }
+}
+
+// Hex code is the primary, editable input (default).
+.color-hex-input {
+  font-family: monospace;
+  font-size: 13px;
+  max-width: 120px;
+  text-transform: lowercase;
 }
 
 .color-input {
-  width: 36px;
-  height: 36px;
-  border: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(0,0,0,.18);
   padding: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   background: none;
+  flex: 0 0 auto;
 }
 
 .color-hex {
@@ -1045,6 +1049,25 @@ select.ff-control {
   color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,.3);
   margin-left: auto;
+}
+
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid rgba(0,0,0,.15);
+  padding: 0;
+  cursor: pointer;
+  transition: transform .1s ease;
+  &:hover  { transform: scale(1.12); }
+  &.active { outline: 2px solid #2a2a30; outline-offset: 1px; }
 }
 
 // ── Dialog misc ───────────────────────────────────────────────────────────────

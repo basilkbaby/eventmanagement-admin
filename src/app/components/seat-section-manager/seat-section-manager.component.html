@@ -434,11 +434,20 @@
         <div class="color-field">
           <label class="color-label">Color</label>
           <div class="color-picker-wrap">
-            <input type="color" formControlName="color" class="color-input">
-            <span class="color-hex">{{ rowConfigForm.get('color')?.value }}</span>
+            <input type="text" formControlName="color" class="ff-control color-hex-input"
+                   placeholder="#4caf50" maxlength="7" spellcheck="false" autocomplete="off">
+            <input type="color" class="color-input" title="Pick a colour"
+                   [value]="rowConfigForm.get('color')?.value || '#000000'"
+                   (input)="rowConfigForm.get('color')?.setValue($any($event.target).value)">
             <div class="color-preview-chip" [style.background-color]="rowConfigForm.get('color')?.value">
               {{ rowConfigForm.get('type')?.value || 'Type' }}
             </div>
+          </div>
+          <div class="color-swatches">
+            <button type="button" class="swatch" *ngFor="let c of paletteColors"
+                    [style.background-color]="c" [title]="c"
+                    [class.active]="(rowConfigForm.get('color')?.value || '').toLowerCase() === c"
+                    (click)="rowConfigForm.get('color')?.setValue(c)"></button>
           </div>
         </div>
         <div class="ff-field">

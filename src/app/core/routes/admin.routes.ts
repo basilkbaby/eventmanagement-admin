@@ -25,6 +25,8 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: ':id/edit',
+        canActivate: [AuthGuard],
+        data: { roles: ['SuperAdmin'] },
         loadComponent: () => import('../../components/events/event-form/event-form.component').then(m => m.EventFormComponent)
       },
       {

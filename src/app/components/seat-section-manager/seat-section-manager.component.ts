@@ -108,6 +108,14 @@ export class SeatSectionManagerComponent implements OnInit {
     { value: 'right', label: 'Right' }
   ];
 
+  // Default block colours — muted, earthy tones for quick picking.
+  readonly paletteColors = [
+    '#8a9a5b', '#acae4c', '#ae944c', '#b3543a', '#ae694c',
+    '#ae4c4c', '#ae4c80', '#ae4c99', '#8a6b8c', '#8b7b9e',
+    '#5c4cae', '#5b629a', '#4a8bc9', '#5b7f9a', '#4a9a8a',
+    '#4cae9d', '#4caf50', '#d4d4d4'
+  ];
+
   constructor(
     private seatSectionService: SeatSectionService,
     readonly eventContext: EventContextService,

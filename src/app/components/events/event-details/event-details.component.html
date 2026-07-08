@@ -12,7 +12,7 @@
         <span class="material-icons">content_copy</span>
         Clone Event
       </button>
-      <button class="ed-btn ed-btn--primary" [routerLink]="['/admin/events', event.id, 'edit']">
+      <button *ngIf="isSuperAdmin" class="ed-btn ed-btn--primary" [routerLink]="['/admin/events', event.id, 'edit']">
         <span class="material-icons">edit</span>
         Edit Event
       </button>
