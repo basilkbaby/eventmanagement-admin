@@ -69,6 +69,7 @@ export interface SectionRowConfig {
   rowSeatCounts?: string;          // CSV per-row seat counts, e.g. "30,32,34" (overrides width)
   rowStartNumbers?: string;        // CSV per-row starting seat numbers (aligned to rowSeatCounts)
   rowAlign?: string;               // auto | left | center | right — how differing rows line up
+  rowLetters?: string;             // CSV per-row letter overrides, e.g. "A,B,C" (blank = auto)
 }
 
 // seats.model.ts

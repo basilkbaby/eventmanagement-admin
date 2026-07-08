@@ -506,15 +506,17 @@
         Custom seat count per row
       </label>
       <div class="ff-hint">
-        When on, each row uses its own seat count (and optional start number) instead of the column range.
-        Leave a row's seats blank to fall back to the column width; leave start blank to use the section's start number.
+        When on, each row can set its own letter, seat count, and start number.
+        Leave letter blank for the auto letter, seats blank to fall back to the column width, and start blank to use the section's start number.
       </div>
       <div class="perrow-grid" *ngIf="perRowEnabled">
         <div class="perrow-row perrow-head">
-          <span>Row</span><span>Seats</span><span>Start #</span>
+          <span>Row</span><span>Letter</span><span>Seats</span><span>Start #</span>
         </div>
         <div class="perrow-row" *ngFor="let r of perRow; let i = index">
           <span class="perrow-idx">{{ i + 1 }}</span>
+          <input class="ff-control" type="text" maxlength="4" placeholder="auto"
+                 [(ngModel)]="r.letter" [ngModelOptions]="{standalone:true}">
           <input class="ff-control" type="number" min="0" placeholder="—"
                  [(ngModel)]="r.seats" [ngModelOptions]="{standalone:true}">
           <input class="ff-control" type="number" min="1" placeholder="—"

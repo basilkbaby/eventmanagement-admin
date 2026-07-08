@@ -55,6 +55,7 @@ export interface RowConfigDto {
   rowSeatCounts: string | null;
   rowStartNumbers: string | null;
   rowAlign: string | null;
+  rowLetters: string | null;
 }
 
 export interface CreateSectionRequest {
@@ -122,6 +123,7 @@ export interface CreateRowConfigRequest {
   rowSeatCounts: string | null;
   rowStartNumbers: string | null;
   rowAlign: string | null;
+  rowLetters: string | null;
 }
 
 export interface UpdateRowConfigRequest {
@@ -143,6 +145,7 @@ export interface UpdateRowConfigRequest {
   rowSeatCounts: string | null;
   rowStartNumbers: string | null;
   rowAlign: string | null;
+  rowLetters: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

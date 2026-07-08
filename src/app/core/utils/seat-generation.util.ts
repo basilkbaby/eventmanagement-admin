@@ -217,6 +217,8 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
       // optionally its own start number). Absent -> previous behaviour (fixed cols / taper).
       const rowCounts = parseRowNums(rowConfig.rowSeatCounts);
       const rowStarts = parseRowNums(rowConfig.rowStartNumbers);
+      // Optional per-row letter overrides (CSV aligned to the block's rows).
+      const rowLettersArr: string[] = ((rowConfig as any).rowLetters || '').split(',').map((s: string) => s.trim());
       const shaped    = !!rowCounts || step > 0;
       // Effective block width = the WIDEST row, so centring and advance stay consistent
       // even when per-row counts (or taper) differ from the column range.
@@ -268,6 +270,9 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
           rowLetter = getRowLetterForIndex(perConfigRowIndex, skipLetters);
           perConfigRowIndex++;
         }
+        // Explicit per-row letter wins when provided.
+        const letterOverride = rowLettersArr[r - fromRow];
+        if (letterOverride) rowLetter = letterOverride;
 
         const ri = r - fromRow;
         const rowWidth = rowCounts

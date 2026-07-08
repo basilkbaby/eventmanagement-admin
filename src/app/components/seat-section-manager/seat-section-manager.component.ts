@@ -90,7 +90,7 @@ export class SeatSectionManagerComponent implements OnInit {
   // Per-row seat counts (Option A): when enabled, each row in the block gets its own
   // seat count and optional start number, serialised to the CSV fields on save.
   perRowEnabled = false;
-  perRow: { seats: number | null; start: number | null }[] = [];
+  perRow: { seats: number | null; start: number | null; letter: string | null }[] = [];
 
   readonly sectionTypes = [
     { value: SeatSectionType.SEAT,     label: 'Seated' },
@@ -368,8 +368,9 @@ export class SeatSectionManagerComponent implements OnInit {
         gapColumns: rowConfig.gapColumns || '',
         rowAlign: rowConfig.rowAlign || 'auto'
       });
-      this.perRowEnabled = !!(rowConfig.rowSeatCounts && rowConfig.rowSeatCounts.trim());
-      this.parseCsvToPerRow(rowConfig.rowSeatCounts, rowConfig.rowStartNumbers);
+      this.perRowEnabled = !!((rowConfig.rowSeatCounts && rowConfig.rowSeatCounts.trim())
+        || (rowConfig.rowLetters && rowConfig.rowLetters.trim()));
+      this.parseCsvToPerRow(rowConfig.rowSeatCounts, rowConfig.rowStartNumbers, rowConfig.rowLetters);
     } else {
       this.rowConfigForm.reset({
         fromRow: 1, toRow: section.rows, fromColumn: 1, toColumn: section.seatsPerRow,
@@ -392,25 +393,27 @@ export class SeatSectionManagerComponent implements OnInit {
     const fv = this.rowConfigForm.value;
     const count = Math.max(0, Math.min(300, (+fv.toRow) - (+fv.fromRow) + 1));
     if (!Number.isFinite(count)) { this.perRow = []; return; }
-    const next: { seats: number | null; start: number | null }[] = [];
-    for (let i = 0; i < count; i++) next.push(this.perRow[i] || { seats: null, start: null });
+    const next: { seats: number | null; start: number | null; letter: string | null }[] = [];
+    for (let i = 0; i < count; i++) next.push(this.perRow[i] || { seats: null, start: null, letter: null });
     this.perRow = next;
   }
 
-  private parseCsvToPerRow(counts?: string | null, starts?: string | null): void {
+  private parseCsvToPerRow(counts?: string | null, starts?: string | null, letters?: string | null): void {
     const c = (counts || '').split(',').map(s => s.trim());
     const st = (starts || '').split(',').map(s => s.trim());
+    const lt = (letters || '').split(',').map(s => s.trim());
     this.syncPerRow();
     this.perRow = this.perRow.map((_, i) => ({
       seats: c[i] && !isNaN(+c[i]) ? +c[i] : null,
       start: st[i] && !isNaN(+st[i]) ? +st[i] : null,
+      letter: lt[i] ? lt[i] : null,
     }));
   }
 
   // Serialise the per-row list back to CSV; returns null when nothing is set.
-  private perRowToCsv(pick: 'seats' | 'start'): string | null {
+  private perRowToCsv(pick: 'seats' | 'start' | 'letter'): string | null {
     if (!this.perRowEnabled) return null;
-    if (!this.perRow.some(r => r[pick] != null)) return null;
+    if (!this.perRow.some(r => r[pick] != null && r[pick] !== '')) return null;
     return this.perRow.map(r => (r[pick] != null ? r[pick] : '')).join(',');
   }
 
@@ -461,6 +464,7 @@ export class SeatSectionManagerComponent implements OnInit {
         gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : '',
         rowSeatCounts:   this.perRowToCsv('seats'),
         rowStartNumbers: this.perRowToCsv('start'),
+        rowLetters:      this.perRowToCsv('letter'),
         rowAlign:        fv.rowAlign || 'auto'
       };
       this.seatSectionService.updateRowConfig(this.selectedRowConfig.id, payload).subscribe({
@@ -483,6 +487,7 @@ export class SeatSectionManagerComponent implements OnInit {
         gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : '',
         rowSeatCounts:   this.perRowToCsv('seats'),
         rowStartNumbers: this.perRowToCsv('start'),
+        rowLetters:      this.perRowToCsv('letter'),
         rowAlign:        fv.rowAlign || 'auto'
       };
       this.seatSectionService.addRowConfig(this.selectedSection!.id, payload).subscribe({
