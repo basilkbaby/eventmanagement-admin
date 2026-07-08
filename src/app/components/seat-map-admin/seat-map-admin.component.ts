@@ -417,8 +417,10 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
         const shaped    = !!rowCounts || step > 0;
         // Effective block width = the WIDEST row, so centring and advance stay consistent
         // even when per-row counts (or taper) differ from the column range.
+        // A per-row value of 0 = an intentionally empty row; only a blank/invalid entry
+        // (NaN) falls back to the column width.
         const blockWidth = rowCounts
-          ? Math.max(1, ...rowCounts.map(n => (n > 0 ? n : baseWidth)))
+          ? Math.max(1, ...rowCounts.map(n => (Number.isFinite(n) ? n : baseWidth)))
           : step > 0 ? baseWidth + step * (toRow - fromRow)
           : baseWidth;
         // Row alignment within the block. "auto" = edges fan outward, middle centred.
@@ -470,7 +472,7 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
 
           const ri = r - fromRow;
           const rowWidth = rowCounts
-            ? (rowCounts[ri] > 0 ? rowCounts[ri] : baseWidth)
+            ? (Number.isFinite(rowCounts[ri]) ? rowCounts[ri] : baseWidth)
             : step > 0 ? baseWidth + step * ri
             : baseWidth;
           const rowStart = rowCounts && rowStarts && rowStarts[ri] > 0 ? rowStarts[ri] : sectionStart;
@@ -527,16 +529,19 @@ export class SeatMapAdminComponent implements OnInit, OnDestroy {
 
           // One label per physical row (merge all blocks), so the row letter shows once at the
           // row's start even when blocks share a block letter. Keep the leftmost block's values.
-          const rowKey = `${section.id}-${globalRow}`;
-          const exLbl = rowLabelPositions.get(rowKey);
-          rowLabelPositions.set(rowKey, {
-            minX: Math.min(rowMinX, exLbl?.minX ?? Infinity),
-            maxX: Math.max(rowMaxX, exLbl?.maxX ?? -Infinity),
-            y: section.y + (globalRow * 26),
-            numberingDirection: exLbl?.numberingDirection ?? numberingDirection,
-            blockLetter: exLbl?.blockLetter ?? blockLetter,
-            rowLetter: exLbl?.rowLetter ?? rowLetter
-          });
+          // Skip empty rows (no seats placed) so they don't pollute the label position.
+          if (rowMinX !== Infinity) {
+            const rowKey = `${section.id}-${globalRow}`;
+            const exLbl = rowLabelPositions.get(rowKey);
+            rowLabelPositions.set(rowKey, {
+              minX: Math.min(rowMinX, exLbl?.minX ?? Infinity),
+              maxX: Math.max(rowMaxX, exLbl?.maxX ?? -Infinity),
+              y: section.y + (globalRow * 26),
+              numberingDirection: exLbl?.numberingDirection ?? numberingDirection,
+              blockLetter: exLbl?.blockLetter ?? blockLetter,
+              rowLetter: exLbl?.rowLetter ?? rowLetter
+            });
+          }
         }
 
         if (shaped) {
