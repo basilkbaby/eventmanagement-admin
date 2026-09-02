@@ -17,7 +17,12 @@ export interface OrderDto {
   totalAmount: number;
   status: OrderStatus;
   createdAt: Date;
-  
+
+  // Booking source: createdBy === 'system' = online (customer paid online);
+  // anything else (e.g. 'admin') = offline booking, isOffline === true (payment collected off-platform).
+  createdBy?: string | null;
+  isOffline?: boolean;
+
   // Collections
   seats: OrderSeatDto[];
   

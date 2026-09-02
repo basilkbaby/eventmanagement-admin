@@ -236,6 +236,14 @@
                 <div class="order-number">#{{ order.orderNumber }}</div>
                 <div class="order-date">{{ order.createdAt | date:'medium' }}</div>
               </div>
+
+              <!-- Booking source: online (paid online) vs offline (collect payment) -->
+              <span class="source-badge"
+                    [class.source-offline]="order.isOffline"
+                    [class.source-online]="!order.isOffline">
+                <mat-icon class="source-icon">{{ order.isOffline ? 'point_of_sale' : 'language' }}</mat-icon>
+                {{ order.isOffline ? 'Offline · collect payment' : 'Online' }}
+              </span>
               
               <div class="customer-info">
                 <div class="customer-name">{{ order.customerName }}</div>

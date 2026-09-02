@@ -1029,3 +1029,29 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+/* Booking source badge (online vs offline) */
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.source-badge .source-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+}
+.source-online {
+  background: #e8f1ff;
+  color: #1d4ed8;
+}
+.source-offline {
+  background: #fff4e5;
+  color: #b45309;
+}
