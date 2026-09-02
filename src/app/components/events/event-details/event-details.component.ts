@@ -55,6 +55,11 @@ export class EventDetailsComponent implements OnInit {
     return this.authService.hasRole('SuperAdmin');
   }
 
+  /** General-admission events (no seat map) manage ticket categories instead. */
+  get isGeneralAdmission(): boolean {
+    return (this.event as any)?.seatingMode === 2;
+  }
+
   ngOnInit() {
     // React to :id changes so switching events (which navigates to a new id while
     // reusing this component) reloads the page instead of keeping the old event.

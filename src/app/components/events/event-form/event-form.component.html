@@ -57,6 +57,17 @@
                     </div>
                 </div>
 
+                <div class="form-row">
+                    <div class="ff-field full-width">
+                        <label class="ff-label">Ticketing Mode <span class="req">*</span></label>
+                        <select class="ff-control" formControlName="seatingMode">
+                            <option [ngValue]="1">Seated (seat map)</option>
+                            <option [ngValue]="2">General Admission (ticket categories)</option>
+                        </select>
+                        <small class="ff-hint">General Admission events have no seat map — you define ticket categories with prices and capacity.</small>
+                    </div>
+                </div>
+
                 <!-- Group (artist/tour): events sharing a group are shown together on the site -->
                 <div class="form-row">
                     <div class="ff-field" [class.half-width]="groupSelection === '__new__'"

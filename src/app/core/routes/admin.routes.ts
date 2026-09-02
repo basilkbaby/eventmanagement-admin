@@ -36,6 +36,10 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'seatmap/:eventId',
         loadComponent: () => import('../../components/seat-map-admin/seat-map-admin.component').then(m => m.SeatMapAdminComponent)
+      },
+      {
+        path: 'tickets/:eventId',
+        loadComponent: () => import('../../components/events/ticket-type-manager/ticket-type-manager.component').then(m => m.TicketTypeManagerComponent)
       }
     ]
   },

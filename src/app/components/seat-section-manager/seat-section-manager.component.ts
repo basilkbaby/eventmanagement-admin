@@ -143,7 +143,13 @@ export class SeatSectionManagerComponent implements OnInit {
       hasColumnGap:       [false],
       gapAfterColumn:     [null],
       gapSize:            [null],
-      gapColumns:         ['']
+      gapColumns:         [''],
+      // Crowd barrier (mainly for standing pens) — one bar per checked edge.
+      barrierLeft:        [false],
+      barrierRight:       [false],
+      barrierTop:         [false],
+      barrierBottom:      [false],
+      barrierLabel:       ['']
     });
 
     this.rowConfigForm = this.fb.group({
@@ -265,7 +271,12 @@ export class SeatSectionManagerComponent implements OnInit {
         hasColumnGap:       section.hasColumnGap,
         gapAfterColumn:     section.gapAfterColumn,
         gapSize:            section.gapSize,
-        gapColumns:         section.gapColumns || ''
+        gapColumns:         section.gapColumns || '',
+        barrierLeft:        this.hasBarrierSide(section.barrierSides, 'Left'),
+        barrierRight:       this.hasBarrierSide(section.barrierSides, 'Right'),
+        barrierTop:         this.hasBarrierSide(section.barrierSides, 'Top'),
+        barrierBottom:      this.hasBarrierSide(section.barrierSides, 'Bottom'),
+        barrierLabel:       section.barrierLabel || ''
       });
     } else {
       this.sectionForm.reset({
@@ -274,7 +285,8 @@ export class SeatSectionManagerComponent implements OnInit {
         rowOffset: null, curveStrength: 0, rotation: 0, rowWidthStep: 0, seatStartNumber: 1, blockGap: 2, numberingDirection: 'left',
         rowNumberingType: RowNumberingType.PERSECTION,
         skipRowLetters: '', hasColumnGap: false,
-        gapAfterColumn: null, gapSize: null, gapColumns: ''
+        gapAfterColumn: null, gapSize: null, gapColumns: '',
+        barrierLeft: false, barrierRight: false, barrierTop: false, barrierBottom: false, barrierLabel: ''
       });
     }
 
@@ -284,6 +296,22 @@ export class SeatSectionManagerComponent implements OnInit {
       maxHeight: '92vh',
       panelClass: 'section-form-dialog'
     });
+  }
+
+  // Serialize the four barrier checkboxes into the CSV the API expects (null = none).
+  private buildBarrierSides(fv: any): string | null {
+    const sides = [
+      fv.barrierLeft   ? 'Left'   : null,
+      fv.barrierRight  ? 'Right'  : null,
+      fv.barrierTop    ? 'Top'    : null,
+      fv.barrierBottom ? 'Bottom' : null
+    ].filter(Boolean);
+    return sides.length ? sides.join(',') : null;
+  }
+
+  private hasBarrierSide(csv: string | null | undefined, side: string): boolean {
+    if (!csv) return false;
+    return csv.split(',').map(s => s.trim().toLowerCase()).includes(side.toLowerCase());
   }
 
   onSectionSubmit(): void {
@@ -312,7 +340,9 @@ export class SeatSectionManagerComponent implements OnInit {
         rowWidthStep: +fv.rowWidthStep || 0,
         seatStartNumber: Math.max(1, +fv.seatStartNumber || 1),
         blockGap: Math.max(0, Number.isFinite(+fv.blockGap) ? +fv.blockGap : 2),
-        rowNumberingType: fv.rowNumberingType
+        rowNumberingType: fv.rowNumberingType,
+        barrierSides: this.buildBarrierSides(fv),
+        barrierLabel: (fv.barrierLabel || '').trim() || null
       };
       this.seatSectionService.updateSection(this.selectedSection.id, payload).subscribe({
         next:  () => { this.showSuccess('Section updated'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
@@ -337,6 +367,8 @@ export class SeatSectionManagerComponent implements OnInit {
         gapAfterColumn: fv.hasColumnGap ? (+fv.gapAfterColumn || 0) : 0,
         gapSize:        fv.hasColumnGap ? (+fv.gapSize        || 0) : 0,
         gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : '',
+        barrierSides: this.buildBarrierSides(fv),
+        barrierLabel: (fv.barrierLabel || '').trim() || null,
         rowConfigs: []
       };
       this.seatSectionService.createSection(payload).subscribe({

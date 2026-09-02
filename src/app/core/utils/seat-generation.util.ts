@@ -166,6 +166,7 @@ export function generateVenueSeats(sections: VenueSection[]): GeneratedSeats {
         status: SeatStatus.AVAILABLE, originalStatus: SeatStatus.AVAILABLE,
         price: rowConfig?.customPrice || 0, color: rowConfig?.color ?? '#6b7280',
         gridRow: section.rows, gridColumn: section.seatsPerRow,
+        barrierSides: section.barrierSides ?? null, barrierLabel: section.barrierLabel ?? null,
         isStandingArea: true, blockIndex: 0, blockStartSeat: 0, blockTotalSeats: 0, blockLetter: 'A'
       });
       return;

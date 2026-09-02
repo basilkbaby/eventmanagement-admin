@@ -31,6 +31,8 @@ export interface SectionDto {
   rowWidthStep: number;
   seatStartNumber: number;
   blockGap: number;
+  barrierSides?: string | null;
+  barrierLabel?: string | null;
   isActive: boolean;
   rowConfigs: RowConfigDto[];
 }
@@ -74,6 +76,8 @@ export interface CreateSectionRequest {
   rowWidthStep: number;
   seatStartNumber: number;
   blockGap: number;
+  barrierSides?: string | null;
+  barrierLabel?: string | null;
   seatSectionType: SeatSectionType;
   numberingDirection: string;
   rowNumberingType: RowNumberingType;
@@ -101,6 +105,8 @@ export interface UpdateSectionRequest {
   rowWidthStep: number;
   seatStartNumber: number;
   blockGap: number;
+  barrierSides?: string | null;
+  barrierLabel?: string | null;
   rowNumberingType: RowNumberingType;
 }
 

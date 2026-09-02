@@ -219,6 +219,7 @@ detailType = getEnumKeysAndValues(DetailType)
     return this.fb.group({
       title: ['', Validators.required],
       type: ['', Validators.required],
+      seatingMode: [1, Validators.required], // 1 = Seated, 2 = General Admission
       // Status, featured and cancellations are no longer editable in the UI —
       // events are always Published, Featured and allow cancellations.
       status: [EventStatus.PUBLISHED],
@@ -341,6 +342,7 @@ detailType = getEnumKeysAndValues(DetailType)
     this.basicInfoForm.patchValue({
       title: eventData.title,
       type: eventData.type,
+      seatingMode: (eventData as any).seatingMode ?? 1,
       // Always Published / Featured / cancellations-allowed (no longer UI-editable).
       status: EventStatus.PUBLISHED,
       description: eventData.description,
@@ -888,6 +890,7 @@ detailType = getEnumKeysAndValues(DetailType)
       description: formData.description,
       shortDescription: formData.shortDescription,
       type: formData.type,
+      seatingMode: Number(formData.seatingMode),
       // Always Published / Featured / cancellations-allowed (no longer UI-editable).
       status: EventStatus.PUBLISHED,
       isActive: formData.isActive,

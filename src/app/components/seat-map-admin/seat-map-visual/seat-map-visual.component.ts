@@ -451,9 +451,25 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
     ctx.globalAlpha = 1;
   }
 
+  // Draws crowd-barrier bars just outside the standing box on each configured edge.
+  private drawBarriers(ctx: CanvasRenderingContext2D, seat: Seat, w: number, h: number) {
+    const sides = (seat.barrierSides || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (!sides.length) return;
+    const gap = 6, t = 7, r = 3;
+    ctx.save();
+    ctx.fillStyle = '#334155';
+    const bar = (x: number, y: number, bw: number, bh: number) => { this.rrect(ctx, x, y, bw, bh, r); ctx.fill(); };
+    if (sides.includes('left'))   bar(seat.cx - gap - t, seat.cy, t, h);
+    if (sides.includes('right'))  bar(seat.cx + w + gap, seat.cy, t, h);
+    if (sides.includes('top'))    bar(seat.cx, seat.cy - gap - t, w, t);
+    if (sides.includes('bottom')) bar(seat.cx, seat.cy + h + gap, w, t);
+    ctx.restore();
+  }
+
   private drawStanding(ctx: CanvasRenderingContext2D, seat: Seat) {
     if (!seat.gridRow || !seat.gridColumn) return;
     const w = seat.gridColumn * this.GAP, h = seat.gridRow * (this.GAP - 1);
+    this.drawBarriers(ctx, seat, w, h);
     const fill  = this.colorCache.get(seat.id) ?? '#6b7280';
     const isSel = this.selectedSet.has(seat.id);
     ctx.globalAlpha = 0.13; ctx.fillStyle = fill;

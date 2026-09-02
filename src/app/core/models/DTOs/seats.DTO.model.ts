@@ -39,6 +39,8 @@ export interface VenueSection {
   rowWidthStep?: number;           // taper: extra seats added per row going back
   seatStartNumber?: number;        // first seat number in the section (default 1)
   blockGap?: number;               // aisle width (columns) between blocks (default 2)
+  barrierSides?: string | null;    // CSV: Left,Right,Top,Bottom — crowd barrier edges
+  barrierLabel?: string | null;
   numberingDirection ? : string;
   rowConfigs: SectionRowConfig[];
   rowNumberingType?: RowNumberingType;
@@ -118,6 +120,8 @@ export interface Seat {
   gridRow?: number;
   gridColumn?: number;
   isStandingArea : boolean;
+  barrierSides?: string | null;   // CSV: Left,Right,Top,Bottom — crowd barrier edges
+  barrierLabel?: string | null;
   columnSectionIndex?: number;
   originalColumn?: number;
   isFirstInSection?: boolean;

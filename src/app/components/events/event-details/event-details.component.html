@@ -12,6 +12,10 @@
         <span class="material-icons">content_copy</span>
         Clone Event
       </button>
+      <button *ngIf="isSuperAdmin && isGeneralAdmission" class="ed-btn ed-btn--soft" [routerLink]="['/admin/events', 'tickets', event.id]">
+        <span class="material-icons">confirmation_number</span>
+        Ticket Categories
+      </button>
       <button *ngIf="isSuperAdmin" class="ed-btn ed-btn--primary" [routerLink]="['/admin/events', event.id, 'edit']">
         <span class="material-icons">edit</span>
         Edit Event

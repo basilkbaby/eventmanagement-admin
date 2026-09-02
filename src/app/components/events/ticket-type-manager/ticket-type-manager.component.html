@@ -1,0 +1,101 @@
+<div class="tt-wrap">
+  <div class="tt-head">
+    <h2>Ticket Categories</h2>
+    <a [routerLink]="['/admin/events', eventId]" class="tt-back">← Back to event</a>
+  </div>
+  <p class="tt-sub">General-admission ticket categories for this event (no seat map).</p>
+
+  <div class="tt-error" *ngIf="error">{{ error }}</div>
+
+  <div class="tt-grid">
+    <!-- List -->
+    <div class="tt-list">
+      <div class="tt-list-head">
+        <span>Existing categories</span>
+        <button class="btn-primary" (click)="startCreate()">+ New category</button>
+      </div>
+
+      <div *ngIf="loading" class="tt-muted">Loading…</div>
+      <div *ngIf="!loading && ticketTypes.length === 0" class="tt-muted">No ticket categories yet.</div>
+
+      <table *ngIf="!loading && ticketTypes.length" class="tt-table">
+        <thead>
+          <tr><th>Name</th><th>Price</th><th>Sold / Capacity</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of ticketTypes" [class.inactive]="!t.isActive">
+            <td>{{ t.name }}</td>
+            <td>£{{ t.price | number:'1.2-2' }}</td>
+            <td>{{ t.quantitySold }} / {{ t.capacity }}
+              <span class="tt-badge sold" *ngIf="t.soldOut">Sold out</span>
+            </td>
+            <td>{{ t.isActive ? 'Active' : 'Hidden' }}</td>
+            <td class="tt-actions">
+              <button (click)="startEdit(t)">Edit</button>
+              <button class="danger" (click)="remove(t)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Form -->
+    <div class="tt-form">
+      <h3>{{ editingId ? 'Edit category' : 'New category' }}</h3>
+
+      <label>Name *</label>
+      <input [(ngModel)]="form.name" placeholder="e.g. Early Bird, VIP, General" />
+
+      <label>Description</label>
+      <textarea [(ngModel)]="form.description" rows="2" placeholder="Optional description shown to buyers"></textarea>
+
+      <div class="tt-row">
+        <div>
+          <label>Price (£)</label>
+          <input type="number" min="0" step="0.01" [(ngModel)]="form.price" />
+        </div>
+        <div>
+          <label>Capacity</label>
+          <input type="number" min="0" [(ngModel)]="form.capacity" />
+        </div>
+      </div>
+
+      <div class="tt-row">
+        <div>
+          <label>Min per order</label>
+          <input type="number" min="1" [(ngModel)]="form.minPerOrder" />
+        </div>
+        <div>
+          <label>Max per order</label>
+          <input type="number" min="1" [(ngModel)]="form.maxPerOrder" />
+        </div>
+      </div>
+
+      <div class="tt-row">
+        <div>
+          <label>Sales start</label>
+          <input type="datetime-local" [(ngModel)]="form.salesStart" />
+        </div>
+        <div>
+          <label>Sales end</label>
+          <input type="datetime-local" [(ngModel)]="form.salesEnd" />
+        </div>
+      </div>
+
+      <div class="tt-row">
+        <div>
+          <label>Sort order</label>
+          <input type="number" [(ngModel)]="form.sortOrder" />
+        </div>
+      </div>
+
+      <label class="tt-check"><input type="checkbox" [(ngModel)]="form.isActive" /> Active (on sale)</label>
+      <label class="tt-check"><input type="checkbox" [(ngModel)]="form.hideWhenSoldOut" /> Hide when sold out</label>
+
+      <div class="tt-form-actions">
+        <button class="btn-primary" [disabled]="saving" (click)="save()">{{ saving ? 'Saving…' : (editingId ? 'Update' : 'Create') }}</button>
+        <button *ngIf="editingId" (click)="cancelEdit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>

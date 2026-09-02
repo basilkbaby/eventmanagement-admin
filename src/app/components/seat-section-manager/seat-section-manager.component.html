@@ -354,6 +354,22 @@
             </div>
           </ng-container>
 
+          <!-- Crowd barrier (standing pens) -->
+          <ng-container *ngIf="sectionForm.get('seatSectionType')?.value === SeatSectionType.STANDING">
+            <div class="form-section-title">Crowd Barrier</div>
+            <p class="ff-hint">Draws a barrier bar just outside the chosen edge(s) of this standing area.</p>
+            <div class="form-row barrier-sides">
+              <label class="ff-check"><input type="checkbox" formControlName="barrierLeft"> Left</label>
+              <label class="ff-check"><input type="checkbox" formControlName="barrierRight"> Right</label>
+              <label class="ff-check"><input type="checkbox" formControlName="barrierTop"> Top</label>
+              <label class="ff-check"><input type="checkbox" formControlName="barrierBottom"> Bottom</label>
+            </div>
+            <div class="ff-field">
+              <label class="ff-label">Barrier Label (optional)</label>
+              <input class="ff-control" formControlName="barrierLabel" placeholder="e.g. Barrier">
+            </div>
+          </ng-container>
+
           <p class="edit-note" *ngIf="isEditSectionMode">
             <mat-icon inline>info</mat-icon>
             Section type, numbering and gap settings are set at creation and cannot be changed here.
