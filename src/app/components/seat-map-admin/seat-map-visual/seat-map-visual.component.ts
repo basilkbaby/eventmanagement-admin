@@ -455,14 +455,29 @@ export class SeatMapVisualComponent implements AfterViewInit, OnDestroy, OnChang
   private drawBarriers(ctx: CanvasRenderingContext2D, seat: Seat, w: number, h: number) {
     const sides = (seat.barrierSides || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
     if (!sides.length) return;
-    const gap = 6, t = 7, r = 3;
+    const label = (seat.barrierLabel || '').trim();
+    const gap = 6, t = label ? 15 : 7, r = 3;
     ctx.save();
-    ctx.fillStyle = '#334155';
-    const bar = (x: number, y: number, bw: number, bh: number) => { this.rrect(ctx, x, y, bw, bh, r); ctx.fill(); };
-    if (sides.includes('left'))   bar(seat.cx - gap - t, seat.cy, t, h);
-    if (sides.includes('right'))  bar(seat.cx + w + gap, seat.cy, t, h);
-    if (sides.includes('top'))    bar(seat.cx, seat.cy - gap - t, w, t);
-    if (sides.includes('bottom')) bar(seat.cx, seat.cy + h + gap, w, t);
+    const bar = (x: number, y: number, bw: number, bh: number) => {
+      ctx.fillStyle = '#334155';
+      this.rrect(ctx, x, y, bw, bh, r); ctx.fill();
+    };
+    const drawLabel = (x: number, y: number, vertical: boolean) => {
+      if (!label) return;
+      ctx.save();
+      ctx.translate(x, y);
+      if (vertical) ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 9px "DM Sans","Helvetica Neue",sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label.toUpperCase(), 0, 0);
+      ctx.restore();
+    };
+    if (sides.includes('left'))   { const bx = seat.cx - gap - t; bar(bx, seat.cy, t, h); drawLabel(bx + t / 2, seat.cy + h / 2, true); }
+    if (sides.includes('right'))  { const bx = seat.cx + w + gap; bar(bx, seat.cy, t, h); drawLabel(bx + t / 2, seat.cy + h / 2, true); }
+    if (sides.includes('top'))    { const by = seat.cy - gap - t; bar(seat.cx, by, w, t); drawLabel(seat.cx + w / 2, by + t / 2, false); }
+    if (sides.includes('bottom')) { const by = seat.cy + h + gap; bar(seat.cx, by, w, t); drawLabel(seat.cx + w / 2, by + t / 2, false); }
     ctx.restore();
   }
 
