@@ -568,6 +568,11 @@ checkInOrder(order: OrderDto): void {
   });
 }
 
+// Cancelling (hard-delete) is restricted to SuperAdmin; payment-collect is for all admins.
+get isSuperAdmin(): boolean {
+  return this.authService.hasRole('SuperAdmin');
+}
+
 // Toggle an offline booking's "payment collected" flag (stored via createdBy suffix).
 togglePaymentCollected(order: OrderDto): void {
   const collected = !order.paymentCollected;

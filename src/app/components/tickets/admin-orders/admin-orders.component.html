@@ -388,7 +388,8 @@
                   <mat-spinner diameter="20" *ngIf="exportingTickets()[order.orderId]"></mat-spinner>
                 </button>
 
-                <button mat-icon-button
+                <button *ngIf="isSuperAdmin"
+                        mat-icon-button
                         color="warn"
                         matTooltip="Cancel booking / seats"
                         (click)="openCancelDialog(order)">
