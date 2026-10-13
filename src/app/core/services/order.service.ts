@@ -109,6 +109,24 @@ export class OrderService {
     );
   }
 
+  /**
+   * Cancel a booking. Pass seatIds to cancel specific seats (partial); omit/empty to cancel the
+   * whole order. Full cancel hard-deletes the order; partial keeps it with recalculated totals.
+   * Both free the seats from SeatManagement.
+   */
+  cancelOrder(orderId: string, seatIds?: string[], reason?: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${orderId}/cancel`, { seatIds: seatIds ?? [], reason: reason ?? null }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /** Mark an offline booking's payment as collected (true) or not-yet (false). */
+  setPaymentCollected(orderId: string, collected: boolean): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${orderId}/payment-collected`, { collected }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
   updateCustomerInfo(orderId: string, customerInfo: UpdateCustomerInfoRequest): Observable<any> {
     return this.http.put(`${this.apiUrl}/${orderId}/customer`, customerInfo).pipe(
       catchError(this.handleError)

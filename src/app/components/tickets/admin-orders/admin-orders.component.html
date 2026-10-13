@@ -237,13 +237,26 @@
                 <div class="order-date">{{ order.createdAt | date:'medium' }}</div>
               </div>
 
-              <!-- Booking source: online (paid online) vs offline (collect payment) -->
-              <span class="source-badge"
-                    [class.source-offline]="order.isOffline"
-                    [class.source-online]="!order.isOffline">
-                <mat-icon class="source-icon">{{ order.isOffline ? 'point_of_sale' : 'language' }}</mat-icon>
-                {{ order.isOffline ? 'Offline · collect payment' : 'Online' }}
-              </span>
+              <!-- Booking source + offline payment status -->
+              <div class="source-line">
+                <span class="source-badge"
+                      [class.source-online]="!order.isOffline"
+                      [class.source-offline]="order.isOffline && !order.paymentCollected"
+                      [class.source-paid]="order.isOffline && order.paymentCollected">
+                  <mat-icon class="source-icon">{{ order.isOffline ? 'point_of_sale' : 'language' }}</mat-icon>
+                  <ng-container *ngIf="!order.isOffline">Online</ng-container>
+                  <ng-container *ngIf="order.isOffline && !order.paymentCollected">Offline · collect payment</ng-container>
+                  <ng-container *ngIf="order.isOffline && order.paymentCollected">Offline · paid</ng-container>
+                </span>
+
+                <!-- Mark offline payment collected / pending -->
+                <button *ngIf="order.isOffline"
+                        mat-stroked-button
+                        class="collect-btn"
+                        (click)="togglePaymentCollected(order)">
+                  {{ order.paymentCollected ? 'Mark pending' : 'Mark collected' }}
+                </button>
+              </div>
               
               <div class="customer-info">
                 <div class="customer-name">{{ order.customerName }}</div>
@@ -365,7 +378,7 @@
                   <mat-icon>edit</mat-icon>
                 </button>
                 
-                <button mat-icon-button 
+                <button mat-icon-button
                         color="primary"
                         matTooltip="Export tickets"
                         (click)="exportOrderTickets(order)"
@@ -373,6 +386,13 @@
                         class="export-ticket-btn">
                   <mat-icon *ngIf="!exportingTickets()[order.orderId]">confirmation_number</mat-icon>
                   <mat-spinner diameter="20" *ngIf="exportingTickets()[order.orderId]"></mat-spinner>
+                </button>
+
+                <button mat-icon-button
+                        color="warn"
+                        matTooltip="Cancel booking / seats"
+                        (click)="openCancelDialog(order)">
+                  <mat-icon>cancel</mat-icon>
                 </button>
               </div>
             </div>

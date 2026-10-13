@@ -20,8 +20,10 @@ export interface OrderDto {
 
   // Booking source: createdBy === 'system' = online (customer paid online);
   // anything else (e.g. 'admin') = offline booking, isOffline === true (payment collected off-platform).
+  // paymentCollected === true when an offline booking has been marked as paid (createdBy '*-collected').
   createdBy?: string | null;
   isOffline?: boolean;
+  paymentCollected?: boolean;
 
   // Collections
   seats: OrderSeatDto[];

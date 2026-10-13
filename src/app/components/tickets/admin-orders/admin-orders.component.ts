@@ -26,6 +26,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { EditCustomerDialogComponent, EditCustomerDialogData } from './dialogs/edit-customer-dialog.component';
 import { ResendEmailDialogComponent, ResendEmailDialogData } from './dialogs/resend-email-dialog.component';
 import { CheckInDialogComponent } from './dialogs/check-in-dialog.component';
+import { CancelOrderDialogComponent, CancelOrderDialogResult } from './dialogs/cancel-order-dialog.component';
 
 @Component({
   selector: 'app-admin-orders',
@@ -564,6 +565,39 @@ checkInOrder(order: OrderDto): void {
     if (result) {
       this.performCheckIn(order, result, staffInfo);
     }
+  });
+}
+
+// Toggle an offline booking's "payment collected" flag (stored via createdBy suffix).
+togglePaymentCollected(order: OrderDto): void {
+  const collected = !order.paymentCollected;
+  this.orderService.setPaymentCollected(order.orderId, collected).subscribe({
+    next: () => {
+      this.showSuccess(collected ? 'Marked as payment collected' : 'Marked as payment pending');
+      this.loadData();
+    },
+    error: (err) => this.showError(err?.error?.error || 'Failed to update payment status')
+  });
+}
+
+// Cancel a booking — whole order (default) or specific seats. Frees the seats and, for a
+// full cancel, hard-deletes the order. No Stripe refund (handled manually).
+openCancelDialog(order: OrderDto): void {
+  const dialogRef = this.dialog.open(CancelOrderDialogComponent, {
+    width: '460px',
+    data: { order },
+    disableClose: true
+  });
+
+  dialogRef.afterClosed().subscribe((result: CancelOrderDialogResult | undefined) => {
+    if (!result) return;
+    this.orderService.cancelOrder(order.orderId, result.seatIds).subscribe({
+      next: (res: any) => {
+        this.showSuccess(res?.data?.message || 'Booking cancelled');
+        this.loadData();
+      },
+      error: (err) => this.showError(err?.error?.error || 'Failed to cancel booking')
+    });
   });
 }
 
