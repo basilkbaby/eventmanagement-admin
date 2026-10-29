@@ -1,101 +1,195 @@
-<div class="tt-wrap">
-  <div class="tt-head">
-    <h2>Ticket Categories</h2>
-    <a [routerLink]="['/admin/events', eventId]" class="tt-back">← Back to event</a>
+<div class="tt-page">
+
+  <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
+  <div class="tt-topbar">
+    <a [routerLink]="['/admin/events', eventId]" class="tt-back">
+      <span class="material-icons">arrow_back</span>
+      Back to event
+    </a>
+    <button class="tt-btn tt-btn--primary" (click)="startCreate()">
+      <span class="material-icons">add</span>
+      New category
+    </button>
   </div>
-  <p class="tt-sub">General-admission ticket categories for this event (no seat map).</p>
 
-  <div class="tt-error" *ngIf="error">{{ error }}</div>
-
-  <div class="tt-grid">
-    <!-- List -->
-    <div class="tt-list">
-      <div class="tt-list-head">
-        <span>Existing categories</span>
-        <button class="btn-primary" (click)="startCreate()">+ New category</button>
-      </div>
-
-      <div *ngIf="loading" class="tt-muted">Loading…</div>
-      <div *ngIf="!loading && ticketTypes.length === 0" class="tt-muted">No ticket categories yet.</div>
-
-      <table *ngIf="!loading && ticketTypes.length" class="tt-table">
-        <thead>
-          <tr><th>Name</th><th>Price</th><th>Sold / Capacity</th><th>Status</th><th></th></tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let t of ticketTypes" [class.inactive]="!t.isActive">
-            <td>{{ t.name }}</td>
-            <td>£{{ t.price | number:'1.2-2' }}</td>
-            <td>{{ t.quantitySold }} / {{ t.capacity }}
-              <span class="tt-badge sold" *ngIf="t.soldOut">Sold out</span>
-            </td>
-            <td>{{ t.isActive ? 'Active' : 'Hidden' }}</td>
-            <td class="tt-actions">
-              <button (click)="startEdit(t)">Edit</button>
-              <button class="danger" (click)="remove(t)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="tt-header">
+    <div class="tt-header__icon"><span class="material-icons">local_activity</span></div>
+    <div>
+      <h1 class="tt-header__title">Ticket Categories</h1>
+      <p class="tt-header__sub">
+        <ng-container *ngIf="eventTitle">{{ eventTitle }} · </ng-container>
+        General-admission ticket tiers for this event (no seat map).
+      </p>
     </div>
+  </header>
 
-    <!-- Form -->
-    <div class="tt-form">
-      <h3>{{ editingId ? 'Edit category' : 'New category' }}</h3>
+  <!-- ── Summary tiles ───────────────────────────────────────────────────── -->
+  <div class="tt-stats" *ngIf="!loading && ticketTypes.length">
+    <div class="tt-stat">
+      <span class="tt-stat__label">Categories</span>
+      <span class="tt-stat__value">{{ ticketTypes.length }}</span>
+      <span class="tt-stat__hint">{{ activeCount }} on sale</span>
+    </div>
+    <div class="tt-stat">
+      <span class="tt-stat__label">Total capacity</span>
+      <span class="tt-stat__value">{{ totalCapacity | number }}</span>
+    </div>
+    <div class="tt-stat">
+      <span class="tt-stat__label">Sold</span>
+      <span class="tt-stat__value">{{ totalSold | number }}</span>
+      <span class="tt-stat__hint" *ngIf="totalCapacity">of {{ totalCapacity | number }}</span>
+    </div>
+    <div class="tt-stat">
+      <span class="tt-stat__label">Revenue</span>
+      <span class="tt-stat__value">£{{ totalRevenue | number:'1.2-2' }}</span>
+    </div>
+  </div>
 
-      <label>Name *</label>
-      <input [(ngModel)]="form.name" placeholder="e.g. Early Bird, VIP, General" />
+  <!-- ── Error ───────────────────────────────────────────────────────────── -->
+  <div class="tt-error" *ngIf="error">
+    <span class="material-icons">error_outline</span>
+    {{ error }}
+  </div>
 
-      <label>Description</label>
-      <textarea [(ngModel)]="form.description" rows="2" placeholder="Optional description shown to buyers"></textarea>
+  <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+  <div class="tt-loading" *ngIf="loading">
+    <span class="tt-spinner"></span>
+    <p>Loading ticket categories…</p>
+  </div>
 
-      <div class="tt-row">
-        <div>
-          <label>Price (£)</label>
-          <input type="number" min="0" step="0.01" [(ngModel)]="form.price" />
+  <!-- ── Empty state ─────────────────────────────────────────────────────── -->
+  <div class="tt-empty" *ngIf="!loading && ticketTypes.length === 0">
+    <span class="material-icons">confirmation_number</span>
+    <h3>No ticket categories yet</h3>
+    <p>Create tiers like <em>Early Bird</em>, <em>Standard</em> or <em>VIP</em> for buyers to choose from.</p>
+    <button class="tt-btn tt-btn--primary" (click)="startCreate()">
+      <span class="material-icons">add</span>
+      Create first category
+    </button>
+  </div>
+
+  <!-- ── Category cards ──────────────────────────────────────────────────── -->
+  <div class="tt-cards" *ngIf="!loading && ticketTypes.length">
+    <article class="tt-card" *ngFor="let t of ticketTypes" [class.is-inactive]="!t.isActive">
+      <div class="tt-card__main">
+        <div class="tt-card__top">
+          <h3 class="tt-card__name">{{ t.name }}</h3>
+          <div class="tt-card__badges">
+            <span class="tt-pill" [class.tt-pill--on]="t.isActive" [class.tt-pill--off]="!t.isActive">
+              {{ t.isActive ? 'On sale' : 'Hidden' }}
+            </span>
+            <span class="tt-pill tt-pill--sold" *ngIf="t.soldOut">Sold out</span>
+          </div>
         </div>
-        <div>
-          <label>Capacity</label>
-          <input type="number" min="0" [(ngModel)]="form.capacity" />
+
+        <p class="tt-card__desc" *ngIf="t.description">{{ t.description }}</p>
+
+        <div class="tt-card__progress" *ngIf="t.capacity">
+          <div class="tt-bar">
+            <span class="tt-bar__fill" [style.width.%]="soldPercent(t)"
+                  [class.tt-bar__fill--full]="soldPercent(t) >= 100"></span>
+          </div>
+          <span class="tt-card__progress-label">
+            {{ t.quantitySold | number }} / {{ t.capacity | number }} sold ({{ soldPercent(t) }}%)
+          </span>
         </div>
       </div>
 
-      <div class="tt-row">
-        <div>
-          <label>Min per order</label>
-          <input type="number" min="1" [(ngModel)]="form.minPerOrder" />
+      <div class="tt-card__aside">
+        <div class="tt-card__price">
+          <span class="tt-card__price-value">£{{ t.price | number:'1.2-2' }}</span>
+          <span class="tt-card__price-label">per ticket</span>
         </div>
-        <div>
-          <label>Max per order</label>
-          <input type="number" min="1" [(ngModel)]="form.maxPerOrder" />
-        </div>
-      </div>
-
-      <div class="tt-row">
-        <div>
-          <label>Sales start</label>
-          <input type="datetime-local" [(ngModel)]="form.salesStart" />
-        </div>
-        <div>
-          <label>Sales end</label>
-          <input type="datetime-local" [(ngModel)]="form.salesEnd" />
+        <div class="tt-card__actions">
+          <button class="tt-btn tt-btn--soft" (click)="startEdit(t)">
+            <span class="material-icons">edit</span>
+            Edit
+          </button>
+          <button class="tt-btn tt-btn--danger" (click)="remove(t)" title="Delete category">
+            <span class="material-icons">delete_outline</span>
+          </button>
         </div>
       </div>
+    </article>
+  </div>
 
-      <div class="tt-row">
-        <div>
-          <label>Sort order</label>
+  <!-- ── Editor drawer ───────────────────────────────────────────────────── -->
+  <div class="tt-drawer-overlay" *ngIf="showForm" (click)="cancelEdit()">
+    <aside class="tt-drawer" (click)="$event.stopPropagation()">
+      <header class="tt-drawer__head">
+        <h2>{{ editingId ? 'Edit category' : 'New category' }}</h2>
+        <button class="tt-iconbtn" (click)="cancelEdit()" title="Close">
+          <span class="material-icons">close</span>
+        </button>
+      </header>
+
+      <div class="tt-drawer__body">
+        <label class="tt-field">
+          <span class="tt-field__label">Name <em>*</em></span>
+          <input [(ngModel)]="form.name" placeholder="e.g. Early Bird, VIP, General" />
+        </label>
+
+        <label class="tt-field">
+          <span class="tt-field__label">Description</span>
+          <textarea [(ngModel)]="form.description" rows="2"
+                    placeholder="Optional description shown to buyers"></textarea>
+        </label>
+
+        <div class="tt-grid2">
+          <label class="tt-field">
+            <span class="tt-field__label">Price (£)</span>
+            <input type="number" min="0" step="0.01" [(ngModel)]="form.price" />
+          </label>
+          <label class="tt-field">
+            <span class="tt-field__label">Capacity</span>
+            <input type="number" min="0" [(ngModel)]="form.capacity" />
+          </label>
+        </div>
+
+        <div class="tt-grid2">
+          <label class="tt-field">
+            <span class="tt-field__label">Min per order</span>
+            <input type="number" min="1" [(ngModel)]="form.minPerOrder" />
+          </label>
+          <label class="tt-field">
+            <span class="tt-field__label">Max per order</span>
+            <input type="number" min="1" [(ngModel)]="form.maxPerOrder" />
+          </label>
+        </div>
+
+        <div class="tt-grid2">
+          <label class="tt-field">
+            <span class="tt-field__label">Sales start</span>
+            <input type="datetime-local" [(ngModel)]="form.salesStart" />
+          </label>
+          <label class="tt-field">
+            <span class="tt-field__label">Sales end</span>
+            <input type="datetime-local" [(ngModel)]="form.salesEnd" />
+          </label>
+        </div>
+
+        <label class="tt-field tt-field--narrow">
+          <span class="tt-field__label">Sort order</span>
           <input type="number" [(ngModel)]="form.sortOrder" />
+        </label>
+
+        <label class="tt-check"><input type="checkbox" [(ngModel)]="form.isActive" /> Active (on sale)</label>
+        <label class="tt-check"><input type="checkbox" [(ngModel)]="form.hideWhenSoldOut" /> Hide when sold out</label>
+
+        <div class="tt-error tt-error--inline" *ngIf="error">
+          <span class="material-icons">error_outline</span>{{ error }}
         </div>
       </div>
 
-      <label class="tt-check"><input type="checkbox" [(ngModel)]="form.isActive" /> Active (on sale)</label>
-      <label class="tt-check"><input type="checkbox" [(ngModel)]="form.hideWhenSoldOut" /> Hide when sold out</label>
-
-      <div class="tt-form-actions">
-        <button class="btn-primary" [disabled]="saving" (click)="save()">{{ saving ? 'Saving…' : (editingId ? 'Update' : 'Create') }}</button>
-        <button *ngIf="editingId" (click)="cancelEdit()">Cancel</button>
-      </div>
-    </div>
+      <footer class="tt-drawer__foot">
+        <button class="tt-btn tt-btn--soft" (click)="cancelEdit()">Cancel</button>
+        <button class="tt-btn tt-btn--primary" [disabled]="saving" (click)="save()">
+          <span class="material-icons" *ngIf="!saving">{{ editingId ? 'save' : 'add' }}</span>
+          {{ saving ? 'Saving…' : (editingId ? 'Update category' : 'Create category') }}
+        </button>
+      </footer>
+    </aside>
   </div>
+
 </div>

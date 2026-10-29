@@ -19,8 +19,11 @@ interface NavigationItem {
   label: string;
   badge?: number;
   seatsLink?: boolean; // dynamic link that targets the selected event's seatmap
+  ticketsLink?: boolean; // dynamic link that targets the selected event's ticket categories (GA)
   detailsLink?: boolean; // dynamic link that targets the selected event's details/edit page
   superAdminOnly?: boolean; // only shown to SuperAdmins
+  seatedOnly?: boolean; // only shown when the selected event uses a seat map
+  gaOnly?: boolean; // only shown when the selected event is General Admission
 }
 
 @Component({
@@ -52,8 +55,9 @@ export class SidebarComponent {
   readonly navigationItems: NavigationItem[] = [
     { path: '/admin/dashboard',         icon: 'dashboard',           label: 'Dashboard' },
     { path: '',                          icon: 'info',                label: 'Event Details', detailsLink: true },
-    { path: '',                          icon: 'event_seat',          label: 'Seats', seatsLink: true },
-    { path: '/admin/sections',          icon: 'grid_view',           label: 'Seating Layout', superAdminOnly: true },
+    { path: '',                          icon: 'event_seat',          label: 'Seats', seatsLink: true, seatedOnly: true },
+    { path: '',                          icon: 'local_activity',      label: 'Ticket Categories', ticketsLink: true, gaOnly: true, superAdminOnly: true },
+    { path: '/admin/sections',          icon: 'grid_view',           label: 'Seating Layout', superAdminOnly: true, seatedOnly: true },
     { path: '/admin/event-users',       icon: 'group',               label: 'Event Users', superAdminOnly: true },
     { path: '/admin/orders',            icon: 'confirmation_number', label: 'Ticket Sales' },
     { path: '/admin/coupons',           icon: 'local_offer',         label: 'Coupons' },
@@ -63,10 +67,27 @@ export class SidebarComponent {
     // { path: '/admin/settings',       icon: 'settings',            label: 'Settings' }
   ];
 
-  /** Nav items filtered by role — SuperAdmin-only items are hidden from everyone else. */
+  /** True when the currently selected event is a General Admission event (no seat map).
+   *  SeatingMode is serialized as a number by the API (2 = GeneralAdmission); it isn't on
+   *  the typed EventDto, so read it loosely. When no event is selected we fall back to the
+   *  seated layout (GA items hidden) since most events are seated. */
+  get isGeneralAdmissionSelected(): boolean {
+    return (this.eventContext.selectedEvent() as any)?.seatingMode === 2;
+  }
+
+  /** Nav items filtered by role and by the selected event's seating mode.
+   *  - SuperAdmin-only items are hidden from everyone else.
+   *  - Seat-map items are hidden for General Admission events; GA-only items (ticket
+   *    categories) are hidden for seated events. */
   get visibleNavigationItems(): NavigationItem[] {
     const isSuperAdmin = this.authService.hasRole('SuperAdmin');
-    return this.navigationItems.filter(item => !item.superAdminOnly || isSuperAdmin);
+    const isGa = this.isGeneralAdmissionSelected;
+    return this.navigationItems.filter(item => {
+      if (item.superAdminOnly && !isSuperAdmin) return false;
+      if (item.seatedOnly && isGa) return false;
+      if (item.gaOnly && !isGa) return false;
+      return true;
+    });
   }
 
   /** Returns the router link for a nav item.
@@ -77,6 +98,10 @@ export class SidebarComponent {
       const eventId = this.eventContext.selectedEventId();
       return eventId ? ['/admin/events/seatmap', eventId] : null;
     }
+    if (item.ticketsLink) {
+      const eventId = this.eventContext.selectedEventId();
+      return eventId ? ['/admin/events/tickets', eventId] : null;
+    }
     if (item.detailsLink) {
       const eventId = this.eventContext.selectedEventId();
       return eventId ? ['/admin/events', eventId] : null;
@@ -86,7 +111,7 @@ export class SidebarComponent {
 
   /** Items that depend on a selected event are disabled until one is chosen. */
   isNavDisabled(item: NavigationItem): boolean {
-    return !!(item.seatsLink || item.detailsLink) && !this.eventContext.selectedEventId();
+    return !!(item.seatsLink || item.ticketsLink || item.detailsLink) && !this.eventContext.selectedEventId();
   }
 
   /** Custom active-state check so Seats is highlighted on any seatmap URL,
@@ -94,6 +119,7 @@ export class SidebarComponent {
   isNavActive(item: NavigationItem): boolean {
     const url = this.router.url;
     if (item.seatsLink) return url.includes('/seatmap');
+    if (item.ticketsLink) return url.includes('/events/tickets');
     if (item.detailsLink) {
       const eventId = this.eventContext.selectedEventId();
       return !!eventId && url.startsWith(`/admin/events/${eventId}`);
