@@ -103,6 +103,19 @@ readonly filteredOrders = computed(() => {
     filtered = filtered.filter(order => order.eventId === eventFilter);
   }
 
+  // Apply payment filter (offline bookings + collected / not-collected state)
+  const payment = this.paymentFilter();
+  if (payment !== 'all') {
+    filtered = filtered.filter(order => {
+      switch (payment) {
+        case 'offline':      return !!order.isOffline;
+        case 'collected':    return !!order.isOffline && !!order.paymentCollected;
+        case 'notCollected': return !!order.isOffline && !order.paymentCollected;
+        default:             return true;
+      }
+    });
+  }
+
   // Apply search filter
   if (search) {
     filtered = filtered.filter(order => {
@@ -169,6 +182,16 @@ readonly displayedOrders = computed(() => {
   // Search and filter signals
   readonly searchTerm = signal('');
   readonly searchField = signal<'all' | 'orderNumber' | 'customerName' | 'customerEmail' | 'eventName' | 'customerPhone' | 'customerPostcode' | 'seatNumber'>('all');
+
+  // Offline-payment filter. Online orders are paid on-platform; offline bookings are taken
+  // off-platform and marked "collected" once the money is received.
+  readonly paymentFilter = signal<'all' | 'offline' | 'collected' | 'notCollected'>('all');
+  readonly paymentFilterOptions = [
+    { value: 'all',          label: 'All Payments' },
+    { value: 'offline',      label: 'Offline Bookings' },
+    { value: 'collected',    label: 'Offline — Collected' },
+    { value: 'notCollected', label: 'Offline — Not Collected' }
+  ];
 // Pre-compute stats with all values
 readonly stats = computed(() => {
   const orders = this.allOrders();
@@ -281,6 +304,7 @@ readonly eventNameMap = computed(() => {
   clearFilters(): void {
     this.searchTerm.set('');
     this.searchField.set('all');
+    this.paymentFilter.set('all');
     this.pageIndex.set(0);
   }
 

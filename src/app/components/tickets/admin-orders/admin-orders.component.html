@@ -173,7 +173,16 @@
         </mat-select>
       </mat-form-field>
 
-      <div class="search-actions" *ngIf="searchTerm()">
+      <mat-form-field appearance="outline" class="search-field-select" subscriptSizing="dynamic">
+        <mat-label>Payment</mat-label>
+        <mat-select [ngModel]="paymentFilter()" (ngModelChange)="paymentFilter.set($event); onSearchChange()">
+          <mat-option *ngFor="let opt of paymentFilterOptions" [value]="opt.value">
+            {{ opt.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="search-actions" *ngIf="searchTerm() || paymentFilter() !== 'all'">
         <button mat-button color="primary" (click)="clearFilters()">
           <mat-icon>clear_all</mat-icon>
           Clear All Filters
@@ -217,7 +226,7 @@
       <p *ngIf="allOrders().length > 0 && filteredOrders().length === 0">
         No orders match your current filters.
       </p>
-      <button mat-button color="primary" (click)="clearFilters()" *ngIf="searchTerm()">
+      <button mat-button color="primary" (click)="clearFilters()" *ngIf="searchTerm() || paymentFilter() !== 'all'">
         <mat-icon>clear_all</mat-icon>
         Clear Filters
       </button>
