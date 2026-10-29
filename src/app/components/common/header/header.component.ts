@@ -55,6 +55,8 @@ export class HeaderComponent implements OnInit {
     const url = this.router.url.split('?')[0].split('#')[0];
     if (/^\/admin\/events\/seatmap\/[^/]+$/.test(url)) {
       this.router.navigate(['/admin/events/seatmap', id]);
+    } else if (/^\/admin\/events\/tickets\/[^/]+$/.test(url)) {
+      this.router.navigate(['/admin/events/tickets', id]);
     } else if (/^\/admin\/events\/[^/]+$/.test(url) && !url.endsWith('/create')) {
       this.router.navigate(['/admin/events', id]);
     }

@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -25,12 +26,20 @@ export class TicketTypeManagerComponent implements OnInit {
   showForm = false;
 
   private readonly eventContext = inject(EventContextService);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(private route: ActivatedRoute, private service: TicketTypeService) {}
 
   ngOnInit(): void {
-    this.eventId = this.route.snapshot.paramMap.get('eventId') || '';
-    this.load();
+    // React to :eventId changes so switching events from the header (which reuses this
+    // component and only changes the URL) reloads for the newly selected event.
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        this.eventId = params.get('eventId') || '';
+        this.cancelEdit();
+        this.load();
+      });
   }
 
   /** Title of the event these categories belong to (from the shared selection), if known. */
