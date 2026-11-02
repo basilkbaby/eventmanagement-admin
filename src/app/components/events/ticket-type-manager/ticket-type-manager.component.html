@@ -6,10 +6,17 @@
       <span class="material-icons">arrow_back</span>
       Back to event
     </a>
-    <button class="tt-btn tt-btn--primary" (click)="startCreate()">
-      <span class="material-icons">add</span>
-      New category
-    </button>
+    <div class="tt-topbar__actions">
+      <button class="tt-btn tt-btn--soft" (click)="openSell()"
+              [disabled]="!ticketTypes.length" title="Sell tickets (offline booking)">
+        <span class="material-icons">point_of_sale</span>
+        Sell tickets
+      </button>
+      <button class="tt-btn tt-btn--primary" (click)="startCreate()">
+        <span class="material-icons">add</span>
+        New category
+      </button>
+    </div>
   </div>
 
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
@@ -43,6 +50,25 @@
     <div class="tt-stat">
       <span class="tt-stat__label">Revenue</span>
       <span class="tt-stat__value">£{{ totalRevenue | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <!-- ── Shared access code ──────────────────────────────────────────────── -->
+  <div class="tt-accesscode" *ngIf="!loading && ticketTypes.length">
+    <div class="tt-accesscode__text">
+      <span class="material-icons">lock</span>
+      <div>
+        <strong>Access code</strong>
+        <span class="tt-accesscode__hint">Buyers must enter this code to see categories marked “access code required”.</span>
+      </div>
+    </div>
+    <div class="tt-accesscode__controls">
+      <input class="tt-accesscode__input" [(ngModel)]="accessCode"
+             placeholder="No code set" autocomplete="off" />
+      <button class="tt-btn tt-btn--soft" [disabled]="accessCodeSaving" (click)="saveAccessCode()">
+        {{ accessCodeSaving ? 'Saving…' : 'Save code' }}
+      </button>
+      <span class="tt-accesscode__saved" *ngIf="accessCodeSaved"><span class="material-icons">check</span> Saved</span>
     </div>
   </div>
 
@@ -80,6 +106,9 @@
               {{ t.isActive ? 'On sale' : 'Hidden' }}
             </span>
             <span class="tt-pill tt-pill--sold" *ngIf="t.soldOut">Sold out</span>
+            <span class="tt-pill tt-pill--code" *ngIf="t.requiresAccessCode">
+              <span class="material-icons">lock</span> Access code
+            </span>
           </div>
         </div>
 
@@ -100,6 +129,7 @@
         <div class="tt-card__price">
           <span class="tt-card__price-value">£{{ t.price | number:'1.2-2' }}</span>
           <span class="tt-card__price-label">per ticket</span>
+          <span class="tt-card__fee" *ngIf="t.serviceFee > 0">+ £{{ t.serviceFee | number:'1.2-2' }} fee</span>
         </div>
         <div class="tt-card__actions">
           <button class="tt-btn tt-btn--soft" (click)="startEdit(t)">
@@ -142,10 +172,15 @@
             <input type="number" min="0" step="0.01" [(ngModel)]="form.price" />
           </label>
           <label class="tt-field">
-            <span class="tt-field__label">Capacity</span>
-            <input type="number" min="0" [(ngModel)]="form.capacity" />
+            <span class="tt-field__label">Service fee (£)</span>
+            <input type="number" min="0" step="0.01" [(ngModel)]="form.serviceFee" />
           </label>
         </div>
+
+        <label class="tt-field tt-field--narrow">
+          <span class="tt-field__label">Capacity</span>
+          <input type="number" min="0" [(ngModel)]="form.capacity" />
+        </label>
 
         <div class="tt-grid2">
           <label class="tt-field">
@@ -176,6 +211,7 @@
 
         <label class="tt-check"><input type="checkbox" [(ngModel)]="form.isActive" /> Active (on sale)</label>
         <label class="tt-check"><input type="checkbox" [(ngModel)]="form.hideWhenSoldOut" /> Hide when sold out</label>
+        <label class="tt-check"><input type="checkbox" [(ngModel)]="form.requiresAccessCode" /> Require access code (hidden until buyer enters the event code)</label>
 
         <div class="tt-error tt-error--inline" *ngIf="error">
           <span class="material-icons">error_outline</span>{{ error }}
@@ -187,6 +223,92 @@
         <button class="tt-btn tt-btn--primary" [disabled]="saving" (click)="save()">
           <span class="material-icons" *ngIf="!saving">{{ editingId ? 'save' : 'add' }}</span>
           {{ saving ? 'Saving…' : (editingId ? 'Update category' : 'Create category') }}
+        </button>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- ── Sell tickets drawer (admin offline booking) ─────────────────────── -->
+  <div class="tt-drawer-overlay" *ngIf="showSell" (click)="closeSell()">
+    <aside class="tt-drawer tt-drawer--wide" (click)="$event.stopPropagation()">
+      <header class="tt-drawer__head">
+        <h2>Sell tickets</h2>
+        <button class="tt-iconbtn" (click)="closeSell()" title="Close">
+          <span class="material-icons">close</span>
+        </button>
+      </header>
+
+      <div class="tt-drawer__body">
+        <p class="tt-sell__note">Record an offline booking (cash / bank transfer). Tickets are issued and emailed to the customer.</p>
+
+        <!-- Quantities -->
+        <div class="tt-sell__lines">
+          <div class="tt-sell__line" *ngFor="let t of sellableTypes">
+            <div class="tt-sell__line-info">
+              <span class="tt-sell__line-name">{{ t.name }}</span>
+              <span class="tt-sell__line-meta">
+                £{{ t.price | number:'1.2-2' }}<ng-container *ngIf="t.serviceFee > 0"> + £{{ t.serviceFee | number:'1.2-2' }} fee</ng-container>
+                · {{ t.available | number }} left
+                <ng-container *ngIf="t.requiresAccessCode"> · access code</ng-container>
+              </span>
+            </div>
+            <input class="tt-sell__qty" type="number" min="0" [max]="t.available"
+                   [(ngModel)]="sellQuantities[t.id]" />
+          </div>
+        </div>
+
+        <!-- Customer -->
+        <div class="tt-grid2">
+          <label class="tt-field">
+            <span class="tt-field__label">Customer name <em>*</em></span>
+            <input [(ngModel)]="sellCustomer.name" placeholder="Full name" />
+          </label>
+          <label class="tt-field">
+            <span class="tt-field__label">Email</span>
+            <input type="email" [(ngModel)]="sellCustomer.email" placeholder="For the ticket email" />
+          </label>
+        </div>
+        <div class="tt-grid2">
+          <label class="tt-field">
+            <span class="tt-field__label">Phone</span>
+            <input [(ngModel)]="sellCustomer.phone" />
+          </label>
+          <label class="tt-field">
+            <span class="tt-field__label">Postcode</span>
+            <input [(ngModel)]="sellCustomer.postCode" />
+          </label>
+        </div>
+        <div class="tt-grid2">
+          <label class="tt-field">
+            <span class="tt-field__label">Payment / transaction ref</span>
+            <input [(ngModel)]="sellCustomer.transactionRef" placeholder="e.g. cash, bank ref" />
+          </label>
+          <label class="tt-field">
+            <span class="tt-field__label">Discount (£)</span>
+            <input type="number" min="0" step="0.01" [(ngModel)]="sellDiscount" />
+          </label>
+        </div>
+
+        <label class="tt-check"><input type="checkbox" [(ngModel)]="sellPaymentCollected" /> Payment already collected</label>
+
+        <!-- Totals -->
+        <div class="tt-sell__totals">
+          <div><span>Subtotal</span><span>£{{ sellSubtotal | number:'1.2-2' }}</span></div>
+          <div *ngIf="sellFees > 0"><span>Service fees</span><span>£{{ sellFees | number:'1.2-2' }}</span></div>
+          <div *ngIf="sellDiscount > 0"><span>Discount</span><span>− £{{ sellDiscount | number:'1.2-2' }}</span></div>
+          <div class="tt-sell__grand"><span>Total ({{ sellUnitCount }} ticket{{ sellUnitCount === 1 ? '' : 's' }})</span><span>£{{ sellTotal | number:'1.2-2' }}</span></div>
+        </div>
+
+        <div class="tt-error tt-error--inline" *ngIf="sellError">
+          <span class="material-icons">error_outline</span>{{ sellError }}
+        </div>
+      </div>
+
+      <footer class="tt-drawer__foot">
+        <button class="tt-btn tt-btn--soft" (click)="closeSell()">Cancel</button>
+        <button class="tt-btn tt-btn--primary" [disabled]="sellSaving || sellUnitCount < 1" (click)="submitSell()">
+          <span class="material-icons" *ngIf="!sellSaving">point_of_sale</span>
+          {{ sellSaving ? 'Processing…' : 'Complete purchase' }}
         </button>
       </footer>
     </aside>
