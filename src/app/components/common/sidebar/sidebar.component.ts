@@ -56,7 +56,7 @@ export class SidebarComponent {
     { path: '/admin/dashboard',         icon: 'dashboard',           label: 'Dashboard' },
     { path: '',                          icon: 'info',                label: 'Event Details', detailsLink: true },
     { path: '',                          icon: 'event_seat',          label: 'Seats', seatsLink: true, seatedOnly: true },
-    { path: '',                          icon: 'local_activity',      label: 'Ticket Categories', ticketsLink: true, gaOnly: true, superAdminOnly: true },
+    { path: '',                          icon: 'local_activity',      label: 'Ticket Categories', ticketsLink: true, gaOnly: true },
     { path: '/admin/sections',          icon: 'grid_view',           label: 'Seating Layout', superAdminOnly: true, seatedOnly: true },
     { path: '/admin/event-users',       icon: 'group',               label: 'Event Users', superAdminOnly: true },
     { path: '/admin/orders',            icon: 'confirmation_number', label: 'Ticket Sales' },

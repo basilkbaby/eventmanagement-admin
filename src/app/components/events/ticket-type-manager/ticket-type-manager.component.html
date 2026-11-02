@@ -2,10 +2,6 @@
 
   <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
   <div class="tt-topbar">
-    <a [routerLink]="['/admin/events', eventId]" class="tt-back">
-      <span class="material-icons">arrow_back</span>
-      Back to event
-    </a>
     <div class="tt-topbar__actions">
       <button class="tt-btn tt-btn--soft" (click)="openSell()"
               [disabled]="!ticketTypes.length" title="Sell tickets (offline booking)">
