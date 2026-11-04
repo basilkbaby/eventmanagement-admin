@@ -33,6 +33,8 @@ export interface SectionDto {
   blockGap: number;
   barrierSides?: string | null;
   barrierLabel?: string | null;
+  standingCapacity?: number | null;
+  standingSold?: number;
   isActive: boolean;
   rowConfigs: RowConfigDto[];
 }
@@ -78,6 +80,7 @@ export interface CreateSectionRequest {
   blockGap: number;
   barrierSides?: string | null;
   barrierLabel?: string | null;
+  standingCapacity?: number | null;
   seatSectionType: SeatSectionType;
   numberingDirection: string;
   rowNumberingType: RowNumberingType;
@@ -107,6 +110,7 @@ export interface UpdateSectionRequest {
   blockGap: number;
   barrierSides?: string | null;
   barrierLabel?: string | null;
+  standingCapacity?: number | null;
   rowNumberingType: RowNumberingType;
 }
 

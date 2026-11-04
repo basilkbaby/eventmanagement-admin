@@ -116,6 +116,15 @@ readonly filteredOrders = computed(() => {
     });
   }
 
+  // Apply ticket-type / section filter: keep orders that have at least one live
+  // (non-cancelled) seat in the selected section.
+  const section = this.sectionFilter();
+  if (section !== 'all') {
+    filtered = filtered.filter(order =>
+      order.seats?.some(s => !s.isCancelled && (s.sectionName || 'Unknown') === section)
+    );
+  }
+
   // Apply search filter
   if (search) {
     filtered = filtered.filter(order => {
@@ -192,6 +201,29 @@ readonly displayedOrders = computed(() => {
     { value: 'collected',    label: 'Offline — Collected' },
     { value: 'notCollected', label: 'Offline — Not Collected' }
   ];
+
+  // Ticket-type / section filter. Lets admins see how many tickets sold per section
+  // (e.g. Diamond, Gold, Standing) and narrow the list to a single section.
+  readonly sectionFilter = signal<string>('all');
+
+  // Per-section sold counts + revenue, derived from loaded orders for the selected event.
+  // Counts only live tickets: non-cancelled seats on non-cancelled orders.
+  readonly sectionBreakdown = computed(() => {
+    const orders = this.allOrders();
+    const map = new Map<string, { name: string; sold: number; revenue: number }>();
+    for (const o of orders) {
+      if (o.status === OrderStatus.CANCELLED) continue;
+      for (const s of (o.seats || [])) {
+        if (s.isCancelled) continue;
+        const name = s.sectionName || 'Unknown';
+        const entry = map.get(name) || { name, sold: 0, revenue: 0 };
+        entry.sold += 1;
+        entry.revenue += (s.finalPrice ?? s.price ?? 0);
+        map.set(name, entry);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.sold - a.sold);
+  });
 // Pre-compute stats with all values
 readonly stats = computed(() => {
   const orders = this.allOrders();
@@ -305,6 +337,13 @@ readonly eventNameMap = computed(() => {
     this.searchTerm.set('');
     this.searchField.set('all');
     this.paymentFilter.set('all');
+    this.sectionFilter.set('all');
+    this.pageIndex.set(0);
+  }
+
+  // Click a section chip to toggle filtering by that section.
+  toggleSectionFilter(name: string): void {
+    this.sectionFilter.set(this.sectionFilter() === name ? 'all' : name);
     this.pageIndex.set(0);
   }
 

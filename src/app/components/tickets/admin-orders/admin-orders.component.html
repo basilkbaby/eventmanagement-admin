@@ -144,6 +144,32 @@
     </div>
   </div>
 
+  <!-- Ticket type (section) breakdown — sold tickets per section. Click to filter. -->
+  <div class="section-breakdown" *ngIf="!loading() && sectionBreakdown().length">
+    <div class="section-breakdown-title">
+      <mat-icon>confirmation_number</mat-icon>
+      Tickets sold by type
+    </div>
+    <div class="section-chips">
+      <button type="button"
+              class="section-chip"
+              [class.active]="sectionFilter() === 'all'"
+              (click)="sectionFilter.set('all'); onSearchChange()">
+        <span class="chip-name">All types</span>
+        <span class="chip-count">{{ stats().activeSeats }}</span>
+      </button>
+      <button type="button"
+              class="section-chip"
+              *ngFor="let s of sectionBreakdown()"
+              [class.active]="sectionFilter() === s.name"
+              (click)="toggleSectionFilter(s.name)"
+              [matTooltip]="(s.revenue | currency:'GBP') + ' revenue'">
+        <span class="chip-name">{{ s.name }}</span>
+        <span class="chip-count">{{ s.sold }}</span>
+      </button>
+    </div>
+  </div>
+
 <!-- Search Section -->
   <div class="search-section">
     <div class="search-container">
@@ -182,7 +208,7 @@
         </mat-select>
       </mat-form-field>
 
-      <div class="search-actions" *ngIf="searchTerm() || paymentFilter() !== 'all'">
+      <div class="search-actions" *ngIf="searchTerm() || paymentFilter() !== 'all' || sectionFilter() !== 'all'">
         <button mat-button color="primary" (click)="clearFilters()">
           <mat-icon>clear_all</mat-icon>
           Clear All Filters
@@ -226,7 +252,7 @@
       <p *ngIf="allOrders().length > 0 && filteredOrders().length === 0">
         No orders match your current filters.
       </p>
-      <button mat-button color="primary" (click)="clearFilters()" *ngIf="searchTerm() || paymentFilter() !== 'all'">
+      <button mat-button color="primary" (click)="clearFilters()" *ngIf="searchTerm() || paymentFilter() !== 'all' || sectionFilter() !== 'all'">
         <mat-icon>clear_all</mat-icon>
         Clear Filters
       </button>

@@ -149,7 +149,9 @@ export class SeatSectionManagerComponent implements OnInit {
       barrierRight:       [false],
       barrierTop:         [false],
       barrierBottom:      [false],
-      barrierLabel:       ['']
+      barrierLabel:       [''],
+      // Standing sections only: optional stock cap (blank/0 = unlimited).
+      standingCapacity:   [null, [Validators.min(1)]]
     });
 
     this.rowConfigForm = this.fb.group({
@@ -276,7 +278,8 @@ export class SeatSectionManagerComponent implements OnInit {
         barrierRight:       this.hasBarrierSide(section.barrierSides, 'Right'),
         barrierTop:         this.hasBarrierSide(section.barrierSides, 'Top'),
         barrierBottom:      this.hasBarrierSide(section.barrierSides, 'Bottom'),
-        barrierLabel:       section.barrierLabel || ''
+        barrierLabel:       section.barrierLabel || '',
+        standingCapacity:   section.standingCapacity ?? null
       });
     } else {
       this.sectionForm.reset({
@@ -286,7 +289,8 @@ export class SeatSectionManagerComponent implements OnInit {
         rowNumberingType: RowNumberingType.PERSECTION,
         skipRowLetters: '', hasColumnGap: false,
         gapAfterColumn: null, gapSize: null, gapColumns: '',
-        barrierLeft: false, barrierRight: false, barrierTop: false, barrierBottom: false, barrierLabel: ''
+        barrierLeft: false, barrierRight: false, barrierTop: false, barrierBottom: false, barrierLabel: '',
+        standingCapacity: null
       });
     }
 
@@ -342,7 +346,8 @@ export class SeatSectionManagerComponent implements OnInit {
         blockGap: Math.max(0, Number.isFinite(+fv.blockGap) ? +fv.blockGap : 2),
         rowNumberingType: fv.rowNumberingType,
         barrierSides: this.buildBarrierSides(fv),
-        barrierLabel: (fv.barrierLabel || '').trim() || null
+        barrierLabel: (fv.barrierLabel || '').trim() || null,
+        standingCapacity: this.resolveStandingCapacity(fv)
       };
       this.seatSectionService.updateSection(this.selectedSection.id, payload).subscribe({
         next:  () => { this.showSuccess('Section updated'); this.loadSections(); this.dialog.closeAll(); this.isSaving = false; },
@@ -369,6 +374,7 @@ export class SeatSectionManagerComponent implements OnInit {
         gapColumns:     fv.hasColumnGap ? (fv.gapColumns      || '') : '',
         barrierSides: this.buildBarrierSides(fv),
         barrierLabel: (fv.barrierLabel || '').trim() || null,
+        standingCapacity: this.resolveStandingCapacity(fv),
         rowConfigs: []
       };
       this.seatSectionService.createSection(payload).subscribe({
@@ -654,6 +660,14 @@ export class SeatSectionManagerComponent implements OnInit {
 
   private markAllTouched(fg: FormGroup): void {
     Object.values(fg.controls).forEach(c => c.markAsTouched());
+  }
+
+  // Standing stock cap only applies to STANDING sections; blank/0 means unlimited (null).
+  // The type control can be disabled in edit mode, so fall back to the selected section's type.
+  private resolveStandingCapacity(fv: any): number | null {
+    const type = fv.seatSectionType ?? this.selectedSection?.seatSectionType;
+    const cap = +fv.standingCapacity;
+    return type === SeatSectionType.STANDING && cap > 0 ? cap : null;
   }
 
   private showSuccess(msg: string): void {

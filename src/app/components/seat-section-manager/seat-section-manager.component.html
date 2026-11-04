@@ -354,8 +354,19 @@
             </div>
           </ng-container>
 
-          <!-- Crowd barrier (standing pens) -->
+          <!-- Standing capacity + crowd barrier (standing pens) -->
           <ng-container *ngIf="sectionForm.get('seatSectionType')?.value === SeatSectionType.STANDING">
+            <div class="form-section-title">Capacity</div>
+            <div class="ff-field">
+              <label class="ff-label">Ticket limit (optional)</label>
+              <input class="ff-control" type="number" min="1" formControlName="standingCapacity"
+                     placeholder="Leave blank for unlimited">
+              <p class="ff-hint">
+                Max standing tickets for this section. Leave blank or 0 for unlimited. When the limit
+                is reached the section shows as sold out and further purchases are blocked.
+              </p>
+            </div>
+
             <div class="form-section-title">Crowd Barrier</div>
             <p class="ff-hint">Draws a barrier bar just outside the chosen edge(s) of this standing area.</p>
             <div class="form-row barrier-sides">
